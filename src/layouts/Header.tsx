@@ -18,11 +18,14 @@ import {
   Beaker,
   Palette,
 } from "lucide-react";
+import { useAuthStore } from "../store/auth.store";
+import UserAvatar from "../components/auth/UserAvatar";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<number | null>(null);
+  const { isAuthenticated } = useAuthStore();
 
   const handleMouseEnter = () => {
     if (hoverTimeout) {
@@ -197,30 +200,38 @@ const Header: React.FC = () => {
         </NavbarContent>
 
         <NavbarContent justify="end" className="gap-2">
-          {/* Login Button */}
-          <NavbarItem className="hidden sm:flex">
-            <button
-              onClick={handleLoginClick}
-              className="group relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 hover:text-teal-600 transition-all duration-300 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-            >
-              <LogIn className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
-              <span>Đăng nhập</span>
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-50 to-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
-            </button>
-          </NavbarItem>
+          {isAuthenticated ? (
+            <NavbarItem className="hidden sm:flex">
+              <UserAvatar />
+            </NavbarItem>
+          ) : (
+            <>
+              {/* Login Button */}
+              <NavbarItem className="hidden sm:flex">
+                <button
+                  onClick={handleLoginClick}
+                  className="group relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 hover:text-teal-600 transition-all duration-300 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+                >
+                  <LogIn className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
+                  <span>Đăng nhập</span>
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-50 to-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
+                </button>
+              </NavbarItem>
 
-          {/* Register Button */}
-          <NavbarItem className="hidden sm:flex">
-            <button
-              onClick={handleRegisterClick}
-              className="group relative inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-teal-700 rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all duration-300 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-700 to-teal-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <UserPlus className="relative h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-              <span className="relative">Đăng ký</span>
-              <Sparkles className="relative h-3 w-3 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:rotate-12" />
-            </button>
-          </NavbarItem>
+              {/* Register Button */}
+              <NavbarItem className="hidden sm:flex">
+                <button
+                  onClick={handleRegisterClick}
+                  className="group relative inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-teal-700 rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all duration-300 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-700 to-teal-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <UserPlus className="relative h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
+                  <span className="relative">Đăng ký</span>
+                  <Sparkles className="relative h-3 w-3 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:rotate-12" />
+                </button>
+              </NavbarItem>
+            </>
+          )}
 
           {/* Mobile Menu Button */}
           <button
@@ -312,23 +323,31 @@ const Header: React.FC = () => {
             </NavLink>
 
             <div className="pt-4 border-t border-gray-200 space-y-2">
-              <NavLink
-                to="/login"
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:text-teal-600 hover:bg-gray-50 rounded-lg transition-all duration-300 hover:scale-105 group"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <LogIn className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
-                Đăng nhập
-              </NavLink>
-              <NavLink
-                to="/register"
-                className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white text-sm font-medium rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all duration-300 hover:scale-105 hover:shadow-lg group"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <UserPlus className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                <span>Đăng ký ngay</span>
-                <Sparkles className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:rotate-12 ml-auto" />
-              </NavLink>
+              {isAuthenticated ? (
+                <div className="px-4 py-3">
+                  <UserAvatar />
+                </div>
+              ) : (
+                <>
+                  <NavLink
+                    to="/login"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:text-teal-600 hover:bg-gray-50 rounded-lg transition-all duration-300 hover:scale-105 group"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <LogIn className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
+                    Đăng nhập
+                  </NavLink>
+                  <NavLink
+                    to="/register"
+                    className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white text-sm font-medium rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all duration-300 hover:scale-105 hover:shadow-lg group"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <UserPlus className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
+                    <span>Đăng ký ngay</span>
+                    <Sparkles className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:rotate-12 ml-auto" />
+                  </NavLink>
+                </>
+              )}
             </div>
           </nav>
         </div>

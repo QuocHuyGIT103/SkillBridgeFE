@@ -1,47 +1,50 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import { BookOpen, User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { BookOpen, User, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
 
 const RegisterPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    role: '',
-    password: '',
-    confirmPassword: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    role: "",
+    password: "",
+    confirmPassword: "",
   });
   const [agreements, setAgreements] = useState({
     terms: false,
-    privacy: false
+    privacy: false,
   });
   const navigate = useNavigate();
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
-  const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
+  const toggleConfirmPasswordVisibility = () =>
+    setShowConfirmPassword(!showConfirmPassword);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const handleAgreementChange = (type: 'terms' | 'privacy') => {
-    setAgreements(prev => ({
+  const handleAgreementChange = (type: "terms" | "privacy") => {
+    setAgreements((prev) => ({
       ...prev,
-      [type]: !prev[type]
+      [type]: !prev[type],
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Register attempt:', formData, agreements);
+    console.log("Register attempt:", formData, agreements);
     // Sau khi đăng ký thành công, có thể điều hướng về trang login
     // navigate('/login');
   };
@@ -49,10 +52,12 @@ const RegisterPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
-        
         {/* Logo Section */}
         <div className="text-center mb-8">
-          <NavLink to="/" className="inline-flex items-center bg-gradient-to-r from-teal-600 to-teal-700 text-white px-6 py-3 rounded-2xl shadow-lg text-xl font-bold gap-3 hover:shadow-xl transition-shadow duration-200">
+          <NavLink
+            to="/"
+            className="inline-flex items-center bg-gradient-to-r from-teal-600 to-teal-700 text-white px-6 py-3 rounded-2xl shadow-lg text-xl font-bold gap-3 hover:shadow-xl transition-shadow duration-200"
+          >
             <div className="bg-white/20 p-1 rounded-lg">
               <BookOpen className="w-6 h-6" />
             </div>
@@ -62,7 +67,6 @@ const RegisterPage: React.FC = () => {
 
         {/* Register Card */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl border-0 p-8">
-          
           {/* Header */}
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-3">
@@ -75,11 +79,13 @@ const RegisterPage: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            
             {/* Họ và Tên */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="firstName"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Họ
                 </label>
                 <div className="relative">
@@ -98,9 +104,12 @@ const RegisterPage: React.FC = () => {
                   />
                 </div>
               </div>
-              
+
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="lastName"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Tên
                 </label>
                 <div className="relative">
@@ -123,7 +132,10 @@ const RegisterPage: React.FC = () => {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Email
               </label>
               <div className="relative">
@@ -145,7 +157,10 @@ const RegisterPage: React.FC = () => {
 
             {/* Số điện thoại */}
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="phone"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Số điện thoại
               </label>
               <div className="relative">
@@ -167,8 +182,11 @@ const RegisterPage: React.FC = () => {
 
             {/* Vai trò */}
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                Vai trò
+              <label
+                htmlFor="role"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Bạn muốn trở thành
               </label>
               <select
                 id="role"
@@ -178,16 +196,17 @@ const RegisterPage: React.FC = () => {
                 required
                 className="block w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white shadow-sm transition-all duration-200 text-sm text-gray-700"
               >
-                <option value="">Chọn vai trò của bạn</option>
                 <option value="student">Học viên</option>
                 <option value="tutor">Gia sư</option>
-                <option value="parent">Phụ huynh</option>
               </select>
             </div>
 
             {/* Mật khẩu */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Mật khẩu
               </label>
               <div className="relative">
@@ -220,7 +239,10 @@ const RegisterPage: React.FC = () => {
 
             {/* Xác nhận mật khẩu */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Xác nhận mật khẩu
               </label>
               <div className="relative">
@@ -257,23 +279,24 @@ const RegisterPage: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={agreements.terms}
-                  onChange={() => handleAgreementChange('terms')}
+                  onChange={() => handleAgreementChange("terms")}
                   className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded mt-0.5"
                 />
                 <span className="text-sm text-gray-600 leading-tight">
-                  Tôi đồng ý với <NavLink to="/terms" className="text-teal-600 hover:text-teal-700 font-medium">Điều khoản sử dụng</NavLink>
-                </span>
-              </label>
-              
-              <label className="flex items-start space-x-3">
-                <input
-                  type="checkbox"
-                  checked={agreements.privacy}
-                  onChange={() => handleAgreementChange('privacy')}
-                  className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded mt-0.5"
-                />
-                <span className="text-sm text-gray-600 leading-tight">
-                  và <NavLink to="/privacy" className="text-teal-600 hover:text-teal-700 font-medium">Chính sách bảo mật</NavLink>
+                  Tôi đồng ý với{" "}
+                  <NavLink
+                    to="/terms"
+                    className="text-teal-600 hover:text-teal-700 font-medium"
+                  >
+                    Điều khoản sử dụng
+                  </NavLink>{" "}
+                  và{" "}
+                  <NavLink
+                    to="/privacy"
+                    className="text-teal-600 hover:text-teal-700 font-medium"
+                  >
+                    Chính sách bảo mật
+                  </NavLink>
                 </span>
               </label>
             </div>
@@ -294,7 +317,9 @@ const RegisterPage: React.FC = () => {
               <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-4 text-gray-500 font-medium">HOẶC</span>
+              <span className="bg-white px-4 text-gray-500 font-medium">
+                HOẶC
+              </span>
             </div>
           </div>
 
@@ -324,13 +349,17 @@ const RegisterPage: React.FC = () => {
               </svg>
               <span className="text-sm">Google</span>
             </button>
-            
+
             <button
               type="button"
               className="flex items-center justify-center gap-2 w-full py-2.5 px-4 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 text-gray-700 font-medium transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              <svg
+                className="w-4 h-4 text-blue-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
               <span className="text-sm">Facebook</span>
             </button>
