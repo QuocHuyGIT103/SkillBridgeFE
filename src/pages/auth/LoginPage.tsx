@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 const LoginPage: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 
@@ -13,18 +13,18 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt:', { email, password, rememberMe });
-    // Sau khi login thành công, có thể điều hướng về trang chủ
-    // navigate('/');
+    console.log("Login attempt:", { email, password, rememberMe });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
-        
         {/* Logo Section */}
         <div className="text-center mb-8">
-          <NavLink to="/" className="inline-flex items-center bg-gradient-to-r from-teal-600 to-teal-700 text-white px-6 py-3 rounded-2xl shadow-lg text-xl font-bold gap-3 hover:shadow-xl transition-shadow duration-200">
+          <NavLink
+            to="/"
+            className="inline-flex items-center bg-gradient-to-r from-teal-600 to-teal-700 text-white px-6 py-3 rounded-2xl shadow-lg text-xl font-bold gap-3 hover:shadow-xl transition-shadow duration-200"
+          >
             <div className="bg-white/20 p-1 rounded-lg">
               <svg
                 className="w-6 h-6"
@@ -46,12 +46,9 @@ const LoginPage: React.FC = () => {
 
         {/* Login Card */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl border-0 p-8">
-          
           {/* Header */}
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">
-              Đăng nhập
-            </h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">Đăng nhập</h2>
             <p className="text-gray-600 text-lg">
               Chào mừng bạn quay trở lại SkillBridge
             </p>
@@ -59,10 +56,12 @@ const LoginPage: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            
             {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Email
               </label>
               <div className="relative">
@@ -95,7 +94,10 @@ const LoginPage: React.FC = () => {
 
             {/* Password Input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Mật khẩu
               </label>
               <div className="relative">
@@ -146,9 +148,11 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
                 />
-                <span className="ml-2 text-sm text-gray-600">Ghi nhớ đăng nhập</span>
+                <span className="ml-2 text-sm text-gray-600">
+                  Ghi nhớ đăng nhập
+                </span>
               </label>
-              
+
               <NavLink
                 to="/forgot-password"
                 className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors"
@@ -172,7 +176,9 @@ const LoginPage: React.FC = () => {
               <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-4 text-gray-500 font-medium">HOẶC</span>
+              <span className="bg-white px-4 text-gray-500 font-medium">
+                HOẶC
+              </span>
             </div>
           </div>
 
@@ -202,13 +208,17 @@ const LoginPage: React.FC = () => {
               </svg>
               Google
             </button>
-            
+
             <button
               type="button"
               className="flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 text-gray-700 font-medium transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              <svg
+                className="w-5 h-5 text-blue-600"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
               Facebook
             </button>
