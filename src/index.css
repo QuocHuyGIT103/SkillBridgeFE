@@ -1,1 +1,101 @@
 @import "tailwindcss";
+
+/* Light mode colors (default) */
+:root {
+  --color-primary: #9a3f3f;
+  --color-secondary: #c1856d;
+  --color-accent: #e6cfa9;
+  --color-neutral: #fbf9d1;
+}
+
+/* Dark mode colors */
+.dark {
+  --color-primary: #dc7373;
+  --color-secondary: #e5a88a;
+  --color-accent: #f0dcc0;
+  --color-neutral: #2d2d2d;
+}
+
+/* Custom utility classes */
+.bg-primary {
+  background-color: var(--color-primary);
+}
+.text-primary {
+  color: var(--color-primary);
+}
+.border-primary {
+  border-color: var(--color-primary);
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary);
+}
+.text-secondary {
+  color: var(--color-secondary);
+}
+.border-secondary {
+  border-color: var(--color-secondary);
+}
+
+.bg-accent {
+  background-color: var(--color-accent);
+}
+.text-accent {
+  color: var(--color-accent);
+}
+.border-accent {
+  border-color: var(--color-accent);
+}
+
+.bg-neutral {
+  background-color: var(--color-neutral);
+}
+.text-neutral {
+  color: var(--color-neutral);
+}
+.border-neutral {
+  border-color: var(--color-neutral);
+}
+
+/* Hover states */
+.hover\:bg-primary:hover {
+  background-color: var(--color-primary);
+}
+.hover\:bg-secondary:hover {
+  background-color: var(--color-secondary);
+}
+.hover\:bg-accent:hover {
+  background-color: var(--color-accent);
+}
+
+/* Dark mode overrides */
+.dark .bg-white {
+  background-color: rgb(30, 41, 59);
+}
+.dark .bg-gray-50 {
+  background-color: rgb(15, 23, 42);
+}
+.dark .bg-gray-100 {
+  background-color: rgb(51, 65, 85);
+}
+.dark .text-gray-900 {
+  color: rgb(248, 250, 252);
+}
+.dark .text-gray-700 {
+  color: rgb(203, 213, 225);
+}
+.dark .text-gray-600 {
+  color: rgb(148, 163, 184);
+}
+.dark .text-gray-500 {
+  color: rgb(100, 116, 139);
+}
+.dark .text-gray-400 {
+  color: rgb(100, 116, 139);
+}
+.dark .border-gray-200 {
+  border-color: rgb(71, 85, 105);
+}
+.dark .border-gray-100 {
+  border-color: rgb(51, 65, 85);
+}

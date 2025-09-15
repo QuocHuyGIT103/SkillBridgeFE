@@ -26,9 +26,15 @@ const LoginPage: React.FC = () => {
         localStorage.removeItem("rememberMe");
       }
 
-      // Redirect to homepage after successful login
+      // Get user from auth store to check role
+      const { user } = useAuthStore.getState();
 
-      navigate("/");
+      // Redirect based on user role
+      if (user?.role?.toLowerCase() === "tutor") {
+        navigate("/tutor/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       console.error("Login failed:", error);
     }
