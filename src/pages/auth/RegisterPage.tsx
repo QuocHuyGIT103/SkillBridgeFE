@@ -2,24 +2,29 @@ import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { BookOpen, User, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
+import { useAuthStore } from "../../store/auth.store";
+import {
+  validateRegistrationForm,
+  showValidationErrors,
+} from "../../utils/validation";
 
 const RegisterPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    full_name: "",
     email: "",
-    phone: "",
-    role: "",
+    phone_number: "",
+    role: "STUDENT",
     password: "",
     confirmPassword: "",
   });
   const [agreements, setAgreements] = useState({
     terms: false,
-    privacy: false,
+    privacy: true,
   });
   const navigate = useNavigate();
+  const { register, isLoading } = useAuthStore();
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
   const toggleConfirmPasswordVisibility = () =>
@@ -42,11 +47,40 @@ const RegisterPage: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Register attempt:", formData, agreements);
-    // Sau khi đăng ký thành công, có thể điều hướng về trang login
-    // navigate('/login');
+
+    // Validation
+    const validationErrors = validateRegistrationForm(formData);
+    if (validationErrors.length > 0) {
+      showValidationErrors(validationErrors);
+      return;
+    }
+
+    if (!agreements.terms || !agreements.privacy) {
+      showValidationErrors([
+        {
+          field: "Điều khoản",
+          message: "Vui lòng đồng ý với điều khoản và chính sách bảo mật!",
+        },
+      ]);
+      return;
+    }
+
+    try {
+      await register({
+        full_name: formData.full_name,
+        email: formData.email,
+        password: formData.password,
+        phone_number: formData.phone_number || undefined,
+        role: formData.role,
+      });
+
+      // Navigate to OTP verification page
+      navigate("/verify-otp");
+    } catch (error) {
+      console.error("Registration failed:", error);
+    }
   };
 
   return (
@@ -80,53 +114,27 @@ const RegisterPage: React.FC = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Họ và Tên */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Họ
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="w-4 h-4 text-gray-400" />
-                  </div>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    placeholder="Nhập họ"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    required
-                    className="block w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white shadow-sm transition-all duration-200 text-sm placeholder:text-gray-400"
-                  />
+            <div>
+              <label
+                htmlFor="full_name"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Họ và tên
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="w-4 h-4 text-gray-400" />
                 </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Tên
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="w-4 h-4 text-gray-400" />
-                  </div>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    placeholder="Nhập tên"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    required
-                    className="block w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white shadow-sm transition-all duration-200 text-sm placeholder:text-gray-400"
-                  />
-                </div>
+                <input
+                  id="full_name"
+                  name="full_name"
+                  type="text"
+                  placeholder="Nhập họ và tên đầy đủ"
+                  value={formData.full_name}
+                  onChange={handleInputChange}
+                  required
+                  className="block w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white shadow-sm transition-all duration-200 text-sm placeholder:text-gray-400"
+                />
               </div>
             </div>
 
@@ -158,7 +166,7 @@ const RegisterPage: React.FC = () => {
             {/* Số điện thoại */}
             <div>
               <label
-                htmlFor="phone"
+                htmlFor="phone_number"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Số điện thoại
@@ -168,11 +176,11 @@ const RegisterPage: React.FC = () => {
                   <Phone className="w-4 h-4 text-gray-400" />
                 </div>
                 <input
-                  id="phone"
-                  name="phone"
+                  id="phone_number"
+                  name="phone_number"
                   type="tel"
                   placeholder="Nhập số điện thoại"
-                  value={formData.phone}
+                  value={formData.phone_number}
                   onChange={handleInputChange}
                   required
                   className="block w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white shadow-sm transition-all duration-200 text-sm placeholder:text-gray-400"
@@ -196,8 +204,8 @@ const RegisterPage: React.FC = () => {
                 required
                 className="block w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white shadow-sm transition-all duration-200 text-sm text-gray-700"
               >
-                <option value="student">Học viên</option>
-                <option value="tutor">Gia sư</option>
+                <option value="STUDENT">Học viên</option>
+                <option value="TUTOR">Gia sư</option>
               </select>
             </div>
 
@@ -304,10 +312,12 @@ const RegisterPage: React.FC = () => {
             {/* Register Button */}
             <button
               type="submit"
-              disabled={!agreements.terms || !agreements.privacy}
-              className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+              disabled={!agreements.terms || isLoading}
+              className={`w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${
+                isLoading ? "opacity-70" : ""
+              }`}
             >
-              Tạo tài khoản
+              {isLoading ? "Đang xử lý..." : "Tạo tài khoản"}
             </button>
           </form>
 

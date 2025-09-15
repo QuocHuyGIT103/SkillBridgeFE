@@ -5,10 +5,34 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterCredentials {
+  full_name: string;
+  email: string;
+  password: string;
+  phone_number?: string;
+  role: string;
+}
+
+export interface VerifyOTPCredentials {
+  email: string;
+  otp_code: string;
+}
+
+export interface ForgotPasswordCredentials {
+  email: string;
+}
+
+export interface ResetPasswordCredentials {
+  email: string;
+  otp_code: string;
+  new_password: string;
+}
+
 export interface UserResponse {
   id: string;
   full_name: string;
   email: string;
+  phone_number?: string;
   avatar_url: string | null;
   role: string;
   status: string;
@@ -27,7 +51,111 @@ export interface AuthResponse {
   tokens: TokensResponse;
 }
 
+export interface RegisterResponse {
+  email: string;
+  otpSent: boolean;
+}
+
+export interface VerifyOTPResponse {
+  user: UserResponse;
+  token: string;
+}
+
+export interface ForgotPasswordResponse {
+  email: string;
+  otpSent: boolean;
+}
+
+export interface OTPStatusResponse {
+  email: string;
+  remainingSeconds: number;
+  expiresAt: string;
+  canResend: boolean;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 const AuthService = {
+  register: async (credentials: RegisterCredentials) => {
+    try {
+      const response = await axiosClient.post<RegisterResponse>(
+        "/auth/register",
+        credentials
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  verifyOTP: async (credentials: VerifyOTPCredentials) => {
+    try {
+      const response = await axiosClient.post<VerifyOTPResponse>(
+        "/auth/verify-otp",
+        credentials
+      );
+
+      // Store token in localStorage if verification successful
+      if (response.success && response.data.token) {
+        localStorage.setItem("access_token", response.data.token);
+      }
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  resendOTP: async (email: string) => {
+    try {
+      const response = await axiosClient.post<RegisterResponse>(
+        "/auth/resend-otp",
+        { email }
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getOTPStatus: async (email: string, otpType: string = "REGISTRATION") => {
+    try {
+      const response = await axiosClient.post<OTPStatusResponse>(
+        "/auth/otp-status",
+        { email, otp_type: otpType }
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  forgotPassword: async (credentials: ForgotPasswordCredentials) => {
+    try {
+      const response = await axiosClient.post<ForgotPasswordResponse>(
+        "/auth/forgot-password",
+        credentials
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  resetPassword: async (credentials: ResetPasswordCredentials) => {
+    try {
+      const response = await axiosClient.post<ResetPasswordResponse>(
+        "/auth/reset-password",
+        credentials
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   login: async (credentials: LoginCredentials) => {
     try {
       const response = await axiosClient.post<AuthResponse>(
