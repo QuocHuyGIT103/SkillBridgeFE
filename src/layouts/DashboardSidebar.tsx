@@ -55,24 +55,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       path: "/tutor/profile",
       children: [
         {
-          id: "profile-edit",
-          label: "Chỉnh sửa hồ sơ",
-          path: "/tutor/profile/edit",
+          id: "profile-personal",
+          label: "Hồ sơ của tôi",
+          path: "/tutor/profile/personal",
         },
         {
-          id: "profile-settings",
-          label: "Cài đặt tài khoản",
-          path: "/tutor/profile/settings",
-        },
-        {
-          id: "profile-verification",
-          label: "Xác thực",
-          path: "/tutor/profile/verification",
-        },
-        {
-          id: "profile-portfolio",
-          label: "Hồ sơ năng lực",
-          path: "/tutor/profile/portfolio",
+          id: "profile-education",
+          label: "Học vấn & Chứng chỉ",
+          path: "/tutor/profile/education",
         },
       ],
     },

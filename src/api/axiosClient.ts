@@ -56,7 +56,7 @@ class AxiosClient {
           const errorData = error.response.data as any;
           return Promise.reject({
             success: false,
-            message: errorData.message || "Đã xảy ra lỗi",
+            message: errorData.message || errorData.error || "Đã xảy ra lỗi",
             data: errorData.data,
             status: error.response.status,
           });

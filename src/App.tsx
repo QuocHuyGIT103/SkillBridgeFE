@@ -13,6 +13,8 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import TutorDashboardLayout from "./layouts/TutorDashboardLayout";
 import TutorDashboardOverview from "./pages/tutor/TutorDashboardOverview";
 import TutorProfilePage from "./pages/tutor/TutorProfilePage";
+import TutorPersonalProfilePage from "./pages/tutor/TutorPersonalProfilePage";
+import TutorEducationPage from "./pages/tutor/TutorEducationPage";
 import TutorSchedulePage from "./pages/tutor/TutorSchedulePage";
 import TutorChatPage from "./pages/tutor/TutorChatPage";
 import AdminDashboardLayout from "./layouts/AdminDashboardLayout";
@@ -92,6 +94,11 @@ function App() {
           >
             <Route path="dashboard" element={<TutorDashboardOverview />} />
             <Route path="profile" element={<TutorProfilePage />} />
+            <Route
+              path="profile/personal"
+              element={<TutorPersonalProfilePage />}
+            />
+            <Route path="profile/education" element={<TutorEducationPage />} />
             <Route path="profile/*" element={<TutorProfilePage />} />
             <Route path="schedule" element={<TutorSchedulePage />} />
             <Route path="schedule/*" element={<TutorSchedulePage />} />
