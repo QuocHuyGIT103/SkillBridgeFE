@@ -17,6 +17,12 @@ import TutorPersonalProfilePage from "./pages/tutor/TutorPersonalProfilePage";
 import TutorEducationPage from "./pages/tutor/TutorEducationPage";
 import TutorSchedulePage from "./pages/tutor/TutorSchedulePage";
 import TutorChatPage from "./pages/tutor/TutorChatPage";
+import StudentDashboardLayout from "./layouts/StudentDashboardLayout";
+import StudentDashboardOverview from "./pages/student/StudentDashboardOverview";
+import StudentSchedulePage from "./pages/student/StudentSchedulePage";
+import StudentTutorSearchPage from "./pages/student/StudentTutorSearchPage";
+import StudentMessagesPage from "./pages/student/StudentMessagesPage";
+import StudentAssignmentsPage from "./pages/student/StudentAssignmentsPage";
 import AdminDashboardLayout from "./layouts/AdminDashboardLayout";
 import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
 import UserManagementList from "./pages/admin/users/UserManagementList";
@@ -67,6 +73,10 @@ const RoleBasedRedirect = () => {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
+  if (isAuthenticated && user?.role?.toLowerCase() === "student") {
+    return <Navigate to="/student/dashboard" replace />;
+  }
+
   return <Navigate to="/" replace />;
 };
 
@@ -87,6 +97,54 @@ function App() {
 
             {/* Role-based redirect route */}
             <Route path="/dashboard" element={<RoleBasedRedirect />} />
+
+            {/* Student Dashboard Routes */}
+            <Route
+              path="/student/*"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <StudentDashboardLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<StudentDashboardOverview />} />
+              <Route path="tutor-search" element={<StudentTutorSearchPage />} />
+              <Route path="schedule" element={<StudentSchedulePage />} />
+              <Route path="messages" element={<StudentMessagesPage />} />
+              <Route
+                path="classes"
+                element={
+                  <div className="text-center py-8 text-gray-500">
+                    Classes - Coming Soon
+                  </div>
+                }
+              />
+              <Route path="assignments" element={<StudentAssignmentsPage />} />
+              <Route
+                path="ratings"
+                element={
+                  <div className="text-center py-8 text-gray-500">
+                    Ratings - Coming Soon
+                  </div>
+                }
+              />
+              <Route
+                path="ai-suggestions"
+                element={
+                  <div className="text-center py-8 text-gray-500">
+                    AI Suggestions - Coming Soon
+                  </div>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <div className="text-center py-8 text-gray-500">
+                    Settings - Coming Soon
+                  </div>
+                }
+              />
+            </Route>
 
             {/* Tutor Dashboard Routes */}
             <Route

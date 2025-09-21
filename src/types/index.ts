@@ -10,3 +10,16 @@ export interface ApiResponse<T> {
   message: string;
   success: boolean;
 }
+
+// Re-export all types
+export * from './admin.types';
+export * from './tutor.types';
+export type {
+  StudentNavigationItem,
+  StudentStats,
+  Assignment,
+  Tutor,
+  Conversation,
+  Lesson as StudentLesson,
+  Message as StudentMessage
+} from './student.types';
