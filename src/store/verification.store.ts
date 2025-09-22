@@ -1,70 +1,77 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import verificationService from "../services/verification.service";
 import type {
-  VerificationRequest,
-  VerificationStatusResponse,
-  VerificationStatus,
-} from "../services/verification.service";
+  VerificationRequestWithPopulatedData,
+  ApproveVerificationData,
+  RejectVerificationData,
+} from "../types/verification.types";
 
 interface VerificationState {
-  verificationRequests: VerificationRequest[];
-  currentVerificationRequest: VerificationRequest | null;
-  verificationStatus: VerificationStatusResponse | null;
+  // Data
+  currentVerificationRequest: VerificationRequestWithPopulatedData | null;
+  verificationHistory: VerificationRequestWithPopulatedData[];
+  pendingRequests: VerificationRequestWithPopulatedData[]; // Admin only
+  selectedRequest: VerificationRequestWithPopulatedData | null; // Admin only
+
+  // Loading states
   isLoading: boolean;
   isSubmitting: boolean;
+  isCreatingRequest: boolean;
 
-  // Actions
+  // Tutor Actions
   createVerificationRequest: () => Promise<void>;
   fetchVerificationStatus: () => Promise<void>;
-  fetchVerificationRequestById: (id: string) => Promise<void>;
-  fetchAllVerificationRequests: (params?: {
-    page?: number;
-    limit?: number;
-    status?: VerificationStatus;
-    tutor_id?: string;
-  }) => Promise<void>;
-  reviewVerificationRequest: (
-    id: string,
-    data: { status: VerificationStatus; admin_feedback?: string }
+  fetchVerificationHistory: () => Promise<void>;
+
+  // Admin Actions
+  fetchPendingRequests: () => Promise<void>;
+  fetchVerificationRequestById: (requestId: string) => Promise<void>;
+  approveVerificationRequest: (
+    requestId: string,
+    data: ApproveVerificationData
   ) => Promise<void>;
-  cancelVerificationRequest: (id: string) => Promise<void>;
-  clearCurrentVerificationRequest: () => void;
+  rejectVerificationRequest: (
+    requestId: string,
+    data: RejectVerificationData
+  ) => Promise<void>;
+
+  // Utility Actions
+  clearCurrentRequest: () => void;
+  clearSelectedRequest: () => void;
   clearVerificationData: () => void;
 }
 
 export const useVerificationStore = create<VerificationState>()(
   persist(
     (set, get) => ({
-      verificationRequests: [],
+      // Initial state
       currentVerificationRequest: null,
-      verificationStatus: null,
+      verificationHistory: [],
+      pendingRequests: [],
+      selectedRequest: null,
       isLoading: false,
       isSubmitting: false,
+      isCreatingRequest: false,
 
+      // Tutor Actions
       createVerificationRequest: async () => {
-        set({ isSubmitting: true });
+        set({ isCreatingRequest: true });
         try {
           const response =
             await verificationService.createVerificationRequest();
 
           if (response.success && response.data) {
-            set({
-              currentVerificationRequest: response.data,
-              verificationStatus: {
-                has_request: true,
-                verification_request: response.data,
-              },
-            });
+            // Fetch updated status after creating request
+            await get().fetchVerificationStatus();
             toast.success(
-              response.message ||
-                "Yêu cầu xác thực đã được gửi thành công. Admin sẽ xem xét và phản hồi sớm nhất có thể."
+              response.message || "Yêu cầu xác thực đã được gửi thành công!"
             );
           } else {
-            toast.error(response.message || "Tạo yêu cầu xác thực thất bại");
+            toast.error(response.message || "Không thể tạo yêu cầu xác thực");
             throw new Error(
-              response.message || "Tạo yêu cầu xác thực thất bại"
+              response.message || "Không thể tạo yêu cầu xác thực"
             );
           }
         } catch (error: any) {
@@ -73,7 +80,7 @@ export const useVerificationStore = create<VerificationState>()(
           );
           throw error;
         } finally {
-          set({ isSubmitting: false });
+          set({ isCreatingRequest: false });
         }
       },
 
@@ -82,8 +89,8 @@ export const useVerificationStore = create<VerificationState>()(
         try {
           const response = await verificationService.getVerificationStatus();
 
-          if (response.success && response.data) {
-            set({ verificationStatus: response.data });
+          if (response.success) {
+            set({ currentVerificationRequest: response.data });
           } else {
             toast.error(
               response.message || "Không thể tải trạng thái xác thực"
@@ -99,39 +106,34 @@ export const useVerificationStore = create<VerificationState>()(
         }
       },
 
-      fetchVerificationRequestById: async (id: string) => {
+      fetchVerificationHistory: async () => {
         set({ isLoading: true });
         try {
-          const response = await verificationService.getVerificationRequestById(
-            id
-          );
+          const response = await verificationService.getVerificationHistory();
 
           if (response.success && response.data) {
-            set({ currentVerificationRequest: response.data });
+            set({ verificationHistory: response.data });
           } else {
-            toast.error(
-              response.message || "Không thể tải thông tin yêu cầu xác thực"
-            );
+            toast.error(response.message || "Không thể tải lịch sử xác thực");
           }
         } catch (error: any) {
           toast.error(
-            error.message || "Đã xảy ra lỗi khi tải thông tin yêu cầu xác thực"
+            error.message || "Đã xảy ra lỗi khi tải lịch sử xác thực"
           );
-          console.error("Error fetching verification request:", error);
+          console.error("Error fetching verification history:", error);
         } finally {
           set({ isLoading: false });
         }
       },
 
-      fetchAllVerificationRequests: async (params) => {
+      // Admin Actions
+      fetchPendingRequests: async () => {
         set({ isLoading: true });
         try {
-          const response = await verificationService.getAllVerificationRequests(
-            params
-          );
+          const response = await verificationService.getPendingRequests();
 
           if (response.success && response.data) {
-            set({ verificationRequests: response.data });
+            set({ pendingRequests: response.data });
           } else {
             toast.error(
               response.message || "Không thể tải danh sách yêu cầu xác thực"
@@ -141,113 +143,127 @@ export const useVerificationStore = create<VerificationState>()(
           toast.error(
             error.message || "Đã xảy ra lỗi khi tải danh sách yêu cầu xác thực"
           );
-          console.error("Error fetching verification requests:", error);
+          console.error("Error fetching pending requests:", error);
         } finally {
           set({ isLoading: false });
         }
       },
 
-      reviewVerificationRequest: async (
-        id: string,
-        data: { status: VerificationStatus; admin_feedback?: string }
-      ) => {
-        set({ isSubmitting: true });
+      fetchVerificationRequestById: async (requestId: string) => {
+        set({ isLoading: true });
         try {
-          const response = await verificationService.reviewVerificationRequest(
-            id,
-            data
+          const response = await verificationService.getVerificationRequestById(
+            requestId
           );
 
           if (response.success && response.data) {
-            const currentRequests = get().verificationRequests;
-            const updatedRequests = currentRequests.map((request) =>
-              request._id === id ? response.data : request
-            );
-
-            set({
-              verificationRequests: updatedRequests,
-              currentVerificationRequest:
-                get().currentVerificationRequest?._id === id
-                  ? response.data
-                  : get().currentVerificationRequest,
-            });
-
-            const statusText =
-              data.status === "approved" ? "phê duyệt" : "từ chối";
-            toast.success(
-              response.message ||
-                `${
-                  statusText.charAt(0).toUpperCase() + statusText.slice(1)
-                } yêu cầu xác thực thành công!`
-            );
+            set({ selectedRequest: response.data });
           } else {
-            toast.error(response.message || "Xử lý yêu cầu xác thực thất bại");
-            throw new Error(
-              response.message || "Xử lý yêu cầu xác thực thất bại"
+            toast.error(
+              response.message || "Không thể tải chi tiết yêu cầu xác thực"
             );
           }
         } catch (error: any) {
           toast.error(
-            error.message || "Đã xảy ra lỗi khi xử lý yêu cầu xác thực"
+            error.message || "Đã xảy ra lỗi khi tải chi tiết yêu cầu xác thực"
           );
-          throw error;
+          console.error("Error fetching verification request:", error);
         } finally {
-          set({ isSubmitting: false });
+          set({ isLoading: false });
         }
       },
 
-      cancelVerificationRequest: async (id: string) => {
+      approveVerificationRequest: async (
+        requestId: string,
+        data: ApproveVerificationData
+      ) => {
         set({ isSubmitting: true });
         try {
-          const response = await verificationService.cancelVerificationRequest(
-            id
+          const response = await verificationService.approveVerificationRequest(
+            requestId,
+            data
           );
 
           if (response.success) {
-            const currentRequests = get().verificationRequests;
-            const filteredRequests = currentRequests.filter(
-              (request) => request._id !== id
+            // Update pending requests list
+            const updatedPendingRequests = get().pendingRequests.filter(
+              (request) => request._id !== requestId
             );
+            set({ pendingRequests: updatedPendingRequests });
 
-            set({
-              verificationRequests: filteredRequests,
-              currentVerificationRequest:
-                get().currentVerificationRequest?._id === id
-                  ? null
-                  : get().currentVerificationRequest,
-              verificationStatus:
-                get().verificationStatus?.verification_request?._id === id
-                  ? { has_request: false }
-                  : get().verificationStatus,
-            });
+            // Clear selected request if it was the approved one
+            if (get().selectedRequest?._id === requestId) {
+              set({ selectedRequest: null });
+            }
+
             toast.success(
-              response.message || "Hủy yêu cầu xác thực thành công!"
+              response.message || "Yêu cầu xác thực đã được phê duyệt!"
             );
           } else {
-            toast.error(response.message || "Hủy yêu cầu xác thực thất bại");
-            throw new Error(
-              response.message || "Hủy yêu cầu xác thực thất bại"
-            );
+            toast.error(response.message || "Không thể phê duyệt yêu cầu");
+            throw new Error(response.message || "Không thể phê duyệt yêu cầu");
           }
         } catch (error: any) {
-          toast.error(
-            error.message || "Đã xảy ra lỗi khi hủy yêu cầu xác thực"
-          );
+          toast.error(error.message || "Đã xảy ra lỗi khi phê duyệt yêu cầu");
           throw error;
         } finally {
           set({ isSubmitting: false });
         }
       },
 
-      clearCurrentVerificationRequest: () => {
+      rejectVerificationRequest: async (
+        requestId: string,
+        data: RejectVerificationData
+      ) => {
+        set({ isSubmitting: true });
+        try {
+          const response = await verificationService.rejectVerificationRequest(
+            requestId,
+            data
+          );
+
+          if (response.success) {
+            // Update pending requests list
+            const updatedPendingRequests = get().pendingRequests.filter(
+              (request) => request._id !== requestId
+            );
+            set({ pendingRequests: updatedPendingRequests });
+
+            // Clear selected request if it was the rejected one
+            if (get().selectedRequest?._id === requestId) {
+              set({ selectedRequest: null });
+            }
+
+            toast.success(
+              response.message || "Yêu cầu xác thực đã được từ chối!"
+            );
+          } else {
+            toast.error(response.message || "Không thể từ chối yêu cầu");
+            throw new Error(response.message || "Không thể từ chối yêu cầu");
+          }
+        } catch (error: any) {
+          toast.error(error.message || "Đã xảy ra lỗi khi từ chối yêu cầu");
+          throw error;
+        } finally {
+          set({ isSubmitting: false });
+        }
+      },
+
+      // Utility Actions
+      clearCurrentRequest: () => {
         set({ currentVerificationRequest: null });
+      },
+
+      clearSelectedRequest: () => {
+        set({ selectedRequest: null });
       },
 
       clearVerificationData: () => {
         set({
-          verificationRequests: [],
           currentVerificationRequest: null,
-          verificationStatus: null,
+          verificationHistory: [],
+          pendingRequests: [],
+          selectedRequest: null,
         });
       },
     }),
@@ -255,9 +271,10 @@ export const useVerificationStore = create<VerificationState>()(
       name: "verification-store",
       // Only persist the data, not loading states
       partialize: (state) => ({
-        verificationRequests: state.verificationRequests,
         currentVerificationRequest: state.currentVerificationRequest,
-        verificationStatus: state.verificationStatus,
+        verificationHistory: state.verificationHistory,
+        pendingRequests: state.pendingRequests,
+        selectedRequest: state.selectedRequest,
       }),
     }
   )

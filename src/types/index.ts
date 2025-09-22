@@ -12,8 +12,9 @@ export interface ApiResponse<T> {
 }
 
 // Re-export all types
-export * from './admin.types';
-export * from './tutor.types';
+export * from "./admin.types";
+export * from "./tutor.types";
+export * from "./verification.types";
 export type {
   StudentNavigationItem,
   StudentStats,
@@ -21,5 +22,5 @@ export type {
   Tutor,
   Conversation,
   Lesson as StudentLesson,
-  Message as StudentMessage
-} from './student.types';
+  Message as StudentMessage,
+} from "./student.types";
