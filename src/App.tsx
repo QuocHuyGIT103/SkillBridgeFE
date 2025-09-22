@@ -27,6 +27,8 @@ import AdminDashboardLayout from "./layouts/AdminDashboardLayout";
 import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
 import UserManagementList from "./pages/admin/users/UserManagementList";
 import TutorApprovalPage from "./pages/admin/authentication/TutorApprovalPage";
+import VerificationApprovalPage from "./pages/admin/authentication/VerificationApprovalPage";
+import VerificationHistoryPage from "./pages/admin/authentication/VerificationHistoryPage";
 import TransactionManagement from "./pages/admin/transactions/TransactionManagement";
 import ComplaintManagement from "./pages/admin/complaints/ComplaintManagement";
 import SystemConfiguration from "./pages/admin/config/SystemConfiguration";
@@ -226,6 +228,14 @@ function App() {
               <Route
                 path="authentication/tutor-approval"
                 element={<TutorApprovalPage />}
+              />
+              <Route
+                path="authentication/verification-approval"
+                element={<VerificationApprovalPage />}
+              />
+              <Route
+                path="authentication/verification-history"
+                element={<VerificationHistoryPage />}
               />
               <Route
                 path="authentication/certificates"

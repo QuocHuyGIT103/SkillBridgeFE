@@ -24,7 +24,7 @@ export interface VerificationRequest {
 export interface VerificationRequestWithPopulatedData {
   _id: string;
   tutor_id: {
-    _id: string;
+    id: string;
     full_name: string;
     email: string;
     phone_number?: string;
@@ -32,25 +32,37 @@ export interface VerificationRequestWithPopulatedData {
   status: VerificationStatus;
   education_id?: {
     _id: string;
-    institution_name: string;
-    degree: string;
-    field_of_study: string;
-    graduation_year: number;
-    gpa?: number;
+    tutor_id: string;
+    level: string;
+    school: string;
+    major?: string;
+    start_year: string;
+    end_year: string;
+    degree_image_url?: string;
+    degree_image_public_id?: string;
     is_verified: boolean;
+    created_at: string;
+    updated_at: string;
+    __v?: number;
   };
   certificate_ids: Array<{
     _id: string;
+    tutor_id: string;
     name: string;
     description: string;
     issued_by: string;
-    issue_date?: string;
-    expiry_date?: string;
+    issue_date?: string | null;
+    expiry_date?: string | null;
     certificate_image_url?: string;
+    certificate_image_public_id?: string;
     is_verified: boolean;
+    created_at: string;
+    updated_at: string;
+    __v?: number;
   }>;
   achievement_ids: Array<{
     _id: string;
+    tutor_id: string;
     name: string;
     level: string;
     date_achieved: string;
@@ -59,17 +71,22 @@ export interface VerificationRequestWithPopulatedData {
     field: string;
     description: string;
     achievement_image_url?: string;
+    achievement_image_public_id?: string;
     is_verified: boolean;
+    created_at: string;
+    updated_at: string;
+    __v?: number;
   }>;
-  admin_feedback?: string;
+  admin_feedback?: string | null;
   reviewed_by?: {
     _id: string;
     full_name: string;
     email: string;
-  };
-  reviewed_at?: string;
+  } | null;
+  reviewed_at?: string | null;
   created_at: string;
   updated_at: string;
+  __v?: number;
 }
 
 export interface CreateVerificationRequestData {

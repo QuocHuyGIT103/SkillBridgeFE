@@ -13,6 +13,7 @@ interface VerificationState {
   currentVerificationRequest: VerificationRequestWithPopulatedData | null;
   verificationHistory: VerificationRequestWithPopulatedData[];
   pendingRequests: VerificationRequestWithPopulatedData[]; // Admin only
+  allRequests: VerificationRequestWithPopulatedData[]; // Admin only - for history page
   selectedRequest: VerificationRequestWithPopulatedData | null; // Admin only
 
   // Loading states
@@ -27,6 +28,7 @@ interface VerificationState {
 
   // Admin Actions
   fetchPendingRequests: () => Promise<void>;
+  fetchAllRequests: () => Promise<void>;
   fetchVerificationRequestById: (requestId: string) => Promise<void>;
   approveVerificationRequest: (
     requestId: string,
@@ -50,6 +52,7 @@ export const useVerificationStore = create<VerificationState>()(
       currentVerificationRequest: null,
       verificationHistory: [],
       pendingRequests: [],
+      allRequests: [],
       selectedRequest: null,
       isLoading: false,
       isSubmitting: false,
@@ -144,6 +147,30 @@ export const useVerificationStore = create<VerificationState>()(
             error.message || "Đã xảy ra lỗi khi tải danh sách yêu cầu xác thực"
           );
           console.error("Error fetching pending requests:", error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      fetchAllRequests: async () => {
+        set({ isLoading: true });
+        try {
+          const response = await verificationService.getAllRequests();
+
+          if (response.success && response.data) {
+            set({ allRequests: response.data });
+          } else {
+            toast.error(
+              response.message ||
+                "Không thể tải danh sách tất cả yêu cầu xác thực"
+            );
+          }
+        } catch (error: any) {
+          toast.error(
+            error.message ||
+              "Đã xảy ra lỗi khi tải danh sách tất cả yêu cầu xác thực"
+          );
+          console.error("Error fetching all requests:", error);
         } finally {
           set({ isLoading: false });
         }

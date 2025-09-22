@@ -55,6 +55,16 @@ export const verificationService = {
   },
 
   /**
+   * Get all verification requests (Admin only)
+   */
+  async getAllRequests(): Promise<
+    VerificationListResponse<VerificationRequestWithPopulatedData>
+  > {
+    const response = await axiosClient.get("/verification/all");
+    return response;
+  },
+
+  /**
    * Get verification request details by ID (Admin only)
    */
   async getVerificationRequestById(
