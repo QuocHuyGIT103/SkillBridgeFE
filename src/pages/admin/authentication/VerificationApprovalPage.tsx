@@ -14,6 +14,7 @@ import {
 import useVerificationStore from "../../../store/verification.store";
 import { VerificationStatus } from "../../../types/verification.types";
 import type { VerificationRequestWithPopulatedData } from "../../../types/verification.types";
+import ImagePreview from "../../../components/common/ImagePreview";
 
 const VerificationApprovalPage: React.FC = () => {
   const {
@@ -369,12 +370,12 @@ const VerificationApprovalPage: React.FC = () => {
                               Hình ảnh bằng cấp:
                             </span>
                             <div className="mt-2">
-                              <img
+                              <ImagePreview
                                 src={
                                   selectedRequest.education_id.degree_image_url
                                 }
                                 alt="Bằng cấp"
-                                className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                                thumbnailClassName="w-48 h-48 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity shadow-md"
                               />
                             </div>
                           </div>
@@ -425,10 +426,11 @@ const VerificationApprovalPage: React.FC = () => {
                               )}
                             </div>
                             {cert.certificate_image_url && (
-                              <img
+                              <ImagePreview
                                 src={cert.certificate_image_url}
                                 alt={cert.name}
-                                className="w-20 h-20 object-cover rounded-lg ml-4"
+                                className="ml-4"
+                                thumbnailClassName="w-32 h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity shadow-md"
                               />
                             )}
                           </div>
@@ -484,10 +486,11 @@ const VerificationApprovalPage: React.FC = () => {
                               </p>
                             </div>
                             {achievement.achievement_image_url && (
-                              <img
+                              <ImagePreview
                                 src={achievement.achievement_image_url}
                                 alt={achievement.name}
-                                className="w-20 h-20 object-cover rounded-lg ml-4"
+                                className="ml-4"
+                                thumbnailClassName="w-32 h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity shadow-md"
                               />
                             )}
                           </div>
