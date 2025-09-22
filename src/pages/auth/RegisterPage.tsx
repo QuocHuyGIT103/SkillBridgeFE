@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { BookOpen, User, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
+import { BookOpen, User, Mail, Phone, Lock, Eye, EyeOff, Users } from "lucide-react";
 import { useAuthStore } from "../../store/auth.store";
 import {
   validateRegistrationForm,
@@ -80,6 +80,33 @@ const RegisterPage: React.FC = () => {
       navigate("/verify-otp");
     } catch (error) {
       console.error("Registration failed:", error);
+    }
+  };
+
+  // Role descriptions for better UX
+  const getRoleDescription = (role: string) => {
+    switch (role) {
+      case "STUDENT":
+        return "Tìm kiếm gia sư phù hợp, đặt lịch học và theo dõi tiến độ học tập";
+      case "TUTOR":
+        return "Chia sẻ kiến thức, dạy học và kiếm thu nhập từ khả năng của bạn";
+      case "PARENT":
+        return "Quản lý việc học của con em, tìm gia sư và theo dõi tiến độ";
+      default:
+        return "";
+    }
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case "STUDENT":
+        return <User className="w-4 h-4" />;
+      case "TUTOR":
+        return <BookOpen className="w-4 h-4" />;
+      case "PARENT":
+        return <Users className="w-4 h-4" />;
+      default:
+        return <User className="w-4 h-4" />;
     }
   };
 
@@ -196,17 +223,60 @@ const RegisterPage: React.FC = () => {
               >
                 Bạn muốn trở thành
               </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                required
-                className="block w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 bg-white shadow-sm transition-all duration-200 text-sm text-gray-700"
-              >
-                <option value="STUDENT">Học viên</option>
-                <option value="TUTOR">Gia sư</option>
-              </select>
+              <div className="space-y-3">
+                {/* Role Selection Cards */}
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    { value: "STUDENT", label: "Học viên", icon: "👨‍🎓" },
+                    { value: "TUTOR", label: "Gia sư", icon: "👨‍🏫" },
+                    { value: "PARENT", label: "Phụ huynh", icon: "👨‍👩‍👧‍👦" }
+                  ].map((role) => (
+                    <label
+                      key={role.value}
+                      className={`relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
+                        formData.role === role.value
+                          ? 'border-teal-500 bg-teal-50'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="role"
+                        value={role.value}
+                        checked={formData.role === role.value}
+                        onChange={handleInputChange}
+                        className="sr-only"
+                      />
+                      <div className="flex items-center flex-1">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-teal-100 to-teal-200 mr-3">
+                          <span className="text-lg">{role.icon}</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center">
+                            <h3 className={`text-sm font-medium ${
+                              formData.role === role.value ? 'text-teal-900' : 'text-gray-900'
+                            }`}>
+                              {role.label}
+                            </h3>
+                          </div>
+                          <p className={`text-xs mt-1 ${
+                            formData.role === role.value ? 'text-teal-700' : 'text-gray-500'
+                          }`}>
+                            {getRoleDescription(role.value)}
+                          </p>
+                        </div>
+                      </div>
+                      {formData.role === role.value && (
+                        <div className="flex items-center justify-center w-5 h-5 bg-teal-500 rounded-full">
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Mật khẩu */}

@@ -34,9 +34,30 @@ interface AuthState {
   clearPendingReset: () => void;
 }
 
+// Helper function để điều hướng theo role
+const navigateByRole = (role: string) => {
+  switch (role?.toUpperCase()) {
+    case 'ADMIN':
+      window.location.href = '/admin/dashboard';
+      break;
+    case 'TUTOR':
+      window.location.href = '/tutor/dashboard';
+      break;
+    case 'STUDENT':
+      window.location.href = '/student/dashboard';
+      break;
+    case 'PARENT':
+      window.location.href = '/parent/dashboard';
+      break;
+    default:
+      window.location.href = '/';
+      break;
+  }
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
@@ -78,6 +99,11 @@ export const useAuthStore = create<AuthState>()(
               pendingVerificationEmail: null,
             });
             toast.success(response.message || "Xác thực thành công!");
+            
+            // Điều hướng theo role sau khi verify OTP thành công
+            setTimeout(() => {
+              navigateByRole(response.data.user.role);
+            }, 1000);
           } else {
             toast.error(response.message || "Xác thực thất bại");
             throw new Error(response.message || "Xác thực thất bại");
@@ -214,6 +240,11 @@ export const useAuthStore = create<AuthState>()(
             });
 
             toast.success(response.message || "Đăng nhập thành công");
+            
+            // Điều hướng theo role sau khi đăng nhập thành công
+            setTimeout(() => {
+              navigateByRole(response.data.user.role);
+            }, 1000);
           } else {
             toast.error(response.message || "Đăng nhập thất bại");
             throw new Error(response.message || "Đăng nhập thất bại");

@@ -30,8 +30,7 @@ import ComplaintManagement from "./pages/admin/complaints/ComplaintManagement";
 import SystemConfiguration from "./pages/admin/config/SystemConfiguration";
 import ToastProvider from "./components/ToastProvider";
 import { useAuthStore } from "./store/auth.store";
-// import CoursesPage from './components/pages/CoursesPage';
-// import AboutPage from './components/pages/AboutPage';
+import ParentDashboard from "./pages/parent/ParentDashboard";
 
 // Protected Route wrapper for role-based access
 const ProtectedRoute = ({
@@ -49,9 +48,21 @@ const ProtectedRoute = ({
 
   if (
     requiredRole &&
-    user?.role?.toLowerCase() !== requiredRole.toLowerCase()
+    user?.role?.toUpperCase() !== requiredRole.toUpperCase()
   ) {
-    return <Navigate to="/" replace />;
+    // Redirect to appropriate dashboard based on user role
+    switch (user?.role?.toUpperCase()) {
+      case 'ADMIN':
+        return <Navigate to="/admin/dashboard" replace />;
+      case 'TUTOR':
+        return <Navigate to="/tutor/dashboard" replace />;
+      case 'STUDENT':
+        return <Navigate to="/student/dashboard" replace />;
+      case 'PARENT':
+        return <Navigate to="/parent/dashboard" replace />;
+      default:
+        return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
@@ -61,16 +72,19 @@ const ProtectedRoute = ({
 const RoleBasedRedirect = () => {
   const { isAuthenticated, user } = useAuthStore();
 
-  if (isAuthenticated && user?.role?.toLowerCase() === "tutor") {
-    return <Navigate to="/tutor/dashboard" replace />;
-  }
-
-  if (isAuthenticated && user?.role?.toLowerCase() === "admin") {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
-  if (isAuthenticated && user?.role?.toLowerCase() === "student") {
-    return <Navigate to="/student/dashboard" replace />;
+  if (isAuthenticated && user?.role) {
+    switch (user.role.toUpperCase()) {
+      case 'TUTOR':
+        return <Navigate to="/tutor/dashboard" replace />;
+      case 'ADMIN':
+        return <Navigate to="/admin/dashboard" replace />;
+      case 'STUDENT':
+        return <Navigate to="/student/dashboard" replace />;
+      case 'PARENT':
+        return <Navigate to="/parent/dashboard" replace />;
+      default:
+        return <Navigate to="/" replace />;
+    }
   }
 
   return <Navigate to="/" replace />;
@@ -95,7 +109,7 @@ function App() {
           <Route
             path="/student/*"
             element={
-              <ProtectedRoute requiredRole="student">
+              <ProtectedRoute requiredRole="STUDENT">
                 <StudentDashboardLayout />
               </ProtectedRoute>
             }
@@ -143,7 +157,7 @@ function App() {
           <Route
             path="/tutor/*"
             element={
-              <ProtectedRoute requiredRole="tutor">
+              <ProtectedRoute requiredRole="TUTOR">
                 <TutorDashboardLayout />
               </ProtectedRoute>
             }
@@ -193,7 +207,7 @@ function App() {
           <Route
             path="/admin/*"
             element={
-              <ProtectedRoute requiredRole="admin">
+              <ProtectedRoute requiredRole="ADMIN">
                 <AdminDashboardLayout />
               </ProtectedRoute>
             }
@@ -445,11 +459,18 @@ function App() {
             />
           </Route>
 
+          {/* Parent Routes */}
+          <Route
+            path="/parent/dashboard"
+            element={
+              <ProtectedRoute requiredRole="PARENT">
+                <ParentDashboard />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/" replace />} />
-
-          {/* <Route path="/courses" element={<CoursesPage />} />
-          <Route path="/about" element={<AboutPage />} /> */}
         </Routes>
       </Router>
     </ToastProvider>

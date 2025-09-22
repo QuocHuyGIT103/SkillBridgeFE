@@ -80,3 +80,48 @@ export interface Message {
   timestamp: string;
   type: "text" | "file";
 }
+
+// Thêm interface mới
+export interface ParentStudentProfile {
+  id: string;
+  full_name: string;
+  email: string;
+  phone_number?: string;
+  avatar_url?: string;
+  role: string;
+  status: string;
+  address?: string;
+  parent_id?: string;
+  date_of_birth?: Date;
+  gender?: 'male' | 'female' | 'other';
+  grade?: string;
+  school?: string;
+  subjects?: string[];
+  learning_goals?: string;
+  preferred_schedule?: string;
+  special_requirements?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface StudentManagementStats {
+  total_students: number;
+  active_students: number;
+  by_grade: Array<{ grade: string; count: number }>;
+  by_subject: Array<{ subject: string; count: number }>;
+  recent_students: ParentStudentProfile[];
+}
+
+export interface CreateStudentForm {
+  full_name: string;
+  date_of_birth?: string;
+  gender?: 'male' | 'female' | 'other';
+  phone_number?: string;
+  address?: string;
+  grade?: string;
+  school?: string;
+  subjects?: string[];
+  learning_goals?: string;
+  preferred_schedule?: string;
+  special_requirements?: string;
+}
