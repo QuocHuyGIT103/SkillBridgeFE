@@ -13,8 +13,6 @@ export interface ApiResponse<T> {
 
 // Re-export all types
 export * from "./admin.types";
-export * from "./tutor.types";
-export * from "./verification.types";
 export type {
   StudentNavigationItem,
   StudentStats,
