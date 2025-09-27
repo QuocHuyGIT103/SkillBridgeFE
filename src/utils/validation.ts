@@ -107,3 +107,33 @@ export const validateEmailForm = (email: string): ValidationError[] => {
 
   return errors;
 };
+
+/**
+ * Validate UUID v4 format
+ */
+export const validateUUID = (uuid: string): boolean => {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
+/**
+ * Validate ID parameter (UUID v4)
+ */
+export const validateId = (
+  id: string,
+  fieldName: string = "ID"
+): ValidationError[] => {
+  const errors: ValidationError[] = [];
+
+  if (!id.trim()) {
+    errors.push({ field: fieldName, message: "Không được để trống" });
+  } else if (!validateUUID(id)) {
+    errors.push({
+      field: fieldName,
+      message: "Định dạng ID không hợp lệ (phải là UUID v4)",
+    });
+  }
+
+  return errors;
+};

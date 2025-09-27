@@ -120,7 +120,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({
             const canEdit = canEditItem(cert, "certificate", tutorRequests);
             return (
               <div
-                key={cert._id}
+                key={cert.id}
                 className="bg-white border border-gray-200 rounded-lg p-6"
               >
                 <div className="flex items-start justify-between mb-4">
@@ -219,7 +219,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({
                     </span>
                   </button>
                   <button
-                    onClick={() => onDeleteCertificate(cert._id)}
+                    onClick={() => onDeleteCertificate(cert.id)}
                     disabled={isDeletingCertificate}
                     className={`flex items-center space-x-1 text-sm ${
                       isDeletingCertificate

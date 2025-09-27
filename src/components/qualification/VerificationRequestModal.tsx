@@ -47,10 +47,10 @@ const VerificationRequestModal: React.FC<VerificationRequestModalProps> = ({
           qualifications.education.status !== "VERIFIED",
         certificates: qualifications.certificates
           .filter((cert) => cert.status !== "VERIFIED")
-          .map((cert) => cert._id),
+          .map((cert) => cert.id),
         achievements: qualifications.achievements
           .filter((achievement) => achievement.status !== "VERIFIED")
-          .map((achievement) => achievement._id),
+          .map((achievement) => achievement.id),
       };
       setSelectedItems(needsVerification);
 
@@ -93,7 +93,7 @@ const VerificationRequestModal: React.FC<VerificationRequestModalProps> = ({
     const requestData: CreateVerificationRequest = {};
 
     if (selectedItems.education && qualifications?.education) {
-      requestData.educationId = qualifications.education._id;
+      requestData.educationId = qualifications.education.id;
     }
 
     if (selectedItems.certificates.length > 0) {
@@ -312,7 +312,7 @@ const VerificationRequestModal: React.FC<VerificationRequestModalProps> = ({
                 <div className="space-y-3">
                   {qualifications.certificates.map((cert) => (
                     <div
-                      key={cert._id}
+                      key={cert.id}
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                     >
                       <div className="flex-1">
@@ -320,9 +320,9 @@ const VerificationRequestModal: React.FC<VerificationRequestModalProps> = ({
                           <input
                             type="checkbox"
                             checked={selectedItems.certificates.includes(
-                              cert._id
+                              cert.id
                             )}
-                            onChange={() => toggleCertificate(cert._id)}
+                            onChange={() => toggleCertificate(cert.id)}
                             disabled={cert.status === "VERIFIED"}
                             className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
                           />
@@ -363,7 +363,7 @@ const VerificationRequestModal: React.FC<VerificationRequestModalProps> = ({
                 <div className="space-y-3">
                   {qualifications.achievements.map((achievement) => (
                     <div
-                      key={achievement._id}
+                      key={achievement.id}
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                     >
                       <div className="flex-1">
@@ -371,9 +371,9 @@ const VerificationRequestModal: React.FC<VerificationRequestModalProps> = ({
                           <input
                             type="checkbox"
                             checked={selectedItems.achievements.includes(
-                              achievement._id
+                              achievement.id
                             )}
-                            onChange={() => toggleAchievement(achievement._id)}
+                            onChange={() => toggleAchievement(achievement.id)}
                             disabled={achievement.status === "VERIFIED"}
                             className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
                           />

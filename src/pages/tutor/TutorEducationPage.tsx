@@ -117,7 +117,7 @@ const TutorEducationPage: React.FC = () => {
   const handleCreateCertificate = async (data: CreateCertificateRequest) => {
     try {
       if (editingItem) {
-        await updateCertificate(editingItem._id, data);
+        await updateCertificate(editingItem.id, data);
       } else {
         await createCertificate(data);
       }
@@ -131,7 +131,7 @@ const TutorEducationPage: React.FC = () => {
   const handleCreateAchievement = async (data: CreateAchievementRequest) => {
     try {
       if (editingItem) {
-        await updateAchievement(editingItem._id, data);
+        await updateAchievement(editingItem.id, data);
       } else {
         await createAchievement(data);
       }
@@ -143,7 +143,7 @@ const TutorEducationPage: React.FC = () => {
   };
 
   const handleDeleteCertificate = async (id: string) => {
-    const certificate = qualifications?.certificates.find((c) => c._id === id);
+    const certificate = qualifications?.certificates.find((c) => c.id === id);
     if (!certificate) return;
 
     const displayData = getDisplayData(certificate);

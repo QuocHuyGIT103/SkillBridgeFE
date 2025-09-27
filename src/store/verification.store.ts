@@ -208,14 +208,14 @@ export const useVerificationStore = create<VerificationState>()(
           // Update the request in both admin and tutor lists
           set((state) => ({
             adminRequests: state.adminRequests.map((req) =>
-              req._id === id
+              req.id === id
                 ? {
                     ...req,
                     status: responseData.status as RequestStatus,
                     reviewedAt: responseData.reviewedAt,
                     reviewedBy: responseData.reviewedBy
                       ? {
-                          _id: responseData.reviewedBy,
+                          id: responseData.reviewedBy,
                           fullName: "",
                           email: "",
                         }
@@ -226,14 +226,14 @@ export const useVerificationStore = create<VerificationState>()(
                 : req
             ),
             tutorRequests: state.tutorRequests.map((req) =>
-              req._id === id
+              req.id === id
                 ? {
                     ...req,
                     status: responseData.status as RequestStatus,
                     reviewedAt: responseData.reviewedAt,
                     reviewedBy: responseData.reviewedBy
                       ? {
-                          _id: responseData.reviewedBy,
+                          id: responseData.reviewedBy,
                           fullName: "",
                           email: "",
                         }
@@ -244,14 +244,14 @@ export const useVerificationStore = create<VerificationState>()(
                 : req
             ),
             currentRequest:
-              state.currentRequest?._id === id
+              state.currentRequest?.id === id
                 ? {
                     ...state.currentRequest,
                     status: responseData.status as RequestStatus,
                     reviewedAt: responseData.reviewedAt,
                     reviewedBy: responseData.reviewedBy
                       ? {
-                          _id: responseData.reviewedBy,
+                          id: responseData.reviewedBy,
                           fullName: "",
                           email: "",
                         }
@@ -317,8 +317,8 @@ export const useVerificationStore = create<VerificationState>()(
       getRequestById: (id: string) => {
         const state = get();
         return (
-          state.tutorRequests.find((req) => req._id === id) ||
-          state.adminRequests.find((req) => req._id === id) ||
+          state.tutorRequests.find((req) => req.id === id) ||
+          state.adminRequests.find((req) => req.id === id) ||
           undefined
         );
       },

@@ -107,7 +107,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({
             );
             return (
               <div
-                key={achievement._id}
+                key={achievement.id}
                 className="bg-white border border-gray-200 rounded-lg p-6"
               >
                 <div className="flex items-start justify-between mb-4">
@@ -206,7 +206,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({
                     <span>Chỉnh sửa</span>
                   </button>
                   <button
-                    onClick={() => onDeleteAchievement(achievement._id)}
+                    onClick={() => onDeleteAchievement(achievement.id)}
                     className="flex items-center space-x-1 text-red-600 hover:text-red-700 text-sm"
                   >
                     <TrashIcon className="w-4 h-4" />

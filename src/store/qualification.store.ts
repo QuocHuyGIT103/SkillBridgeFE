@@ -274,7 +274,7 @@ export const useQualificationStore = create<QualificationState>()(
             if (!state.qualifications) return state;
 
             const oldCertificate = state.qualifications.certificates.find(
-              (c) => c._id === id
+              (c) => c.id === id
             );
             const wasVerified = oldCertificate?.status === "VERIFIED";
             const isNowVerified = certificateData.status === "VERIFIED";
@@ -283,7 +283,7 @@ export const useQualificationStore = create<QualificationState>()(
               qualifications: {
                 ...state.qualifications,
                 certificates: state.qualifications.certificates.map((c) =>
-                  c._id === id ? certificateData : c
+                  c.id === id ? certificateData : c
                 ),
                 qualificationStats: state.qualifications.qualificationStats
                   ? {
@@ -333,7 +333,7 @@ export const useQualificationStore = create<QualificationState>()(
             if (!state.qualifications) return state;
 
             const certificateToDelete = state.qualifications.certificates.find(
-              (c) => c._id === id
+              (c) => c.id === id
             );
             const wasVerified = certificateToDelete?.status === "VERIFIED";
 
@@ -341,7 +341,7 @@ export const useQualificationStore = create<QualificationState>()(
               qualifications: {
                 ...state.qualifications,
                 certificates: state.qualifications.certificates.filter(
-                  (c) => c._id !== id
+                  (c) => c.id !== id
                 ),
                 qualificationStats: state.qualifications.qualificationStats
                   ? {
@@ -429,7 +429,7 @@ export const useQualificationStore = create<QualificationState>()(
             if (!state.qualifications) return state;
 
             const oldAchievement = state.qualifications.achievements.find(
-              (a) => a._id === id
+              (a) => a.id === id
             );
             const wasVerified = oldAchievement?.status === "VERIFIED";
             const isNowVerified = achievementData.status === "VERIFIED";
@@ -438,7 +438,7 @@ export const useQualificationStore = create<QualificationState>()(
               qualifications: {
                 ...state.qualifications,
                 achievements: state.qualifications.achievements.map((a) =>
-                  a._id === id ? achievementData : a
+                  a.id === id ? achievementData : a
                 ),
                 qualificationStats: state.qualifications.qualificationStats
                   ? {
@@ -474,7 +474,7 @@ export const useQualificationStore = create<QualificationState>()(
             if (!state.qualifications) return state;
 
             const achievementToDelete = state.qualifications.achievements.find(
-              (a) => a._id === id
+              (a) => a.id === id
             );
             const wasVerified = achievementToDelete?.status === "VERIFIED";
 
@@ -482,7 +482,7 @@ export const useQualificationStore = create<QualificationState>()(
               qualifications: {
                 ...state.qualifications,
                 achievements: state.qualifications.achievements.filter(
-                  (a) => a._id !== id
+                  (a) => a.id !== id
                 ),
                 qualificationStats: state.qualifications.qualificationStats
                   ? {

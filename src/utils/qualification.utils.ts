@@ -35,7 +35,7 @@ export const canEditItem = (
   verificationRequests: VerificationRequest[]
 ): boolean => {
   // Không thể edit nếu đang pending verification
-  if (hasPendingVerificationRequest(item._id, itemType, verificationRequests)) {
+  if (hasPendingVerificationRequest(item.id, itemType, verificationRequests)) {
     return false;
   }
 
@@ -55,7 +55,7 @@ export const canDeleteCertificate = (
   certificates: Certificate[]
 ): { canDelete: boolean; reason?: string } => {
   const remainingVerified = certificates.filter(
-    (cert) => cert.status === "VERIFIED" && cert._id !== certificateId
+    (cert) => cert.status === "VERIFIED" && cert.id !== certificateId
   );
 
   if (remainingVerified.length === 0) {
@@ -81,7 +81,7 @@ export const getDisplayData = <T extends Education | Certificate | Achievement>(
       ...item,
       ...item.verifiedData,
       // Giữ lại các field không có trong verifiedData
-      _id: item._id,
+      id: item.id,
       tutorId: item.tutorId,
       status: item.status,
       createdAt: item.createdAt,

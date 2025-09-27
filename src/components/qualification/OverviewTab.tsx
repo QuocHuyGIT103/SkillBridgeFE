@@ -264,7 +264,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
                 const displayData = getDisplayData(cert);
                 return (
                   <div
-                    key={cert._id}
+                    key={cert.id}
                     className="flex items-start justify-between p-3 bg-gray-50 rounded-lg"
                   >
                     <div className="flex-1">
@@ -344,7 +344,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {qualifications.achievements.slice(0, 4).map((achievement) => (
                   <div
-                    key={achievement._id}
+                    key={achievement.id}
                     className="p-3 bg-gray-50 rounded-lg"
                   >
                     <div className="flex items-start justify-between">

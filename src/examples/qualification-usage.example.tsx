@@ -136,14 +136,14 @@ const QualificationManagementExample: React.FC = () => {
         qualifications?.education &&
         qualifications.education.status !== "VERIFIED"
       ) {
-        requestData.educationId = qualifications.education._id;
+        requestData.educationId = qualifications.education.id;
       }
 
       // Add certificates that need verification
       const pendingCertificates =
         qualifications?.certificates
           .filter((cert) => cert.status !== "VERIFIED")
-          .map((cert) => cert._id) || [];
+          .map((cert) => cert.id) || [];
       if (pendingCertificates.length > 0) {
         requestData.certificateIds = pendingCertificates;
       }
@@ -152,7 +152,7 @@ const QualificationManagementExample: React.FC = () => {
       const pendingAchievements =
         qualifications?.achievements
           .filter((achievement) => achievement.status !== "VERIFIED")
-          .map((achievement) => achievement._id) || [];
+          .map((achievement) => achievement.id) || [];
       if (pendingAchievements.length > 0) {
         requestData.achievementIds = pendingAchievements;
       }
@@ -233,7 +233,7 @@ const QualificationManagementExample: React.FC = () => {
           {qualifications?.certificates.length ? (
             <div className="space-y-2">
               {qualifications.certificates.slice(0, 3).map((cert) => (
-                <div key={cert._id} className="text-sm">
+                <div key={cert.id} className="text-sm">
                   <p>{cert.name}</p>
                   <span
                     className={`inline-block px-2 py-1 rounded text-xs ${
@@ -269,7 +269,7 @@ const QualificationManagementExample: React.FC = () => {
           {qualifications?.achievements.length ? (
             <div className="space-y-2">
               {qualifications.achievements.slice(0, 3).map((achievement) => (
-                <div key={achievement._id} className="text-sm">
+                <div key={achievement.id} className="text-sm">
                   <p>{achievement.name}</p>
                   <span
                     className={`inline-block px-2 py-1 rounded text-xs ${
@@ -559,11 +559,11 @@ const QualificationManagementExample: React.FC = () => {
         {tutorRequests.length > 0 ? (
           <div className="space-y-3">
             {tutorRequests.map((request) => (
-              <div key={request._id} className="p-3 border rounded">
+              <div key={request.id} className="p-3 border rounded">
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-medium">
-                      Yêu cầu #{request._id.slice(-6)}
+                      Yêu cầu #{request.id.slice(-6)}
                     </p>
                     <p className="text-sm text-gray-600">
                       Gửi lúc: {new Date(request.submittedAt).toLocaleString()}

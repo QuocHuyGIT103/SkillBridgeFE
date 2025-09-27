@@ -65,7 +65,7 @@ export type VerificationTargetType =
 
 // Interfaces
 export interface Education {
-  _id: string;
+  id: string;
   tutorId: string;
   level: EducationLevel;
   school: string;
@@ -88,7 +88,7 @@ export interface Education {
 }
 
 export interface Certificate {
-  _id: string;
+  id: string;
   tutorId: string;
   name: string;
   issuingOrganization: string;
@@ -112,7 +112,7 @@ export interface Certificate {
 }
 
 export interface Achievement {
-  _id: string;
+  id: string;
   tutorId: string;
   name: string;
   level: AchievementLevel;
@@ -164,7 +164,7 @@ export interface QualificationsData {
 }
 
 export interface VerificationDetail {
-  _id: string;
+  id: string;
   requestId: string;
   targetType: VerificationTargetType;
   targetId: string;
@@ -180,10 +180,10 @@ export interface VerificationDetail {
 }
 
 export interface VerificationRequest {
-  _id: string;
+  id: string;
   tutorId: string;
   tutor?: {
-    _id: string;
+    id: string;
     fullName: string;
     email: string;
   };
@@ -191,7 +191,7 @@ export interface VerificationRequest {
   submittedAt: string;
   reviewedAt?: string;
   reviewedBy?: {
-    _id: string;
+    id: string;
     fullName: string;
     email: string;
   };

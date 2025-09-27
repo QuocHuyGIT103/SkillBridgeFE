@@ -112,7 +112,7 @@ const VerificationService = {
         success: boolean;
         message: string;
         data: {
-          _id: string;
+          id: string;
           status: string;
           reviewedAt: string;
           reviewedBy: string;
