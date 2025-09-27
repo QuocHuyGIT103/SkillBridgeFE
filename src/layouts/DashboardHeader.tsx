@@ -17,7 +17,7 @@ import {
 import { BellIcon as BellSolidIcon } from "@heroicons/react/24/solid";
 import { useAuthStore } from "../store/auth.store";
 import { useDarkMode } from "../hooks/useDarkMode";
-import type { NotificationItem } from "../types/tutor.types";
+import type { NotificationItem } from "../types/tutor.types.ts";
 
 interface DashboardHeaderProps {
   onToggleMobileSidebar: () => void;

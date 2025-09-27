@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import {
   VideoCameraIcon,
   DocumentTextIcon,
   BellAlertIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import {
   UserGroupIcon as UserGroupSolidIcon,
@@ -20,13 +21,22 @@ import {
   CurrencyDollarIcon as CurrencySolidIcon,
   StarIcon as StarSolidIcon,
 } from "@heroicons/react/24/solid";
+import { useQualificationStore } from "../../store/qualification.store";
 import type {
   DashboardStats,
   RecentActivity,
   UpcomingSession,
-} from "../../types/tutor.types";
+} from "../../types/tutor.types.ts";
 
 const TutorDashboardOverview: React.FC = () => {
+  // Qualification store
+  const { qualificationInfo, fetchQualifications } = useQualificationStore();
+
+  // Load qualification data on mount
+  useEffect(() => {
+    fetchQualifications();
+  }, [fetchQualifications]);
+
   // Mock data - replace with actual API calls
   const stats: DashboardStats = {
     total_students: 24,
@@ -232,6 +242,73 @@ const TutorDashboardOverview: React.FC = () => {
           {stats.new_messages} tin nhắn mới.
         </p>
       </motion.div>
+
+      {/* Qualification Status */}
+      {qualificationInfo && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100"
+        >
+          <div className="flex items-start space-x-4">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <AcademicCapIcon className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Trạng thái trình độ
+              </h3>
+              <p className="text-gray-700 mb-3">
+                {qualificationInfo.suggestion}
+              </p>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium">Đủ điều kiện:</span>
+                  <span
+                    className={
+                      qualificationInfo.isQualified
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }
+                  >
+                    {qualificationInfo.isQualified ? "Có" : "Chưa"}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium">Có thể gửi yêu cầu:</span>
+                  <span
+                    className={
+                      qualificationInfo.canSubmitVerification
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }
+                  >
+                    {qualificationInfo.canSubmitVerification ? "Có" : "Không"}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium">Đang chờ xác thực:</span>
+                  <span className="text-blue-600">
+                    {qualificationInfo.pendingVerificationCount}
+                  </span>
+                </div>
+              </div>
+              {qualificationInfo.canSubmitVerification && (
+                <div className="mt-4">
+                  <Link
+                    to="/tutor/profile/education"
+                    className="inline-flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  >
+                    <CheckCircleIcon className="w-4 h-4" />
+                    <span>Quản lý trình độ</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Stats Cards */}
       <motion.div

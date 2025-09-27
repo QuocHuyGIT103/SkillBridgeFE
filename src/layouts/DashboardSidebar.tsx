@@ -22,7 +22,7 @@ import {
   AcademicCapIcon as AcademicSolidIcon,
   HomeIcon as HomeSolidIcon,
 } from "@heroicons/react/24/solid";
-import type { NavigationItem } from "../types/tutor.types";
+import type { NavigationItem } from "../types/tutor.types.ts";
 
 interface DashboardSidebarProps {
   collapsed: boolean;
