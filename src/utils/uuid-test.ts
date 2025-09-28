@@ -99,3 +99,4 @@ if (typeof window !== "undefined") {
   (window as any).generateTestUUID = generateTestUUID;
   (window as any).testApiData = testApiData;
 }
+

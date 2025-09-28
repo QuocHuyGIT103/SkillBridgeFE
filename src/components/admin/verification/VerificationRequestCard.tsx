@@ -105,10 +105,10 @@ const VerificationRequestCard: React.FC<VerificationRequestCardProps> = ({
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900">
-                {request.tutor?.fullName || "Gia sư"}
+                {request.tutorId?.fullName || "Gia sư"}
               </h3>
               <p className="text-sm text-gray-600">
-                {request.tutor?.email || "Email không có"}
+                {request.tutorId?.email || "Email không có"}
               </p>
             </div>
             <span

@@ -203,3 +203,4 @@ const VerificationHistoryCard: React.FC<VerificationHistoryCardProps> = ({
 };
 
 export default VerificationHistoryCard;
+

@@ -198,3 +198,163 @@ export const getItemsNeedingVerification = (
     ),
   };
 };
+
+/**
+ * Lấy danh sách items bị từ chối
+ */
+export const getRejectedItems = (
+  qualifications: {
+    education?: Education;
+    certificates: Certificate[];
+    achievements: Achievement[];
+  } | null
+): {
+  education?: Education;
+  certificates: Certificate[];
+  achievements: Achievement[];
+} => {
+  if (!qualifications) {
+    return { certificates: [], achievements: [] };
+  }
+
+  return {
+    education:
+      qualifications.education?.status === "REJECTED"
+        ? qualifications.education
+        : undefined,
+    certificates: qualifications.certificates.filter(
+      (cert) => cert.status === "REJECTED"
+    ),
+    achievements: qualifications.achievements.filter(
+      (achievement) => achievement.status === "REJECTED"
+    ),
+  };
+};
+
+/**
+ * Lấy danh sách items đã được sửa sau khi bị từ chối
+ */
+export const getModifiedAfterRejectionItems = (
+  qualifications: {
+    education?: Education;
+    certificates: Certificate[];
+    achievements: Achievement[];
+  } | null
+): {
+  education?: Education;
+  certificates: Certificate[];
+  achievements: Achievement[];
+} => {
+  if (!qualifications) {
+    return { certificates: [], achievements: [] };
+  }
+
+  return {
+    education:
+      qualifications.education?.status === "MODIFIED_AFTER_REJECTION"
+        ? qualifications.education
+        : undefined,
+    certificates: qualifications.certificates.filter(
+      (cert) => cert.status === "MODIFIED_AFTER_REJECTION"
+    ),
+    achievements: qualifications.achievements.filter(
+      (achievement) => achievement.status === "MODIFIED_AFTER_REJECTION"
+    ),
+  };
+};
+
+/**
+ * Kiểm tra xem có items cần gửi lại yêu cầu xác thực không
+ */
+export const hasItemsNeedingReVerification = (
+  qualifications: {
+    education?: Education;
+    certificates: Certificate[];
+    achievements: Achievement[];
+  } | null
+): boolean => {
+  if (!qualifications) {
+    return false;
+  }
+
+  const rejectedItems = getRejectedItems(qualifications);
+  const modifiedItems = getModifiedAfterRejectionItems(qualifications);
+
+  return !!(
+    rejectedItems.education ||
+    rejectedItems.certificates.length > 0 ||
+    rejectedItems.achievements.length > 0 ||
+    modifiedItems.education ||
+    modifiedItems.certificates.length > 0 ||
+    modifiedItems.achievements.length > 0
+  );
+};
+
+/**
+ * Lấy tổng số items cần gửi lại yêu cầu xác thực
+ */
+export const getReVerificationCount = (
+  qualifications: {
+    education?: Education;
+    certificates: Certificate[];
+    achievements: Achievement[];
+  } | null
+): number => {
+  if (!qualifications) {
+    return 0;
+  }
+
+  const rejectedItems = getRejectedItems(qualifications);
+  const modifiedItems = getModifiedAfterRejectionItems(qualifications);
+
+  let count = 0;
+  if (rejectedItems.education) count++;
+  if (modifiedItems.education) count++;
+  count += rejectedItems.certificates.length;
+  count += modifiedItems.certificates.length;
+  count += rejectedItems.achievements.length;
+  count += modifiedItems.achievements.length;
+
+  return count;
+};
+
+/**
+ * Tạo message gợi ý sửa tất cả rejected items
+ */
+export const getReVerificationSuggestionMessage = (
+  qualifications: {
+    education?: Education;
+    certificates: Certificate[];
+    achievements: Achievement[];
+  } | null
+): string | null => {
+  if (!qualifications) {
+    return null;
+  }
+
+  const rejectedItems = getRejectedItems(qualifications);
+  const rejectedCount = getReVerificationCount(qualifications);
+
+  if (rejectedCount === 0) {
+    return null;
+  }
+
+  const itemNames = [];
+  if (rejectedItems.education) {
+    itemNames.push("thông tin học vấn");
+  }
+  if (rejectedItems.certificates.length > 0) {
+    itemNames.push(`${rejectedItems.certificates.length} chứng chỉ`);
+  }
+  if (rejectedItems.achievements.length > 0) {
+    itemNames.push(`${rejectedItems.achievements.length} thành tích`);
+  }
+
+  if (itemNames.length === 1) {
+    return `Bạn có ${itemNames[0]} bị từ chối. Hãy sửa đổi để có thể gửi lại yêu cầu xác thực.`;
+  } else {
+    return `Bạn có ${itemNames.join(
+      ", "
+    )} bị từ chối. Hãy sửa đổi tất cả để có thể gửi lại yêu cầu xác thực.`;
+  }
+};

@@ -330,3 +330,4 @@ const DataDisplay: React.FC<DataDisplayProps> = ({
 };
 
 export default DataDisplay;
+

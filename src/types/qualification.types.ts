@@ -29,6 +29,7 @@ export const VerificationStatus = {
   VERIFIED: "VERIFIED",
   REJECTED: "REJECTED",
   MODIFIED_PENDING: "MODIFIED_PENDING",
+  MODIFIED_AFTER_REJECTION: "MODIFIED_AFTER_REJECTION",
 } as const;
 
 export const RequestStatus = {
@@ -181,11 +182,10 @@ export interface VerificationDetail {
 
 export interface VerificationRequest {
   id: string;
-  tutorId: string;
-  tutor?: {
+  tutorId: {
     id: string;
-    fullName: string;
     email: string;
+    fullName: string;
   };
   status: RequestStatus;
   submittedAt: string;
