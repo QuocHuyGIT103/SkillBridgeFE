@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import axiosClient from "../api/axiosClient";
+import type { StructuredAddress } from "../types/address.types";
 
 // Types for the store
 export interface User {
@@ -11,6 +12,7 @@ export interface User {
   gender?: "male" | "female" | "other";
   date_of_birth?: Date;
   address?: string;
+  structured_address?: StructuredAddress;
   role: string;
   status: string;
   created_at: Date;
@@ -41,6 +43,7 @@ interface PersonalInfoUpdate {
   gender?: "male" | "female" | "other";
   date_of_birth?: string;
   address?: string;
+  structured_address?: StructuredAddress;
   avatar_file?: File;
 }
 
@@ -125,7 +128,13 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
           key !== "avatar_file" &&
           data[key as keyof PersonalInfoUpdate] !== undefined
         ) {
-          formData.append(key, data[key as keyof PersonalInfoUpdate] as string);
+          const value = data[key as keyof PersonalInfoUpdate];
+          if (key === "structured_address" && typeof value === "object") {
+            // Handle structured_address as JSON string
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, value as string);
+          }
         }
       });
 
