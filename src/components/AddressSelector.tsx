@@ -38,8 +38,28 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
       setLoading((prev) => ({ ...prev, provinces: true }));
       try {
         const response = await AddressService.getProvinces();
-        if (response.success && response.data) {
+        console.log("Provinces response:", response);
+        console.log("Response type:", typeof response);
+        console.log("Response keys:", Object.keys(response));
+        console.log("Is array:", Array.isArray(response));
+
+        // Check if response is directly an array or has success/data structure
+        if (Array.isArray(response)) {
+          console.log(
+            "Setting provinces (direct array):",
+            response.length,
+            "items"
+          );
+          setProvinces(response);
+        } else if (response.success && response.data) {
+          console.log(
+            "Setting provinces (success/data):",
+            response.data.length,
+            "items"
+          );
           setProvinces(response.data);
+        } else {
+          console.log("Unexpected response format:", response);
         }
       } catch (error) {
         console.error("Error fetching provinces:", error);
@@ -57,8 +77,12 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
       const fetchDistricts = async () => {
         setLoading((prev) => ({ ...prev, districts: true }));
         try {
-          const response = await AddressService.getDistricts(selectedProvince);
+          const response = await AddressService.getDistrictsByProvince(
+            selectedProvince
+          );
+          console.log("Districts response:", response);
           if (response.success && response.data) {
+            console.log("Setting districts:", response.data.length, "items");
             setDistricts(response.data);
           }
         } catch (error) {
@@ -80,8 +104,12 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
       const fetchWards = async () => {
         setLoading((prev) => ({ ...prev, wards: true }));
         try {
-          const response = await AddressService.getWards(selectedDistrict);
+          const response = await AddressService.getWardsByDistrict(
+            selectedDistrict
+          );
+          console.log("Wards response:", response);
           if (response.success && response.data) {
+            console.log("Setting wards:", response.data.length, "items");
             setWards(response.data);
           }
         } catch (error) {
@@ -140,6 +168,17 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
     );
   }
 
+  // Debug: Log current state
+  console.log("AddressSelector state:", {
+    provinces: provinces.length,
+    districts: districts.length,
+    wards: wards.length,
+    loading,
+    selectedProvince,
+    selectedDistrict,
+    selectedWard,
+  });
+
   // Edit mode - compact version
   return (
     <div className={`space-y-3 ${className}`}>
@@ -165,6 +204,12 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
                   {province.name}
                 </option>
               ))}
+              {/* Debug info */}
+              {provinces.length === 0 && !loading.provinces && (
+                <option value="" disabled>
+                  Không có dữ liệu
+                </option>
+              )}
             </select>
             <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
@@ -194,6 +239,14 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
                   {district.name}
                 </option>
               ))}
+              {/* Debug info */}
+              {districts.length === 0 &&
+                !loading.districts &&
+                selectedProvince && (
+                  <option value="" disabled>
+                    Không có dữ liệu quận/huyện
+                  </option>
+                )}
             </select>
             <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
@@ -226,6 +279,12 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
                   {ward.name}
                 </option>
               ))}
+              {/* Debug info */}
+              {wards.length === 0 && !loading.wards && selectedDistrict && (
+                <option value="" disabled>
+                  Không có dữ liệu phường/xã
+                </option>
+              )}
             </select>
             <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>

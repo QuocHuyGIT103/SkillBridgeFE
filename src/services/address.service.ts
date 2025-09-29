@@ -9,10 +9,14 @@ import type {
 
 const AddressService = {
   // Lấy danh sách tất cả tỉnh/thành phố
-  getProvinces: async (): Promise<Province[]> => {
+  getProvinces: async (): Promise<{
+    success: boolean;
+    message: string;
+    data: Province[];
+  }> => {
     try {
-      const response = await axiosClient.get<Province[]>("/address/provinces");
-      return response.data;
+      const response = await axiosClient.get("/address/provinces");
+      return response; // axiosClient already returns response.data
     } catch (error) {
       console.error("Error fetching provinces:", error);
       throw error;
@@ -20,12 +24,14 @@ const AddressService = {
   },
 
   // Lấy danh sách quận/huyện theo tỉnh/thành phố
-  getDistrictsByProvince: async (provinceCode: string): Promise<District[]> => {
+  getDistrictsByProvince: async (
+    provinceCode: string
+  ): Promise<{ success: boolean; message: string; data: District[] }> => {
     try {
-      const response = await axiosClient.get<District[]>(
+      const response = await axiosClient.get(
         `/address/provinces/${provinceCode}/districts`
       );
-      return response.data;
+      return response; // axiosClient already returns response.data
     } catch (error) {
       console.error("Error fetching districts:", error);
       throw error;
@@ -33,12 +39,14 @@ const AddressService = {
   },
 
   // Lấy danh sách phường/xã theo quận/huyện
-  getWardsByDistrict: async (districtCode: string): Promise<Ward[]> => {
+  getWardsByDistrict: async (
+    districtCode: string
+  ): Promise<{ success: boolean; message: string; data: Ward[] }> => {
     try {
-      const response = await axiosClient.get<Ward[]>(
+      const response = await axiosClient.get(
         `/address/districts/${districtCode}/wards`
       );
-      return response.data;
+      return response; // axiosClient already returns response.data
     } catch (error) {
       console.error("Error fetching wards:", error);
       throw error;
@@ -50,7 +58,7 @@ const AddressService = {
     provinceCode?: string,
     districtCode?: string,
     wardCode?: string
-  ): Promise<AddressInfo> => {
+  ): Promise<{ success: boolean; message: string; data: AddressInfo }> => {
     try {
       const params = new URLSearchParams();
       if (provinceCode) params.append("provinceCode", provinceCode);
@@ -60,7 +68,7 @@ const AddressService = {
       const response = await axiosClient.get<AddressInfo>(
         `/address/info?${params.toString()}`
       );
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error fetching address info:", error);
       throw error;
@@ -72,7 +80,7 @@ const AddressService = {
     provinceCode: string,
     districtCode: string,
     wardCode: string
-  ): Promise<FullAddressInfo> => {
+  ): Promise<{ success: boolean; message: string; data: FullAddressInfo }> => {
     try {
       const params = new URLSearchParams({
         provinceCode,
@@ -83,7 +91,7 @@ const AddressService = {
       const response = await axiosClient.get<FullAddressInfo>(
         `/address/full-info?${params.toString()}`
       );
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error fetching full address info:", error);
       throw error;
