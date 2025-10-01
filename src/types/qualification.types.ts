@@ -48,6 +48,7 @@ export const VerificationTargetType = {
   EDUCATION: "EDUCATION",
   CERTIFICATE: "CERTIFICATE",
   ACHIEVEMENT: "ACHIEVEMENT",
+  TUTOR_PROFILE: "TUTOR_PROFILE",
 } as const;
 
 // Type definitions for the constants
@@ -139,6 +140,31 @@ export interface Achievement {
   };
 }
 
+export interface TutorProfile {
+  id: string;
+  user_id: string;
+  headline?: string;
+  introduction?: string;
+  teaching_experience?: string;
+  student_levels?: string;
+  video_intro_link?: string;
+  cccd_images: string[];
+  status: VerificationStatus;
+  rejection_reason?: string;
+  verified_at?: string;
+  verified_by?: string;
+  verified_data?: {
+    headline?: string;
+    introduction?: string;
+    teaching_experience?: string;
+    student_levels?: string;
+    video_intro_link?: string;
+    cccd_images?: string[];
+  };
+  created_at: string;
+  updated_at: string;
+}
+
 export interface QualificationStats {
   totalEducation: number;
   totalCertificates: number;
@@ -177,7 +203,7 @@ export interface VerificationDetail {
   createdAt: string;
   updatedAt: string;
   dataSnapshot: any;
-  target?: Education | Certificate | Achievement;
+  target?: Education | Certificate | Achievement | TutorProfile;
 }
 
 export interface VerificationRequest {
@@ -266,6 +292,7 @@ export interface CreateVerificationRequest {
   educationId?: string;
   certificateIds?: string[];
   achievementIds?: string[];
+  tutorProfileId?: string;
 }
 
 export interface VerificationDecision {
@@ -305,4 +332,39 @@ export interface VerificationHistoryResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+// TutorProfile Verification API Types
+export interface EditStatusResponse {
+  canEdit: boolean;
+  status: VerificationStatus;
+  warning?: string;
+  message?: string;
+}
+
+export interface VerificationSubmitResponse {
+  requestId: string;
+  status: RequestStatus;
+  submittedAt: string;
+}
+
+export interface VerificationErrorResponse {
+  errorType:
+    | "PENDING_REQUEST"
+    | "NOT_FOUND"
+    | "ACCESS_DENIED"
+    | "INTERNAL_ERROR";
+  canRetry: boolean;
+}
+
+export interface VerificationWarningResponse {
+  status: VerificationStatus;
+  canEdit: boolean;
+  warning: string;
+  requiresConfirmation: boolean;
+}
+
+export interface VerificationBlockedResponse {
+  status: VerificationStatus;
+  canEdit: boolean;
 }

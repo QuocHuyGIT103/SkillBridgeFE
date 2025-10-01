@@ -42,9 +42,10 @@ const VerificationRequestModal: React.FC<VerificationRequestModalProps> = ({
     if (qualifications) {
       // Auto-select items that need verification
       const needsVerification = {
-        education:
+        education: Boolean(
           qualifications.education &&
-          qualifications.education.status !== "VERIFIED",
+            qualifications.education.status !== "VERIFIED"
+        ),
         certificates: qualifications.certificates
           .filter((cert) => cert.status !== "VERIFIED")
           .map((cert) => cert.id),
@@ -304,106 +305,108 @@ const VerificationRequestModal: React.FC<VerificationRequestModalProps> = ({
             )}
 
             {/* Certificates Section */}
-            {qualifications?.certificates.length > 0 && (
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Chứng chỉ
-                </h3>
-                <div className="space-y-3">
-                  {qualifications.certificates.map((cert) => (
-                    <div
-                      key={cert.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedItems.certificates.includes(
-                              cert.id
-                            )}
-                            onChange={() => toggleCertificate(cert.id)}
-                            disabled={cert.status === "VERIFIED"}
-                            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                          />
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {cert.name}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {cert.issuingOrganization}
-                            </p>
+            {qualifications?.certificates &&
+              qualifications.certificates.length > 0 && (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Chứng chỉ
+                  </h3>
+                  <div className="space-y-3">
+                    {qualifications.certificates.map((cert) => (
+                      <div
+                        key={cert.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedItems.certificates.includes(
+                                cert.id
+                              )}
+                              onChange={() => toggleCertificate(cert.id)}
+                              disabled={cert.status === "VERIFIED"}
+                              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                            />
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {cert.name}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {cert.issuingOrganization}
+                              </p>
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              cert.status
+                            )}`}
+                          >
+                            {getStatusText(cert.status)}
+                          </span>
+                          {cert.status === "VERIFIED" && (
+                            <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            cert.status
-                          )}`}
-                        >
-                          {getStatusText(cert.status)}
-                        </span>
-                        {cert.status === "VERIFIED" && (
-                          <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Achievements Section */}
-            {qualifications?.achievements.length > 0 && (
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Thành tích
-                </h3>
-                <div className="space-y-3">
-                  {qualifications.achievements.map((achievement) => (
-                    <div
-                      key={achievement.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedItems.achievements.includes(
-                              achievement.id
-                            )}
-                            onChange={() => toggleAchievement(achievement.id)}
-                            disabled={achievement.status === "VERIFIED"}
-                            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                          />
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {achievement.name}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {achievement.awardingOrganization}
-                            </p>
+            {qualifications?.achievements &&
+              qualifications.achievements.length > 0 && (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Thành tích
+                  </h3>
+                  <div className="space-y-3">
+                    {qualifications.achievements.map((achievement) => (
+                      <div
+                        key={achievement.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedItems.achievements.includes(
+                                achievement.id
+                              )}
+                              onChange={() => toggleAchievement(achievement.id)}
+                              disabled={achievement.status === "VERIFIED"}
+                              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                            />
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {achievement.name}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {achievement.awardingOrganization}
+                              </p>
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              achievement.status
+                            )}`}
+                          >
+                            {getStatusText(achievement.status)}
+                          </span>
+                          {achievement.status === "VERIFIED" && (
+                            <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                            achievement.status
-                          )}`}
-                        >
-                          {getStatusText(achievement.status)}
-                        </span>
-                        {achievement.status === "VERIFIED" && (
-                          <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
 
           <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 mt-6">

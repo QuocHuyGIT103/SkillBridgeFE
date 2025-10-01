@@ -174,12 +174,28 @@ export const useVerificationStore = create<VerificationState>()(
       },
 
       fetchVerificationRequestDetail: async (id: string) => {
+        if (!id) {
+          console.error("fetchVerificationRequestDetail: ID is missing");
+          return;
+        }
+
         set({ isFetchingDetail: true });
         try {
           const response =
             await VerificationService.getVerificationRequestDetail(id);
 
           const requestData = (response as any).data;
+
+          // Ensure the request data has an ID
+          // The response structure is { request: { id: "...", ... }, details: [...] }
+          if (!requestData || !requestData.request || !requestData.request.id) {
+            console.error(
+              "fetchVerificationRequestDetail: Response data is missing ID:",
+              requestData
+            );
+            throw new Error("Invalid response data: missing ID");
+          }
+
           set({
             currentRequest: requestData,
           });

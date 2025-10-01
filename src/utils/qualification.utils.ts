@@ -3,7 +3,6 @@ import type {
   Education,
   Certificate,
   Achievement,
-  RequestStatus,
 } from "../types/qualification.types";
 
 /**

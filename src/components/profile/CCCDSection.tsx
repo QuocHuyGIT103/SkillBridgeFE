@@ -1,10 +1,16 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   IdentificationIcon,
   DocumentTextIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { useTutorProfileStore } from "../../store/tutorProfile.store";
+import {
+  VerificationStatusBadge,
+  RejectionReasonDisplay,
+} from "../verification";
+import type { VerificationStatus } from "../../types/qualification.types";
 
 interface CCCDSectionProps {
   profileData: any;
@@ -23,6 +29,40 @@ const CCCDSection: React.FC<CCCDSectionProps> = ({
   onRemoveCCCDImage,
   cccdInputRef,
 }) => {
+  // Store hooks
+  const { checkEditStatus, verificationStatus, canEdit } =
+    useTutorProfileStore();
+
+  // Local state
+  const [isCheckingEditStatus, setIsCheckingEditStatus] = useState(false);
+
+  // Check edit status when component mounts or verification status changes
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (profileData?.profile?.id) {
+        setIsCheckingEditStatus(true);
+        try {
+          await checkEditStatus();
+        } catch (error) {
+          console.error("Error checking edit status:", error);
+        } finally {
+          setIsCheckingEditStatus(false);
+        }
+      }
+    };
+
+    checkStatus();
+  }, [profileData?.profile?.id, checkEditStatus]);
+
+  const getVerificationStatus = (): VerificationStatus | null => {
+    return profileData?.profile?.status || verificationStatus;
+  };
+
+  const getRejectionReason = (): string | null => {
+    return profileData?.profile?.rejection_reason || null;
+  };
+
+  const isEditDisabled = !canEdit || isCheckingEditStatus;
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -39,16 +79,31 @@ const CCCDSection: React.FC<CCCDSectionProps> = ({
               Căn cước công dân (CCCD)
             </h2>
           </div>
-          {isEditing && (
-            <button
-              onClick={() => cccdInputRef.current?.click()}
-              className="flex items-center space-x-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors"
-            >
-              <DocumentTextIcon className="w-4 h-4" />
-              <span>Thêm ảnh CCCD</span>
-            </button>
-          )}
+
+          <div className="flex items-center space-x-3">
+            {/* Verification Status Badge */}
+            {getVerificationStatus() && (
+              <VerificationStatusBadge
+                status={getVerificationStatus()!}
+                size="md"
+                showTooltip={true}
+              />
+            )}
+
+            {/* Upload Button */}
+            {isEditing && !isEditDisabled && (
+              <button
+                onClick={() => cccdInputRef.current?.click()}
+                className="flex items-center space-x-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors"
+                disabled={isUploadingCCCD}
+              >
+                <DocumentTextIcon className="w-4 h-4" />
+                <span>Thêm ảnh CCCD</span>
+              </button>
+            )}
+          </div>
         </div>
+
         <input
           ref={cccdInputRef}
           type="file"
@@ -57,6 +112,17 @@ const CCCDSection: React.FC<CCCDSectionProps> = ({
           onChange={onCCCDUpload}
           className="hidden"
         />
+
+        {/* Rejection Reason Display */}
+        {getVerificationStatus() === "REJECTED" && getRejectionReason() && (
+          <div className="mt-4">
+            <RejectionReasonDisplay
+              rejectionReason={getRejectionReason()!}
+              maxLength={150}
+              showIcon={true}
+            />
+          </div>
+        )}
       </div>
 
       {/* CCCD Images */}
@@ -76,7 +142,7 @@ const CCCDSection: React.FC<CCCDSectionProps> = ({
                     }}
                   />
                 </div>
-                {isEditing && (
+                {isEditing && !isEditDisabled && (
                   <button
                     onClick={() => onRemoveCCCDImage(imageUrl)}
                     className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -92,10 +158,11 @@ const CCCDSection: React.FC<CCCDSectionProps> = ({
           <div className="col-span-full text-center py-12 text-gray-500">
             <IdentificationIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
             <p>Chưa có hình ảnh CCCD nào được tải lên</p>
-            {isEditing && (
+            {isEditing && !isEditDisabled && (
               <button
                 onClick={() => cccdInputRef.current?.click()}
                 className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                disabled={isUploadingCCCD}
               >
                 Tải ảnh CCCD
               </button>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   UserCircleIcon,
@@ -9,6 +9,13 @@ import {
 } from "@heroicons/react/24/outline";
 import AddressSelector from "../AddressSelector";
 import type { StructuredAddress } from "../../types/address.types";
+import { useTutorProfileStore } from "../../store/tutorProfile.store";
+import {
+  VerificationStatusBadge,
+  VerificationWarningModal,
+  RejectionReasonDisplay,
+} from "../verification";
+import type { VerificationStatus } from "../../types/qualification.types";
 
 interface PersonalInfo {
   full_name: string;
@@ -30,6 +37,7 @@ interface PersonalInfoSectionProps {
   onPortraitUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onStructuredAddressChange: (updates: Partial<StructuredAddress>) => void;
   portraitInputRef: React.RefObject<HTMLInputElement | null>;
+  onEditToggle?: () => void;
 }
 
 const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
@@ -41,10 +49,54 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   onPortraitUpload,
   onStructuredAddressChange,
   portraitInputRef,
+  onEditToggle,
 }) => {
+  // Store hooks
+  const { checkEditStatus, verificationStatus, canEdit, editWarning } =
+    useTutorProfileStore();
+
+  // Local state
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [isCheckingEditStatus, setIsCheckingEditStatus] = useState(false);
+
+  // Check edit status when component mounts or verification status changes
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (profileData?.profile?.id) {
+        setIsCheckingEditStatus(true);
+        try {
+          await checkEditStatus();
+        } catch (error) {
+          console.error("Error checking edit status:", error);
+        } finally {
+          setIsCheckingEditStatus(false);
+        }
+      }
+    };
+
+    checkStatus();
+  }, [profileData?.profile?.id, checkEditStatus]);
+
   const getImageUrl = (file: File | null) => {
     return file ? URL.createObjectURL(file) : null;
   };
+
+  const handleWarningConfirm = () => {
+    setShowWarningModal(false);
+    if (onEditToggle) {
+      onEditToggle();
+    }
+  };
+
+  const getVerificationStatus = (): VerificationStatus | null => {
+    return profileData?.profile?.status || verificationStatus;
+  };
+
+  const getRejectionReason = (): string | null => {
+    return profileData?.profile?.rejection_reason || null;
+  };
+
+  const isEditDisabled = !canEdit || isCheckingEditStatus;
 
   return (
     <motion.div
@@ -55,14 +107,36 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     >
       {/* Header */}
       <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-            <UserCircleIcon className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <UserCircleIcon className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Thông tin cá nhân
+            </h2>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Thông tin cá nhân
-          </h2>
+
+          {/* Verification Status Badge */}
+          {getVerificationStatus() && (
+            <VerificationStatusBadge
+              status={getVerificationStatus()!}
+              size="md"
+              showTooltip={true}
+            />
+          )}
         </div>
+
+        {/* Rejection Reason Display */}
+        {getVerificationStatus() === "REJECTED" && getRejectionReason() && (
+          <div className="mt-4">
+            <RejectionReasonDisplay
+              rejectionReason={getRejectionReason()!}
+              maxLength={150}
+              showIcon={true}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col lg:flex-row lg:items-start space-y-6 lg:space-y-0 lg:space-x-8">
@@ -86,7 +160,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
                 <UserCircleIcon className="w-20 h-20 text-secondary" />
               )}
             </div>
-            {isEditing && (
+            {isEditing && !isEditDisabled && (
               <button
                 onClick={() => portraitInputRef.current?.click()}
                 className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
@@ -114,7 +188,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Họ và tên
             </label>
-            {isEditing ? (
+            {isEditing && !isEditDisabled ? (
               <input
                 id="full_name"
                 name="full_name"
@@ -154,7 +228,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Giới tính
             </label>
-            {isEditing ? (
+            {isEditing && !isEditDisabled ? (
               <select
                 id="gender"
                 name="gender"
@@ -188,7 +262,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Số điện thoại
             </label>
-            {isEditing ? (
+            {isEditing && !isEditDisabled ? (
               <input
                 id="phone_number"
                 name="phone_number"
@@ -212,7 +286,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Ngày sinh
             </label>
-            {isEditing ? (
+            {isEditing && !isEditDisabled ? (
               <input
                 id="date_of_birth"
                 name="date_of_birth"
@@ -268,7 +342,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
                   detail_address: detailAddress,
                 })
               }
-              isEditing={isEditing}
+              isEditing={isEditing && !isEditDisabled}
               provinceInfo={
                 profileData?.user?.structured_address?.province_info
               }
@@ -280,6 +354,21 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Verification Warning Modal */}
+      <VerificationWarningModal
+        isOpen={showWarningModal}
+        onClose={() => setShowWarningModal(false)}
+        onConfirm={handleWarningConfirm}
+        warningMessage={
+          editWarning ||
+          "Thông tin đã được xác thực. Mọi thay đổi sẽ cần gửi yêu cầu xác thực cho admin."
+        }
+        isLoading={isUpdatingPersonal}
+        title="Cảnh báo xác thực thông tin cá nhân"
+        confirmText="Tiếp tục chỉnh sửa"
+        cancelText="Hủy"
+      />
     </motion.div>
   );
 };

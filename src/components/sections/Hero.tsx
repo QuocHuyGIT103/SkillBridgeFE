@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { ArrowRight, Play, Star, Users, BookOpen, Shield } from "lucide-react";
+import { ArrowRight, Play, Star, Users, BookOpen } from "lucide-react";
 
 const Hero: React.FC = () => {
   return (

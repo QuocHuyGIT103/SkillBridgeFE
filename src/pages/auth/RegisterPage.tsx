@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { BookOpen, User, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "../../store/auth.store";
 import {

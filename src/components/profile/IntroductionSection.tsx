@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   DocumentTextIcon,
@@ -8,6 +8,13 @@ import {
   UserGroupIcon,
   VideoCameraIcon,
 } from "@heroicons/react/24/outline";
+import { useTutorProfileStore } from "../../store/tutorProfile.store";
+import {
+  VerificationStatusBadge,
+  VerificationWarningModal,
+  RejectionReasonDisplay,
+} from "../verification";
+import type { VerificationStatus } from "../../types/qualification.types";
 
 interface PersonalInfo {
   headline: string;
@@ -22,6 +29,7 @@ interface IntroductionSectionProps {
   editedInfo: PersonalInfo;
   isEditing: boolean;
   onInputChange: (field: keyof PersonalInfo, value: string) => void;
+  onEditToggle?: () => void;
 }
 
 const IntroductionSection: React.FC<IntroductionSectionProps> = ({
@@ -29,7 +37,50 @@ const IntroductionSection: React.FC<IntroductionSectionProps> = ({
   editedInfo,
   isEditing,
   onInputChange,
+  onEditToggle,
 }) => {
+  // Store hooks
+  const { checkEditStatus, verificationStatus, canEdit, editWarning } =
+    useTutorProfileStore();
+
+  // Local state
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [isCheckingEditStatus, setIsCheckingEditStatus] = useState(false);
+
+  // Check edit status when component mounts or verification status changes
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (profileData?.profile?.id) {
+        setIsCheckingEditStatus(true);
+        try {
+          await checkEditStatus();
+        } catch (error) {
+          console.error("Error checking edit status:", error);
+        } finally {
+          setIsCheckingEditStatus(false);
+        }
+      }
+    };
+
+    checkStatus();
+  }, [profileData?.profile?.id, checkEditStatus]);
+
+  const handleWarningConfirm = () => {
+    setShowWarningModal(false);
+    if (onEditToggle) {
+      onEditToggle();
+    }
+  };
+
+  const getVerificationStatus = (): VerificationStatus | null => {
+    return profileData?.profile?.status || verificationStatus;
+  };
+
+  const getRejectionReason = (): string | null => {
+    return profileData?.profile?.rejection_reason || null;
+  };
+
+  const isEditDisabled = !canEdit || isCheckingEditStatus;
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -39,14 +90,36 @@ const IntroductionSection: React.FC<IntroductionSectionProps> = ({
     >
       {/* Header */}
       <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-            <DocumentTextIcon className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <DocumentTextIcon className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Giới thiệu bản thân
+            </h2>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Giới thiệu bản thân
-          </h2>
+
+          {/* Verification Status Badge */}
+          {getVerificationStatus() && (
+            <VerificationStatusBadge
+              status={getVerificationStatus()!}
+              size="md"
+              showTooltip={true}
+            />
+          )}
         </div>
+
+        {/* Rejection Reason Display */}
+        {getVerificationStatus() === "REJECTED" && getRejectionReason() && (
+          <div className="mt-4">
+            <RejectionReasonDisplay
+              rejectionReason={getRejectionReason()!}
+              maxLength={150}
+              showIcon={true}
+            />
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -62,7 +135,7 @@ const IntroductionSection: React.FC<IntroductionSectionProps> = ({
             Viết một dòng tiêu đề lôi cuốn, bắt mắt để gây ấn tượng với học
             viên.
           </p>
-          {isEditing ? (
+          {isEditing && !isEditDisabled ? (
             <input
               id="headline"
               name="headline"
@@ -90,7 +163,7 @@ const IntroductionSection: React.FC<IntroductionSectionProps> = ({
               Giới thiệu về bản thân *
             </label>
           </div>
-          {isEditing ? (
+          {isEditing && !isEditDisabled ? (
             <textarea
               id="introduction"
               name="introduction"
@@ -119,7 +192,7 @@ const IntroductionSection: React.FC<IntroductionSectionProps> = ({
                 <span className="text-gray-400 font-normal">(Tùy chọn)</span>
               </label>
             </div>
-            {isEditing ? (
+            {isEditing && !isEditDisabled ? (
               <textarea
                 id="teaching_experience"
                 name="teaching_experience"
@@ -149,7 +222,7 @@ const IntroductionSection: React.FC<IntroductionSectionProps> = ({
                 <span className="text-gray-400 font-normal">(Tùy chọn)</span>
               </label>
             </div>
-            {isEditing ? (
+            {isEditing && !isEditDisabled ? (
               <textarea
                 id="student_levels"
                 name="student_levels"
@@ -183,7 +256,7 @@ const IntroductionSection: React.FC<IntroductionSectionProps> = ({
           <p className="text-xs text-gray-500 mb-3">
             Gợi ý: YouTube, Google Drive, Vimeo hoặc các nền tảng video khác
           </p>
-          {isEditing ? (
+          {isEditing && !isEditDisabled ? (
             <input
               id="video_intro_link"
               name="video_intro_link"
@@ -220,6 +293,21 @@ const IntroductionSection: React.FC<IntroductionSectionProps> = ({
           )}
         </div>
       </div>
+
+      {/* Verification Warning Modal */}
+      <VerificationWarningModal
+        isOpen={showWarningModal}
+        onClose={() => setShowWarningModal(false)}
+        onConfirm={handleWarningConfirm}
+        warningMessage={
+          editWarning ||
+          "Thông tin đã được xác thực. Mọi thay đổi sẽ cần gửi yêu cầu xác thực cho admin."
+        }
+        isLoading={false}
+        title="Cảnh báo xác thực thông tin giới thiệu"
+        confirmText="Tiếp tục chỉnh sửa"
+        cancelText="Hủy"
+      />
     </motion.div>
   );
 };
