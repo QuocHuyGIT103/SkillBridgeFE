@@ -36,8 +36,9 @@ import ToastProvider from "./components/ToastProvider";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { useAuthStore } from "./store/auth.store";
 import { useFirebase } from "./hooks/useFirebase";
-// import CoursesPage from './components/pages/CoursesPage';
-// import AboutPage from './components/pages/AboutPage';
+import MyPostsPage from "./pages/student/MyPostsPage";
+import PostFormPage from "./pages/student/PostFormPage"; // Thay thế CreatePostPage và EditPostPage
+import AdminPostReviewPage from "./pages/admin/posts/AdminPostReviewPage";
 
 // Protected Route wrapper for role-based access
 const ProtectedRoute = ({
@@ -113,6 +114,9 @@ function App() {
               <Route path="tutor-search" element={<StudentTutorSearchPage />} />
               <Route path="schedule" element={<StudentSchedulePage />} />
               <Route path="messages" element={<StudentMessagesPage />} />
+              <Route path="posts/create" element={<PostFormPage />} />
+              <Route path="posts/edit/:id" element={<PostFormPage />} />
+              <Route path="my-posts" element={<MyPostsPage />} />
               <Route
                 path="classes"
                 element={
@@ -223,6 +227,7 @@ function App() {
               <Route path="users/tutors" element={<UserManagementList />} />
               <Route path="users/blocked" element={<UserManagementList />} />
               <Route path="users/reports" element={<UserManagementList />} />
+              <Route path="posts/review" element={<AdminPostReviewPage />} />
 
               {/* Authentication & Quality */}
               <Route
@@ -475,9 +480,6 @@ function App() {
 
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" replace />} />
-
-            {/* <Route path="/courses" element={<CoursesPage />} />
-          <Route path="/about" element={<AboutPage />} /> */}
           </Routes>
         </Router>
       </ToastProvider>
