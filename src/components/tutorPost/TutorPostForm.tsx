@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTutorPostStore } from "../../store/tutorPost.store";
 import SubjectSelector from "./SubjectSelector";
 import PriceInput from "./PriceInput";
+import AddressSelector from "../AddressSelector";
 import type {
   CreateTutorPostRequest,
   TutorPost,
@@ -542,101 +543,52 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
                 Thông tin địa chỉ dạy học
               </h4>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tỉnh/Thành phố <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.address?.province || ""}
-                    onChange={(e) =>
-                      updateFormData("address", {
-                        ...formData.address!,
-                        province: e.target.value,
-                      })
-                    }
-                    placeholder="Chọn tỉnh/thành phố"
-                    className={`
-                      w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
-                      ${errors.province ? "border-red-500" : "border-gray-300"}
-                    `}
-                  />
-                  {errors.province && (
-                    <span className="text-xs text-red-600">
-                      {errors.province}
-                    </span>
-                  )}
-                </div>
+              <AddressSelector
+                selectedProvince={formData.address?.province || ""}
+                selectedDistrict={formData.address?.district || ""}
+                selectedWard={formData.address?.ward || ""}
+                detailAddress={formData.address?.specificAddress || ""}
+                onProvinceChange={(provinceCode) => {
+                  updateFormData("address", {
+                    province: provinceCode,
+                    district: "",
+                    ward: "",
+                    specificAddress: formData.address?.specificAddress || "",
+                  });
+                }}
+                onDistrictChange={(districtCode) => {
+                  updateFormData("address", {
+                    ...formData.address!,
+                    district: districtCode,
+                    ward: "",
+                  });
+                }}
+                onWardChange={(wardCode) => {
+                  updateFormData("address", {
+                    ...formData.address!,
+                    ward: wardCode,
+                  });
+                }}
+                onDetailAddressChange={(detailAddress) => {
+                  updateFormData("address", {
+                    ...formData.address!,
+                    specificAddress: detailAddress,
+                  });
+                }}
+                isEditing={true}
+                className="space-y-4"
+              />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Quận/Huyện <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.address?.district || ""}
-                    onChange={(e) =>
-                      updateFormData("address", {
-                        ...formData.address!,
-                        district: e.target.value,
-                      })
-                    }
-                    placeholder="Chọn quận/huyện"
-                    className={`
-                      w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
-                      ${errors.district ? "border-red-500" : "border-gray-300"}
-                    `}
-                  />
-                  {errors.district && (
-                    <span className="text-xs text-red-600">
-                      {errors.district}
-                    </span>
-                  )}
+              {/* Display validation errors */}
+              {(errors.province || errors.district || errors.ward) && (
+                <div className="bg-red-50 border border-red-200 rounded p-3">
+                  <div className="text-sm text-red-600 space-y-1">
+                    {errors.province && <div>• {errors.province}</div>}
+                    {errors.district && <div>• {errors.district}</div>}
+                    {errors.ward && <div>• {errors.ward}</div>}
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phường/Xã <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.address?.ward || ""}
-                    onChange={(e) =>
-                      updateFormData("address", {
-                        ...formData.address!,
-                        ward: e.target.value,
-                      })
-                    }
-                    placeholder="Chọn phường/xã"
-                    className={`
-                      w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500
-                      ${errors.ward ? "border-red-500" : "border-gray-300"}
-                    `}
-                  />
-                  {errors.ward && (
-                    <span className="text-xs text-red-600">{errors.ward}</span>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Địa chỉ cụ thể (tùy chọn)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.address?.specificAddress || ""}
-                    onChange={(e) =>
-                      updateFormData("address", {
-                        ...formData.address!,
-                        specificAddress: e.target.value,
-                      })
-                    }
-                    placeholder="VD: Số 123 đường ABC"
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>

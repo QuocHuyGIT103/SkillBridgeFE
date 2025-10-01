@@ -13,6 +13,7 @@ import {
   ArrowLeftOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import {
   UserIcon as UserSolidIcon,
@@ -21,6 +22,7 @@ import {
   CurrencyDollarIcon as CurrencySolidIcon,
   AcademicCapIcon as AcademicSolidIcon,
   HomeIcon as HomeSolidIcon,
+  DocumentTextIcon as DocumentSolidIcon,
 } from "@heroicons/react/24/solid";
 import type { NavigationItem } from "../types/tutor.types.ts";
 
@@ -97,6 +99,24 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           id: "schedule-history",
           label: "Lịch sử bài học",
           path: "/tutor/schedule/history",
+        },
+      ],
+    },
+    {
+      id: "posts",
+      label: "Quản lý bài đăng",
+      icon: "document",
+      path: "/tutor/posts",
+      children: [
+        {
+          id: "posts-list",
+          label: "Danh sách bài đăng",
+          path: "/tutor/posts",
+        },
+        {
+          id: "posts-create",
+          label: "Tạo bài đăng mới",
+          path: "/tutor/posts/create",
         },
       ],
     },
@@ -248,6 +268,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           <AcademicSolidIcon className={className} />
         ) : (
           <AcademicCapIcon className={className} />
+        );
+      case "document":
+        return isActive ? (
+          <DocumentSolidIcon className={className} />
+        ) : (
+          <DocumentTextIcon className={className} />
         );
       default:
         return <HomeIcon className={className} />;

@@ -1,7 +1,12 @@
 import axiosClient from "../api/axiosClient";
 import type { Subject } from "./subject.service";
 
-// TutorPost types
+/**
+ * TutorPost Service
+ * Provides APIs for managing tutor posts including CRUD operations, search, and eligibility checks
+ */
+
+// Core TutorPost types
 export interface TeachingSchedule {
   dayOfWeek: number; // 0-6 (0=Sunday)
   startTime: string; // "HH:mm" format
@@ -9,10 +14,10 @@ export interface TeachingSchedule {
 }
 
 export interface Address {
-  province: string;
-  district: string;
-  ward: string;
-  specificAddress: string;
+  province: string; // Province code (e.g., "79" for Ho Chi Minh City)
+  district: string; // District code (e.g., "760" for District 1)
+  ward: string; // Ward code (e.g., "26734" for Ben Nghe Ward)
+  specificAddress: string; // Detail address (street number, street name)
 }
 
 export interface TutorInfo {
@@ -98,8 +103,22 @@ export interface TutorPostSearchQuery {
   sortOrder?: "asc" | "desc";
 }
 
+export interface TutorEligibilityRequirement {
+  id: string;
+  title: string;
+  description: string;
+  status: "completed" | "pending" | "missing";
+  actionText?: string;
+  actionPath?: string;
+}
+
+export interface TutorEligibilityResponse {
+  isEligible: boolean;
+  requirements: TutorEligibilityRequirement[];
+}
+
 const TutorPostService = {
-  // Public APIs
+  // ==================== Public APIs (No authentication required) ====================
   searchTutorPosts: async (query?: TutorPostSearchQuery) => {
     try {
       const params = new URLSearchParams();
@@ -149,7 +168,7 @@ const TutorPostService = {
     }
   },
 
-  // Tutor APIs (require authentication)
+  // ==================== Tutor APIs (Authentication required) ====================
   createTutorPost: async (data: CreateTutorPostRequest) => {
     try {
       const response = await axiosClient.post<{ tutorPost: TutorPost }>(
@@ -214,6 +233,21 @@ const TutorPostService = {
   deleteTutorPost: async (postId: string) => {
     try {
       const response = await axiosClient.delete(`/tutor-posts/${postId}`);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Check if the current tutor is eligible to create posts
+   * Returns eligibility status and requirements list with actionable items
+   */
+  checkTutorEligibility: async () => {
+    try {
+      const response = await axiosClient.get<TutorEligibilityResponse>(
+        "/tutor-posts/check-eligibility"
+      );
       return response;
     } catch (error) {
       throw error;

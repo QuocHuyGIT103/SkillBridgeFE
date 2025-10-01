@@ -24,7 +24,7 @@ import UserAvatar from "../components/auth/UserAvatar";
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
-  const [hoverTimeout, setHoverTimeout] = useState<number | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const { isAuthenticated } = useAuthStore();
 
   const handleMouseEnter = () => {
@@ -125,6 +125,23 @@ const Header: React.FC = () => {
             </NavLink>
           </NavbarItem>
 
+          <NavbarItem>
+            <NavLink
+              to="/search"
+              className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 group flex items-center gap-1 ${
+                isActive("/search")
+                  ? "text-teal-600 bg-teal-50"
+                  : "text-gray-700 hover:text-teal-600"
+              }`}
+            >
+              <Search className="h-4 w-4" />
+              Tìm kiếm gia sư
+              {isActive("/search") && (
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-teal-600 rounded-full"></div>
+              )}
+            </NavLink>
+          </NavbarItem>
+
           <NavbarItem className="relative">
             <div
               className="relative"
@@ -139,7 +156,7 @@ const Header: React.FC = () => {
                 }`}
               >
                 <Search className="h-4 w-4" />
-                Tìm kiếm gia sư
+                Danh mục môn học
                 <ChevronDown
                   className={`h-3 w-3 transition-transform duration-200 ${
                     isSearchDropdownOpen ? "rotate-180" : ""
@@ -278,11 +295,24 @@ const Header: React.FC = () => {
               Trở thành gia sư
             </NavLink>
 
-            {/* Mobile Search Section */}
+            <NavLink
+              to="/search"
+              className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 hover:scale-105 ${
+                isActive("/search")
+                  ? "text-teal-600 bg-teal-50 border-l-4 border-teal-600"
+                  : "text-gray-700 hover:text-teal-600 hover:bg-gray-50"
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Search className="h-4 w-4" />
+              Tìm kiếm gia sư
+            </NavLink>
+
+            {/* Mobile Subject Categories */}
             <div className="px-4 py-2">
               <div className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-                <Search className="h-4 w-4" />
-                Tìm kiếm gia sư
+                <BookOpen className="h-4 w-4" />
+                Danh mục môn học
               </div>
               <div className="grid grid-cols-2 gap-2 ml-4">
                 {subjects.map((subject) => {

@@ -62,7 +62,7 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       id: "tutor-search",
       label: "Tìm gia sư",
       icon: "search",
-      path: "/student/tutor-search",
+      path: "/search",
     },
     {
       id: "schedule",
@@ -194,7 +194,9 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
               <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 SkillBridge
               </span>
-              <span className="text-xs text-blue-600 font-medium">Học sinh</span>
+              <span className="text-xs text-blue-600 font-medium">
+                Học sinh
+              </span>
             </div>
           </motion.div>
         )}

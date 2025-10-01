@@ -1,5 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/auth.store";
+import { formatShortAddress } from "../../utils/addressUtils";
 import type { TutorPost } from "../../services/tutorPost.service";
 
 interface TutorPostCardProps {
@@ -18,6 +20,7 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
   className = "",
 }) => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
 
   const handleCardClick = () => {
     navigate(`/tutors/${tutorPost._id}`);
@@ -63,7 +66,7 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
     if (tutorPost.teachingMode === "ONLINE") return "Trực tuyến";
     if (tutorPost.teachingMode === "OFFLINE") {
       if (tutorPost.address) {
-        return `${tutorPost.address.district}, ${tutorPost.address.province}`;
+        return formatShortAddress(tutorPost.address);
       }
       return "Trực tiếp";
     }
@@ -176,8 +179,30 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
             <p className="font-medium text-gray-900">
               {tutorPost.tutorId.name}
             </p>
-            {tutorPost.tutorId.email && (
+            {isAuthenticated && tutorPost.tutorId.email ? (
               <p className="text-sm text-gray-500">{tutorPost.tutorId.email}</p>
+            ) : (
+              <div className="flex items-center space-x-1">
+                <div className="flex space-x-0.5">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-1 h-2 bg-gray-300 rounded-sm"
+                    ></div>
+                  ))}
+                </div>
+                <svg
+                  className="w-3 h-3 text-gray-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
             )}
           </div>
         </div>
