@@ -144,6 +144,19 @@ const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
       ],
     },
     {
+      id: "posts",
+      label: "Quản lý Bài Đăng",
+      icon: "document",
+      path: "/admin/posts",
+      children: [
+        {
+          id: "post-review",
+          label: "Duyệt Bài Đăng",
+          path: "/admin/posts/review",
+        },
+      ],
+    },
+    {
       id: "transactions",
       label: "Quản lý giao dịch",
       icon: "currency",

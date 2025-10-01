@@ -100,3 +100,4 @@ export type {
   Lesson as StudentLesson,
   Message as StudentMessage,
 } from "./student.types";
+export * from './post.types';

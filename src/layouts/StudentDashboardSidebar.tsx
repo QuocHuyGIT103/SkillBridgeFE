@@ -65,6 +65,18 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       path: "/search",
     },
     {
+      id: "create-post",
+      label: "Tạo Bài Đăng",
+      icon: "document",
+      path: "/student/posts/create", // Cập nhật đường dẫn
+    },
+    {
+      id: "my-posts",
+      label: "Bài Đăng Của Tôi",
+      icon: "academic",
+      path: "/student/my-posts",
+    },
+    {
       id: "schedule",
       label: "Lịch học",
       icon: "calendar",
