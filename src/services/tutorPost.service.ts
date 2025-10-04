@@ -65,15 +65,16 @@ export interface TutorInfo {
   email?: string;
   gender?: string;
   avatar_url?: string;
-         structured_address?: {
-           province_code?: string;
-           district_code?: string;
-           ward_code?: string;
-           detail_address?: string;
-           province_name?: string;
-           district_name?: string;
-           ward_name?: string;
-         };
+  date_of_birth?: string;
+  structured_address?: {
+    province_code?: string;
+    district_code?: string;
+    ward_code?: string;
+    detail_address?: string;
+    province_name?: string;
+    district_name?: string;
+    ward_name?: string;
+  };
   profile?: TutorProfileInfo;
   education?: EducationInfo[];
   certificates?: CertificateInfo[];
@@ -81,7 +82,8 @@ export interface TutorInfo {
 }
 
 export interface TutorPost {
-  id: string;
+  _id?: string;
+  id?: string;
   tutorId: TutorInfo;
   title: string;
   description: string;

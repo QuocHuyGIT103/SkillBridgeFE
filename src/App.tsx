@@ -97,7 +97,7 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/tutors" element={<TutorSearchPage />} />
+            <Route path="/tutors" element={<StudentTutorSearchPage />} />
             <Route path="/tutors/:postId" element={<TutorPostDetailPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />

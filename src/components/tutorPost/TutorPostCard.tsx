@@ -1,34 +1,89 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../store/auth.store";
-import { formatShortAddress } from "../../utils/addressUtils";
-import type { TutorPost } from "../../services/tutorPost.service";
+import {
+  MapPinIcon,
+  ClockIcon,
+  CurrencyDollarIcon,
+  UserIcon,
+  BookOpenIcon,
+} from "@heroicons/react/24/outline";
 
 interface TutorPostCardProps {
-  tutorPost: TutorPost;
-  onContactClick?: (tutorPost: TutorPost) => void;
-  showActions?: boolean;
-  compact?: boolean;
-  className?: string;
+  post: {
+    _id?: string;
+    id?: string;
+    title: string;
+    description: string;
+    subjects: Array<{ _id?: string; name: string; category: string }>;
+    pricePerSession: number;
+    sessionDuration: number;
+    teachingMode: "ONLINE" | "OFFLINE" | "BOTH";
+    tutorId: {
+      _id?: string;
+      full_name: string;
+      email?: string;
+      date_of_birth?: string;
+      avatar_url?: string;
+      gender?: string;
+      structured_address?: {
+        province_code?: string;
+        district_code?: string;
+        ward_code?: string;
+        detail_address?: string;
+        province_name?: string;
+        district_name?: string;
+        ward_name?: string;
+      };
+      profile?: {
+        headline?: string;
+        introduction?: string;
+        teaching_experience?: string;
+        student_levels?: string;
+        video_intro_link?: string;
+        status?: string;
+      };
+    };
+    viewCount: number;
+    contactCount: number;
+    createdAt: string;
+  };
 }
 
-const TutorPostCard: React.FC<TutorPostCardProps> = ({
-  tutorPost,
-  onContactClick,
-  showActions = true,
-  compact = false,
-  className = "",
-}) => {
+const TutorPostCard: React.FC<TutorPostCardProps> = ({ post }) => {
+  // Guard clause to prevent rendering if post or tutorId is undefined
+  if (!post || !post.tutorId) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="animate-pulse">
+          <div className="flex items-start space-x-4 mb-4">
+            <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+            <div className="flex-1">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
 
-  const handleCardClick = () => {
-    navigate(`/tutors/${tutorPost._id}`);
-  };
+  // Utility functions
+  const calculateAge = (dateOfBirth: string): number => {
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
 
-  const handleContactClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onContactClick?.(tutorPost);
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    return age;
   };
 
   const formatPrice = (amount: number): string => {
@@ -39,42 +94,26 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
     }).format(amount);
   };
 
-  const getScheduleSummary = () => {
-    if (tutorPost.teachingSchedule.length === 0) return "Chưa có lịch dạy";
-
-    const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-    const scheduleByDay: Record<number, string[]> = {};
-
-    tutorPost.teachingSchedule.forEach((slot) => {
-      if (!scheduleByDay[slot.dayOfWeek]) {
-        scheduleByDay[slot.dayOfWeek] = [];
-      }
-      scheduleByDay[slot.dayOfWeek].push(`${slot.startTime}-${slot.endTime}`);
-    });
-
-    const summary = Object.entries(scheduleByDay)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .slice(0, 3) // Show only first 3 days
-      .map(([day, times]) => `${dayNames[Number(day)]}: ${times.join(", ")}`)
-      .join(" • ");
-
-    const totalDays = Object.keys(scheduleByDay).length;
-    return totalDays > 3 ? `${summary} +${totalDays - 3} ngày khác` : summary;
+  const truncateText = (text: string, maxLength: number): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
   };
 
-  const getLocationText = () => {
-    if (tutorPost.teachingMode === "ONLINE") return "Trực tuyến";
-    if (tutorPost.teachingMode === "OFFLINE") {
-      if (tutorPost.address) {
-        return formatShortAddress(tutorPost.address);
-      }
-      return "Trực tiếp";
+  const getTeachingModeText = (mode: string): string => {
+    switch (mode) {
+      case "ONLINE":
+        return "Trực tuyến";
+      case "OFFLINE":
+        return "Tại nhà";
+      case "BOTH":
+        return "Cả hai hình thức";
+      default:
+        return "Linh hoạt";
     }
-    return "Cả hai hình thức";
   };
 
-  const getTeachingModeColor = () => {
-    switch (tutorPost.teachingMode) {
+  const getTeachingModeColor = (mode: string): string => {
+    switch (mode) {
       case "ONLINE":
         return "bg-green-100 text-green-800";
       case "OFFLINE":
@@ -86,260 +125,140 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
     }
   };
 
-  const getStatusColor = () => {
-    switch (tutorPost.status) {
-      case "ACTIVE":
-        return "bg-green-100 text-green-800";
-      case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
-      case "INACTIVE":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const getLocationText = (): string => {
+    if (post.teachingMode === "ONLINE") return "Trực tuyến";
+    if (post.tutorId.structured_address?.province_name) {
+      return post.tutorId.structured_address.province_name;
     }
+    return "Linh hoạt";
   };
 
-  if (compact) {
-    return (
-      <div
-        className={`
-          bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer
-          ${className}
-        `}
-        onClick={handleCardClick}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-1">
-              {tutorPost.title}
-            </h4>
-            <p className="text-xs text-gray-600 mb-2">
-              {tutorPost.tutorId.name}
-            </p>
-            <div className="flex items-center space-x-2 text-xs">
-              <span
-                className={`px-2 py-1 rounded-full ${getTeachingModeColor()}`}
-              >
-                {getLocationText()}
+  const handleViewDetails = () => {
+    navigate(`/tutors/${post._id || post.id}`);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden"
+    >
+      <div className="p-6">
+        {/* Header with Avatar and Basic Info */}
+        <div className="flex items-start space-x-4 mb-4">
+          {/* Avatar */}
+          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+            {post.tutorId.avatar_url ? (
+              <img
+                src={post.tutorId.avatar_url}
+                alt="Avatar"
+                className="w-16 h-16 rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-gray-600 font-medium text-xl">
+                {post.tutorId.full_name?.charAt(0).toUpperCase() || "U"}
               </span>
-              <span className="text-gray-500">
-                {formatPrice(tutorPost.pricePerSession)}/
-                {tutorPost.sessionDuration}p
+            )}
+          </div>
+
+          {/* Tutor Info */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
+              {post.tutorId.full_name || "Gia sư"}
+            </h3>
+            <div className="flex items-center space-x-3 text-sm text-gray-600">
+              {post.tutorId.date_of_birth && (
+                <span className="flex items-center">
+                  <UserIcon className="w-4 h-4 mr-1" />
+                  {calculateAge(post.tutorId.date_of_birth)} tuổi
+                </span>
+              )}
+              {post.tutorId.gender && (
+                <span className="flex items-center">
+                  <UserIcon className="w-4 h-4 mr-1" />
+                  {post.tutorId.gender === "male"
+                    ? "Nam"
+                    : post.tutorId.gender === "female"
+                    ? "Nữ"
+                    : "Khác"}
+                </span>
+              )}
+              <span className="flex items-center">
+                <MapPinIcon className="w-4 h-4 mr-1" />
+                {getLocationText()}
               </span>
             </div>
           </div>
 
-          {showActions && (
-            <button
-              onClick={handleContactClick}
-              className="ml-3 text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 flex-shrink-0"
-            >
-              Liên hệ
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`
-        bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer
-        ${className}
-      `}
-      onClick={handleCardClick}
-    >
-      {/* Header */}
-      <div className="p-6">
-        {/* Title and Status */}
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">
-            {tutorPost.title}
-          </h3>
+          {/* Teaching Mode Badge */}
           <span
-            className={`ml-3 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor()}`}
+            className={`px-3 py-1 rounded-full text-xs font-medium ${getTeachingModeColor(
+              post.teachingMode
+            )}`}
           >
-            {tutorPost.status === "ACTIVE"
-              ? "Đang hoạt động"
-              : tutorPost.status === "PENDING"
-              ? "Chờ duyệt"
-              : "Tạm dừng"}
+            {getTeachingModeText(post.teachingMode)}
           </span>
         </div>
 
-        {/* Tutor Info */}
-        <div className="flex items-center mb-4">
-          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-            <span className="text-gray-600 font-medium text-sm">
-              {tutorPost.tutorId.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="ml-3">
-            <p className="font-medium text-gray-900">
-              {tutorPost.tutorId.name}
-            </p>
-            {isAuthenticated && tutorPost.tutorId.email ? (
-              <p className="text-sm text-gray-500">{tutorPost.tutorId.email}</p>
-            ) : (
-              <div className="flex items-center space-x-1">
-                <div className="flex space-x-0.5">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-1 h-2 bg-gray-300 rounded-sm"
-                    ></div>
-                  ))}
-                </div>
-                <svg
-                  className="w-3 h-3 text-gray-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            )}
-          </div>
-        </div>
+        {/* Title */}
+        <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+          {post.title}
+        </h2>
 
-        {/* Description */}
-        <p className="text-sm text-gray-600 line-clamp-3 mb-4">
-          {tutorPost.description}
+        {/* Description - Show TutorProfile introduction if available, otherwise post description */}
+        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+          {truncateText(
+            post.tutorId.profile?.introduction || post.description,
+            150
+          )}
         </p>
 
         {/* Subjects */}
         <div className="mb-4">
+          <div className="flex items-center mb-2">
+            <BookOpenIcon className="w-4 h-4 text-gray-500 mr-2" />
+            <span className="text-sm font-medium text-gray-700">Môn học:</span>
+          </div>
           <div className="flex flex-wrap gap-2">
-            {tutorPost.subjects.slice(0, 3).map((subject, index) => (
+            {post.subjects.map((subject, index) => (
               <span
-                key={index}
-                className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full"
+                key={subject._id || subject.name || index}
+                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-lg font-medium"
               >
-                {typeof subject === "string" ? subject : subject.name}
+                {subject.name}
               </span>
             ))}
-            {tutorPost.subjects.length > 3 && (
-              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                +{tutorPost.subjects.length - 3} môn khác
-              </span>
-            )}
           </div>
         </div>
 
-        {/* Student Level */}
-        <div className="mb-4">
-          <p className="text-xs text-gray-500 mb-1">Đối tượng học viên:</p>
-          <div className="flex flex-wrap gap-1">
-            {tutorPost.studentLevel.slice(0, 3).map((level, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded"
-              >
-                {level}
-              </span>
-            ))}
-            {tutorPost.studentLevel.length > 3 && (
-              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                +{tutorPost.studentLevel.length - 3} cấp khác
-              </span>
-            )}
+        {/* Price and Duration */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center text-lg font-bold text-green-600">
+            <CurrencyDollarIcon className="w-5 h-5 mr-1" />
+            {formatPrice(post.pricePerSession)}
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <ClockIcon className="w-4 h-4 mr-1" />
+            {post.sessionDuration} phút/buổi
           </div>
         </div>
 
-        {/* Teaching Details */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <p className="text-xs text-gray-500 mb-1">Hình thức dạy:</p>
-            <span
-              className={`px-2 py-1 rounded text-xs font-medium ${getTeachingModeColor()}`}
-            >
-              {getLocationText()}
-            </span>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 mb-1">Thời lượng buổi:</p>
-            <span className="text-sm font-medium text-gray-900">
-              {tutorPost.sessionDuration} phút
-            </span>
-          </div>
+        {/* Stats */}
+        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+          <span>{post.viewCount} lượt xem</span>
+          <span>{post.contactCount} liên hệ</span>
         </div>
 
-        {/* Schedule Summary */}
-        <div className="mb-4">
-          <p className="text-xs text-gray-500 mb-1">Lịch dạy:</p>
-          <p className="text-sm text-gray-700">{getScheduleSummary()}</p>
-        </div>
+        {/* Action Button */}
+        <button
+          onClick={handleViewDetails}
+          className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-center"
+        >
+          Xem chi tiết
+        </button>
       </div>
-
-      {/* Footer */}
-      <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-4 text-xs text-gray-500">
-          <div className="flex items-center">
-            <svg
-              className="w-4 h-4 mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              />
-            </svg>
-            <span>{tutorPost.viewCount} lượt xem</span>
-          </div>
-          <div className="flex items-center">
-            <svg
-              className="w-4 h-4 mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-            <span>{tutorPost.contactCount} liên hệ</span>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <div className="text-right">
-            <p className="text-lg font-bold text-gray-900">
-              {formatPrice(tutorPost.pricePerSession)}
-            </p>
-            <p className="text-xs text-gray-500">
-              /{tutorPost.sessionDuration} phút
-            </p>
-          </div>
-
-          {showActions && (
-            <button
-              onClick={handleContactClick}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Liên hệ ngay
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -9,38 +9,16 @@ import {
   LogIn,
   UserPlus,
   Sparkles,
-  ChevronDown,
   GraduationCap,
   Search,
-  Users,
-  Globe,
-  Calculator,
-  Beaker,
-  Palette,
 } from "lucide-react";
 import { useAuthStore } from "../store/auth.store";
 import UserAvatar from "../components/auth/UserAvatar";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
-  const handleMouseEnter = () => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      setHoverTimeout(null);
-    }
-    setIsSearchDropdownOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    const timeout = setTimeout(() => {
-      setIsSearchDropdownOpen(false);
-    }, 150); // Delay 150ms trước khi đóng
-    setHoverTimeout(timeout);
-  };
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -53,18 +31,6 @@ const Header: React.FC = () => {
   };
 
   const isActive = (path: string) => location.pathname === path;
-
-  // Danh sách các môn học và lĩnh vực
-  const subjects = [
-    { name: "Toán học", icon: Calculator, path: "/tutors/math" },
-    { name: "Vật lý", icon: Beaker, path: "/tutors/physics" },
-    { name: "Hóa học", icon: Beaker, path: "/tutors/chemistry" },
-    { name: "Tiếng Anh", icon: Globe, path: "/tutors/english" },
-    { name: "TOEIC", icon: Globe, path: "/tutors/toeic" },
-    { name: "IELTS", icon: Globe, path: "/tutors/ielts" },
-    { name: "Lập trình", icon: Users, path: "/tutors/programming" },
-    { name: "Thiết kế", icon: Palette, path: "/tutors/design" },
-  ];
 
   return (
     <div className="sticky top-0 z-50 w-full py-2">
@@ -125,79 +91,25 @@ const Header: React.FC = () => {
             </NavLink>
           </NavbarItem>
 
-          <NavbarItem>
-            <NavLink
-              to="/search"
-              className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 group flex items-center gap-1 ${
-                isActive("/search")
-                  ? "text-teal-600 bg-teal-50"
-                  : "text-gray-700 hover:text-teal-600"
-              }`}
-            >
-              <Search className="h-4 w-4" />
-              Tìm kiếm gia sư
-              {isActive("/search") && (
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-teal-600 rounded-full"></div>
-              )}
-            </NavLink>
-          </NavbarItem>
-
-          <NavbarItem className="relative">
-            <div
-              className="relative"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button
+          {/* Hide search menu for TUTOR role */}
+          {user?.role !== "TUTOR" && (
+            <NavbarItem>
+              <NavLink
+                to="/tutors"
                 className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 group flex items-center gap-1 ${
-                  location.pathname.startsWith("/tutors")
+                  isActive("/tutors")
                     ? "text-teal-600 bg-teal-50"
                     : "text-gray-700 hover:text-teal-600"
                 }`}
               >
                 <Search className="h-4 w-4" />
-                Danh mục môn học
-                <ChevronDown
-                  className={`h-3 w-3 transition-transform duration-200 ${
-                    isSearchDropdownOpen ? "rotate-180" : ""
-                  }`}
-                />
-                {location.pathname.startsWith("/tutors") && (
+                Tìm kiếm gia sư
+                {isActive("/tutors") && (
                   <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-teal-600 rounded-full"></div>
                 )}
-              </button>
-
-              {/* Dropdown Menu */}
-              {isSearchDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-                  <div className="grid grid-cols-2 gap-1 p-2">
-                    {subjects.map((subject) => {
-                      const IconComponent = subject.icon;
-                      return (
-                        <NavLink
-                          key={subject.path}
-                          to={subject.path}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all duration-200 group"
-                        >
-                          <IconComponent className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
-                          {subject.name}
-                        </NavLink>
-                      );
-                    })}
-                  </div>
-                  <div className="border-t border-gray-100 mt-2 pt-2 px-2">
-                    <NavLink
-                      to="/tutors"
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-teal-600 hover:bg-teal-50 rounded-lg transition-all duration-200 font-medium"
-                    >
-                      <Users className="h-4 w-4" />
-                      Xem tất cả gia sư
-                    </NavLink>
-                  </div>
-                </div>
-              )}
-            </div>
-          </NavbarItem>
+              </NavLink>
+            </NavbarItem>
+          )}
 
           <NavbarItem>
             <NavLink
@@ -307,38 +219,6 @@ const Header: React.FC = () => {
               <Search className="h-4 w-4" />
               Tìm kiếm gia sư
             </NavLink>
-
-            {/* Mobile Subject Categories */}
-            <div className="px-4 py-2">
-              <div className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                Danh mục môn học
-              </div>
-              <div className="grid grid-cols-2 gap-2 ml-4">
-                {subjects.map((subject) => {
-                  const IconComponent = subject.icon;
-                  return (
-                    <NavLink
-                      key={subject.path}
-                      to={subject.path}
-                      className="flex items-center gap-2 px-3 py-2 text-xs text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all duration-200"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <IconComponent className="h-3 w-3" />
-                      {subject.name}
-                    </NavLink>
-                  );
-                })}
-              </div>
-              <NavLink
-                to="/tutors"
-                className="flex items-center gap-2 px-3 py-2 mt-2 text-sm text-teal-600 hover:bg-teal-50 rounded-lg transition-all duration-200 font-medium ml-4"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Users className="h-4 w-4" />
-                Xem tất cả gia sư
-              </NavLink>
-            </div>
 
             <NavLink
               to="/blog"
