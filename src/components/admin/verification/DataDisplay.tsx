@@ -3,8 +3,6 @@ import {
   AcademicCapIcon,
   DocumentTextIcon,
   TrophyIcon,
-  CalendarIcon,
-  BuildingOfficeIcon,
   PhotoIcon,
 } from "@heroicons/react/24/outline";
 

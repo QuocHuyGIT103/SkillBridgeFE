@@ -4,7 +4,6 @@ import {
   CalendarIcon,
   ClockIcon,
   UserGroupIcon,
-  VideoCameraIcon,
   BookOpenIcon,
   ChartBarIcon,
 } from "@heroicons/react/24/outline";

@@ -5,13 +5,80 @@ import type {
   ProcessVerificationRequest,
   VerificationRequestsResponse,
   VerificationHistoryResponse,
+  EditStatusResponse,
+  VerificationSubmitResponse,
+  VerificationErrorResponse,
 } from "../types/qualification.types";
 
 const VerificationService = {
   // ==================== TUTOR VERIFICATION REQUESTS ====================
 
   /**
-   * Gửi yêu cầu xác thực thông tin
+   * Kiểm tra trạng thái có thể chỉnh sửa TutorProfile
+   */
+  checkEditStatus: async () => {
+    try {
+      const response = await axiosClient.get<{
+        success: boolean;
+        message: string;
+        data: EditStatusResponse;
+      }>("/tutor/profile/check-edit-status");
+      return response;
+    } catch (error: any) {
+      // Handle 403 as valid response when canEdit is false
+      if (
+        error.response?.status === 403 &&
+        error.response?.data?.data?.canEdit === false
+      ) {
+        // This is actually a valid response, not an error
+        return {
+          success: false, // Backend returns success: false for 403
+          message: error.response.data.message,
+          data: error.response.data.data,
+        };
+      }
+
+      // Handle specific error types for edit status
+      if (error.response?.data?.data?.errorType) {
+        const errorData: VerificationErrorResponse = error.response.data.data;
+        const enhancedError = new Error(
+          error.response.data.message ||
+            "Không thể kiểm tra trạng thái chỉnh sửa"
+        );
+        (enhancedError as any).data = errorData;
+        throw enhancedError;
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Gửi yêu cầu xác thực TutorProfile
+   */
+  submitTutorProfileVerification: async () => {
+    try {
+      const response = await axiosClient.post<{
+        success: boolean;
+        message: string;
+        data: VerificationSubmitResponse;
+      }>("/tutor/profile/submit-verification");
+      return response;
+    } catch (error: any) {
+      // Handle specific error types for verification submission
+      if (error.response?.data?.data?.errorType) {
+        const errorData: VerificationErrorResponse = error.response.data.data;
+        const enhancedError = new Error(
+          error.response.data.message || "Không thể gửi yêu cầu xác thực"
+        );
+        (enhancedError as any).data = errorData;
+        throw enhancedError;
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Gửi yêu cầu xác thực thông tin (Qualifications)
    */
   createVerificationRequest: async (data: CreateVerificationRequest) => {
     try {

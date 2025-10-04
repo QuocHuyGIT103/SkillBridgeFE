@@ -31,7 +31,6 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
   qualifications,
   tutorRequests,
   onEditEducation,
-  onEditCertificate,
   onAddEducation,
   onAddCertificate,
   onViewAllCertificates,

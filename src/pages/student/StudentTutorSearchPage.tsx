@@ -1,316 +1,294 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  StarIcon,
-  MapPinIcon,
-  ClockIcon,
-  CurrencyDollarIcon,
-  UserIcon,
-  BookOpenIcon,
-  VideoCameraIcon,
-  ChatBubbleLeftRightIcon,
-} from "@heroicons/react/24/outline";
-import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid";
+import { useTutorPostStore } from "../../store/tutorPost.store";
+import TutorPostCard from "../../components/tutorPost/TutorPostCard";
+import SearchFilters from "../../components/tutorPost/SearchFilters";
+import { debounce } from "../../utils/tutorUtils";
+
+interface TutorPostSearchQuery {
+  subjects?: string[];
+  teachingMode?: "ONLINE" | "OFFLINE" | "BOTH";
+  studentLevel?: string[];
+  priceMin?: number;
+  priceMax?: number;
+  province?: string;
+  district?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: "createdAt" | "pricePerSession" | "viewCount";
+  sortOrder?: "asc" | "desc";
+}
 
 const StudentTutorSearchPage: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [priceRange, setPriceRange] = useState("");
-  const [location, setLocation] = useState("");
+  const { posts, pagination, searchLoading, searchTutorPosts } =
+    useTutorPostStore();
+  const [currentFilters, setCurrentFilters] = useState<TutorPostSearchQuery>({
+    page: 1,
+    limit: 12,
+    sortBy: "createdAt",
+    sortOrder: "desc",
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // Mock data
-  const subjects = [
-    "Toán học", "Tiếng Anh", "Vật lý", "Hóa học", "Sinh học", 
-    "Lịch sử", "Địa lý", "Ngữ văn", "Tin học", "IELTS", "TOEIC"
-  ];
+  // Debounced search function with error handling
+  const debouncedSearch = debounce(async (filters: TutorPostSearchQuery) => {
+    try {
+      setError(null);
+      await searchTutorPosts(filters);
+    } catch (error) {
+      console.error("Search error:", error);
+      setError("Có lỗi xảy ra khi tìm kiếm gia sư. Vui lòng thử lại.");
+    }
+  }, 500);
 
-  const tutors = [
-    {
-      id: 1,
-      name: "Thầy Nguyễn Văn A",
-      avatar: "https://via.placeholder.com/80",
-      rating: 4.9,
-      reviewCount: 156,
-      subjects: ["Toán học", "Vật lý"],
-      experience: "5 năm kinh nghiệm",
-      price: "300,000 VNĐ/giờ",
-      location: "Quận 1, TP.HCM",
-      isOnline: true,
-      description: "Giáo viên Toán học tại trường THPT chuyên, có nhiều năm kinh nghiệm dạy học sinh giỏi.",
-      achievements: ["Top 1% gia sư Toán", "100+ học sinh đậu đại học"],
-      verified: true,
-      responseTime: "Phản hồi trong 1 giờ",
-    },
-    {
-      id: 2,
-      name: "Cô Sarah Johnson",
-      avatar: "https://via.placeholder.com/80",
-      rating: 4.8,
-      reviewCount: 89,
-      subjects: ["Tiếng Anh", "IELTS"],
-      experience: "3 năm kinh nghiệm",
-      price: "400,000 VNĐ/giờ",
-      location: "Quận 3, TP.HCM",
-      isOnline: true,
-      description: "Người nước ngoài, chuyên gia IELTS với chứng chỉ TESOL.",
-      achievements: ["IELTS 8.5", "TESOL Certified"],
-      verified: true,
-      responseTime: "Phản hồi trong 30 phút",
-    },
-    {
-      id: 3,
-      name: "Cô Trần Thị B",
-      avatar: "https://via.placeholder.com/80",
-      rating: 4.7,
-      reviewCount: 234,
-      subjects: ["Vật lý", "Hóa học"],
-      experience: "7 năm kinh nghiệm",
-      price: "250,000 VNĐ/giờ",
-      location: "Quận 5, TP.HCM",
-      isOnline: false,
-      description: "Thạc sĩ Vật lý, giảng viên đại học với phương pháp dạy độc đáo.",
-      achievements: ["Thạc sĩ Vật lý", "500+ học sinh đã dạy"],
-      verified: true,
-      responseTime: "Phản hồi trong 2 giờ",
-    },
-  ];
+  // Handle filters change
+  const handleFiltersChange = (filters: TutorPostSearchQuery) => {
+    const newFilters = { ...filters, page: 1 }; // Reset to page 1 when filters change
+    setCurrentFilters(newFilters);
+    debouncedSearch(newFilters);
+  };
 
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, index) => (
-      <StarSolidIcon
-        key={index}
-        className={`w-4 h-4 ${
-          index < Math.floor(rating) ? "text-yellow-400" : "text-gray-300"
-        }`}
-      />
-    ));
+  // Load initial data with loading state
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        setIsInitialLoading(true);
+        setError(null);
+        await searchTutorPosts(currentFilters);
+      } catch (error) {
+        console.error("Initial search error:", error);
+        setError("Không thể tải danh sách gia sư. Vui lòng thử lại.");
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  // Handle pagination with error handling
+  const handleLoadMore = async () => {
+    if (pagination && pagination.hasNext) {
+      try {
+        setError(null);
+        const newFilters = {
+          ...currentFilters,
+          page: (currentFilters.page || 1) + 1,
+        };
+        setCurrentFilters(newFilters);
+        await searchTutorPosts(newFilters);
+      } catch (error) {
+        console.error("Load more error:", error);
+        setError("Không thể tải thêm gia sư. Vui lòng thử lại.");
+      }
+    }
+  };
+
+  // Retry function
+  const handleRetry = () => {
+    setError(null);
+    debouncedSearch(currentFilters);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl p-6 shadow-sm border border-blue-50 hover:shadow-md transition-shadow"
-      >
-        <div className="flex flex-col md:flex-row md:items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Tìm gia sư</h1>
-            <p className="text-gray-600">Tìm kiếm gia sư phù hợp với nhu cầu học tập của bạn</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200 mb-6 sm:mb-8"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+            <div className="mb-4 sm:mb-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                Tìm gia sư
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">
+                Tìm kiếm gia sư phù hợp với nhu cầu học tập của bạn
+              </p>
+            </div>
+            <div className="flex items-center justify-between sm:justify-end">
+              <span className="text-sm text-gray-500">
+                {pagination
+                  ? `Tìm thấy ${pagination.totalItems} gia sư`
+                  : "Đang tải..."}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center space-x-4 mt-4 md:mt-0">
-            <span className="text-sm text-gray-500">
-              Tìm thấy {tutors.length} gia sư
-            </span>
-          </div>
-        </div>
-      </motion.div>
+        </motion.div>
 
-      {/* Search and Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-white rounded-xl p-6 shadow-sm border border-blue-50 hover:shadow-md transition-shadow"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Tìm gia sư..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/50"
+        {/* Main Content */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 xl:gap-8">
+          {/* Left Sidebar - Filters */}
+          <div className="xl:col-span-1 order-2 xl:order-1">
+            <SearchFilters
+              onFiltersChange={handleFiltersChange}
+              isLoading={searchLoading}
             />
           </div>
 
-          {/* Subject Filter */}
-          <select
-            value={selectedSubject}
-            onChange={(e) => setSelectedSubject(e.target.value)}
-            className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/50"
-          >
-            <option value="">Tất cả môn học</option>
-            {subjects.map((subject) => (
-              <option key={subject} value={subject}>
-                {subject}
-              </option>
-            ))}
-          </select>
+          {/* Right Content - Results */}
+          <div className="xl:col-span-4 order-1 xl:order-2">
+            {/* Initial Loading State */}
+            {isInitialLoading && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                  <span className="ml-3 text-gray-600">
+                    Đang tải danh sách gia sư...
+                  </span>
+                </div>
+              </div>
+            )}
 
-          {/* Price Range */}
-          <select
-            value={priceRange}
-            onChange={(e) => setPriceRange(e.target.value)}
-            className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/50"
-          >
-            <option value="">Mức giá</option>
-            <option value="0-200">Dưới 200,000 VNĐ</option>
-            <option value="200-400">200,000 - 400,000 VNĐ</option>
-            <option value="400-600">400,000 - 600,000 VNĐ</option>
-            <option value="600+">Trên 600,000 VNĐ</option>
-          </select>
+            {/* Search Loading State */}
+            {!isInitialLoading && searchLoading && posts.length === 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                  <span className="ml-3 text-gray-600">
+                    Đang tìm kiếm gia sư...
+                  </span>
+                </div>
+              </div>
+            )}
 
-          {/* Location */}
-          <select
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50/50"
-          >
-            <option value="">Khu vực</option>
-            <option value="district1">Quận 1</option>
-            <option value="district3">Quận 3</option>
-            <option value="district5">Quận 5</option>
-            <option value="district7">Quận 7</option>
-            <option value="online">Online</option>
-          </select>
-        </div>
+            {/* Error State */}
+            {!isInitialLoading && error && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-xl shadow-sm border border-red-200 p-8 text-center"
+              >
+                <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-8 h-8 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Có lỗi xảy ra
+                </h3>
+                <p className="text-gray-600 mb-6">{error}</p>
+                <button
+                  onClick={handleRetry}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Thử lại
+                </button>
+              </motion.div>
+            )}
 
-        <div className="flex items-center justify-between mt-4">
-          <button className="flex items-center space-x-2 px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 bg-blue-50/50 transition-colors">
-            <FunnelIcon className="w-5 h-5 text-blue-500" />
-            <span className="text-blue-700">Bộ lọc nâng cao</span>
-          </button>
-          <button className="text-blue-600 hover:text-blue-700 font-medium bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors">
-            Xóa bộ lọc
-          </button>
-        </div>
-      </motion.div>
+            {/* Results Grid */}
+            {!isInitialLoading &&
+              !error &&
+              !searchLoading &&
+              posts.length > 0 && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                    {posts.map((post, index) => (
+                      <motion.div
+                        key={post.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <TutorPostCard post={post} />
+                      </motion.div>
+                    ))}
+                  </div>
 
-      {/* Tutor List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {tutors.map((tutor, index) => (
-          <motion.div
-            key={tutor.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 + index * 0.1 }}
-            className="bg-gradient-to-r from-white to-blue-50 rounded-xl p-6 shadow-sm border border-blue-100 hover:shadow-md transition-all duration-200"
-          >
-            <div className="flex items-start space-x-4">
-              <div className="relative">
-                <img
-                  src={tutor.avatar}
-                  alt={tutor.name}
-                  className="w-20 h-20 rounded-full object-cover"
-                />
-                {tutor.verified && (
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  {/* Load More Button */}
+                  {pagination && pagination.hasNext && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="text-center"
+                    >
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleLoadMore}
+                        disabled={searchLoading}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+                      >
+                        {searchLoading ? "Đang tải..." : "Xem thêm gia sư"}
+                      </motion.button>
+                    </motion.div>
+                  )}
+
+                  {/* Pagination Info */}
+                  {pagination && (
+                    <div className="text-center text-sm text-gray-500">
+                      Trang {pagination.currentPage} / {pagination.totalPages}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            {/* Empty State */}
+            {!isInitialLoading &&
+              !error &&
+              !searchLoading &&
+              posts.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center"
+                >
+                  <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-12 h-12 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
                     </svg>
                   </div>
-                )}
-              </div>
-
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{tutor.name}</h3>
-                  <div className="flex items-center space-x-1">
-                    {renderStars(tutor.rating)}
-                    <span className="text-sm text-gray-600 ml-1">
-                      {tutor.rating} ({tutor.reviewCount})
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <span className="flex items-center">
-                      <BookOpenIcon className="w-4 h-4 mr-1" />
-                      {tutor.subjects.join(", ")}
-                    </span>
-                    <span className="flex items-center">
-                      <UserIcon className="w-4 h-4 mr-1" />
-                      {tutor.experience}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <span className="flex items-center">
-                      <CurrencyDollarIcon className="w-4 h-4 mr-1" />
-                      {tutor.price}
-                    </span>
-                    <span className="flex items-center">
-                      {tutor.isOnline ? (
-                        <VideoCameraIcon className="w-4 h-4 mr-1" />
-                      ) : (
-                        <MapPinIcon className="w-4 h-4 mr-1" />
-                      )}
-                      {tutor.isOnline ? "Online" : tutor.location}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center text-sm text-gray-600">
-                    <ClockIcon className="w-4 h-4 mr-1" />
-                    {tutor.responseTime}
-                  </div>
-                </div>
-
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {tutor.description}
-                </p>
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {tutor.achievements.map((achievement, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                    >
-                      {achievement}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Không tìm thấy gia sư nào
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Thử điều chỉnh bộ lọc tìm kiếm hoặc tìm kiếm với từ khóa
+                    khác
+                  </p>
+                  <button
+                    onClick={() =>
+                      handleFiltersChange({
+                        page: 1,
+                        limit: 12,
+                        sortBy: "createdAt",
+                        sortOrder: "desc",
+                      })
+                    }
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                   >
-                    Xem hồ sơ
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <ChatBubbleLeftRightIcon className="w-5 h-5 text-gray-600" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <StarIcon className="w-5 h-5 text-gray-600" />
-                  </motion.button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+                    Xóa bộ lọc
+                  </button>
+                </motion.div>
+              )}
+          </div>
+        </div>
       </div>
-
-      {/* Load More */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="text-center"
-      >
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-8 py-3 rounded-lg font-medium transition-colors"
-        >
-          Xem thêm gia sư
-        </motion.button>
-      </motion.div>
     </div>
   );
 };

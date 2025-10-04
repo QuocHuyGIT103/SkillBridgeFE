@@ -17,6 +17,11 @@ import TutorPersonalProfilePage from "./pages/tutor/TutorPersonalProfilePage";
 import TutorEducationPage from "./pages/tutor/TutorEducationPage";
 import TutorSchedulePage from "./pages/tutor/TutorSchedulePage";
 import TutorChatPage from "./pages/tutor/TutorChatPage";
+import CreateTutorPostPage from "./pages/tutor/CreateTutorPostPage";
+import EditTutorPostPage from "./pages/tutor/EditTutorPostPage";
+import TutorPostListPage from "./pages/tutor/TutorPostListPage";
+import TutorSearchPage from "./pages/TutorSearchPage";
+import TutorPostDetailPage from "./pages/TutorPostDetailPage";
 import StudentDashboardLayout from "./layouts/StudentDashboardLayout";
 import StudentDashboardOverview from "./pages/student/StudentDashboardOverview";
 import StudentSchedulePage from "./pages/student/StudentSchedulePage";
@@ -92,6 +97,8 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/tutors" element={<StudentTutorSearchPage />} />
+            <Route path="/tutors/:postId" element={<TutorPostDetailPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/verify-otp" element={<VerifyOTPPage />} />
@@ -189,6 +196,12 @@ function App() {
                     Academic Affairs - Coming Soon
                   </div>
                 }
+              />
+              <Route path="posts" element={<TutorPostListPage />} />
+              <Route path="posts/create" element={<CreateTutorPostPage />} />
+              <Route
+                path="posts/edit/:postId"
+                element={<EditTutorPostPage />}
               />
               <Route path="chat" element={<TutorChatPage />} />
               <Route path="chat/*" element={<TutorChatPage />} />

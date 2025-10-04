@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   ClipboardDocumentCheckIcon,
@@ -7,7 +7,6 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useVerificationStore } from "../../../store/verification.store";
-import { validateId } from "../../../utils/validation";
 import type {
   VerificationRequest,
   VerificationStatus,
@@ -34,10 +33,11 @@ const VerificationApprovalPage: React.FC = () => {
     status: "",
     tutorId: "",
     search: "",
+    requestType: "", // New filter for request type
   });
-  const [tutorIdError, setTutorIdError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
+  const [sortBy, setSortBy] = useState<"priority" | "date">("priority"); // New sort option
 
   // Load data on mount and when filters change
   useEffect(() => {
@@ -56,6 +56,11 @@ const VerificationApprovalPage: React.FC = () => {
 
   // Handlers
   const handleViewDetails = async (request: VerificationRequest) => {
+    if (!request.id) {
+      console.error("Request ID is missing:", request);
+      return;
+    }
+
     try {
       // Fetch chi tiết từ API
       await fetchVerificationRequestDetail(request.id);
@@ -73,7 +78,10 @@ const VerificationApprovalPage: React.FC = () => {
     }>,
     adminNote?: string
   ) => {
-    if (!currentRequest) return;
+    if (!currentRequest || !currentRequest.id) {
+      console.error("No current request or request ID is missing");
+      return;
+    }
 
     try {
       await processVerificationRequest(currentRequest.id, {
@@ -96,21 +104,10 @@ const VerificationApprovalPage: React.FC = () => {
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     setCurrentPage(1); // Reset to first page when filtering
-
-    // Validate tutorId if it's being changed
-    if (key === "tutorId") {
-      if (value.trim() === "") {
-        setTutorIdError("");
-      } else {
-        const errors = validateId(value, "ID Gia sư");
-        setTutorIdError(errors.length > 0 ? errors[0].message : "");
-      }
-    }
   };
 
   const clearFilters = () => {
-    setFilters({ status: "", tutorId: "", search: "" });
-    setTutorIdError("");
+    setFilters({ status: "", tutorId: "", search: "", requestType: "" });
     setCurrentPage(1);
   };
 
@@ -118,16 +115,86 @@ const VerificationApprovalPage: React.FC = () => {
     setCurrentPage(page);
   };
 
-  // Filter requests based on search
-  const filteredRequests = adminRequests.filter((request) => {
-    if (!filters.search) return true;
-    const searchLower = filters.search.toLowerCase();
+  // Helper function to check if request contains TUTOR_PROFILE
+  const hasTutorProfile = (request: VerificationRequest): boolean => {
     return (
-      request.tutor?.fullName?.toLowerCase().includes(searchLower) ||
-      request.tutor?.email?.toLowerCase().includes(searchLower) ||
-      request.id.toLowerCase().includes(searchLower)
+      request.details?.some(
+        (detail) => detail.targetType === "TUTOR_PROFILE"
+      ) || false
     );
-  });
+  };
+
+  // Filter and sort requests
+  const filteredAndSortedRequests = useMemo(() => {
+    let filtered = adminRequests.filter((request) => {
+      // Search filter
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesSearch =
+          request.tutorId?.fullName?.toLowerCase().includes(searchLower) ||
+          request.tutorId?.email?.toLowerCase().includes(searchLower) ||
+          request.id.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+
+      // Request type filter
+      if (filters.requestType) {
+        if (
+          filters.requestType === "TUTOR_PROFILE" &&
+          !hasTutorProfile(request)
+        ) {
+          return false;
+        }
+        if (
+          filters.requestType === "QUALIFICATIONS" &&
+          hasTutorProfile(request)
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Sort requests
+    if (sortBy === "priority") {
+      filtered.sort((a, b) => {
+        const aHasTutorProfile = hasTutorProfile(a);
+        const bHasTutorProfile = hasTutorProfile(b);
+
+        // TUTOR_PROFILE requests first
+        if (aHasTutorProfile && !bHasTutorProfile) return -1;
+        if (!aHasTutorProfile && bHasTutorProfile) return 1;
+
+        // Then by submission date (newest first)
+        return (
+          new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+        );
+      });
+    } else {
+      // Sort by date only
+      filtered.sort(
+        (a, b) =>
+          new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+      );
+    }
+
+    return filtered;
+  }, [adminRequests, filters.search, filters.requestType, sortBy]);
+
+  // Statistics
+  const stats = useMemo(() => {
+    const total = adminRequests.length;
+    const pending = adminRequests.filter(
+      (req) => req.status === "PENDING"
+    ).length;
+    const tutorProfilePending = adminRequests.filter(
+      (req) => req.status === "PENDING" && hasTutorProfile(req)
+    ).length;
+    const qualificationsPending = pending - tutorProfilePending;
+
+    return { total, pending, tutorProfilePending, qualificationsPending };
+  }, [adminRequests]);
 
   return (
     <div className="space-y-6">
@@ -141,16 +208,32 @@ const VerificationApprovalPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center">
               <ClipboardDocumentCheckIcon className="w-8 h-8 mr-3 text-orange-600" />
-              Duyệt xác thực bằng cấp
+              Duyệt xác thực thông tin gia sư
             </h1>
             <p className="text-gray-600 mt-1">
-              Xem xét và phê duyệt các yêu cầu xác thực thông tin gia sư
+              Xem xét và phê duyệt các yêu cầu xác thực thông tin cá nhân và
+              bằng cấp gia sư
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-600">Tổng yêu cầu chờ duyệt</p>
-            <p className="text-2xl font-bold text-orange-600">
-              {adminRequests.filter((req) => req.status === "PENDING").length}
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                <p className="text-xs text-purple-600 font-medium">
+                  Thông tin gia sư
+                </p>
+                <p className="text-lg font-bold text-purple-600">
+                  {stats.tutorProfilePending}
+                </p>
+              </div>
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p className="text-xs text-blue-600 font-medium">Bằng cấp</p>
+                <p className="text-lg font-bold text-blue-600">
+                  {stats.qualificationsPending}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              Tổng: {stats.pending} yêu cầu chờ duyệt
             </p>
           </div>
         </div>
@@ -177,7 +260,7 @@ const VerificationApprovalPage: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -193,6 +276,24 @@ const VerificationApprovalPage: React.FC = () => {
                 placeholder="Tên gia sư, email, ID..."
               />
             </div>
+          </div>
+
+          {/* Request Type Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Loại yêu cầu
+            </label>
+            <select
+              value={filters.requestType}
+              onChange={(e) =>
+                handleFilterChange("requestType", e.target.value)
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Tất cả</option>
+              <option value="TUTOR_PROFILE">Thông tin gia sư</option>
+              <option value="QUALIFICATIONS">Bằng cấp</option>
+            </select>
           </div>
 
           {/* Status Filter */}
@@ -213,29 +314,25 @@ const VerificationApprovalPage: React.FC = () => {
             </select>
           </div>
 
-          {/* Tutor ID Filter */}
+          {/* Sort By */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              ID Gia sư
+              Sắp xếp
             </label>
-            <input
-              type="text"
-              value={filters.tutorId}
-              onChange={(e) => handleFilterChange("tutorId", e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                tutorIdError ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="Nhập ID gia sư (UUID v4)..."
-            />
-            {tutorIdError && (
-              <p className="text-red-500 text-xs mt-1">{tutorIdError}</p>
-            )}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "priority" | "date")}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="priority">Ưu tiên</option>
+              <option value="date">Ngày gửi</option>
+            </select>
           </div>
 
           {/* Results count */}
           <div className="flex items-end">
             <div className="text-sm text-gray-600">
-              Hiển thị {filteredRequests.length} kết quả
+              Hiển thị {filteredAndSortedRequests.length} kết quả
             </div>
           </div>
         </div>
@@ -253,9 +350,9 @@ const VerificationApprovalPage: React.FC = () => {
             <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-gray-500">Đang tải dữ liệu...</p>
           </div>
-        ) : filteredRequests.length > 0 ? (
+        ) : filteredAndSortedRequests.length > 0 ? (
           <div className="divide-y divide-gray-200">
-            {filteredRequests.map((request) => (
+            {filteredAndSortedRequests.map((request) => (
               <VerificationRequestCard
                 key={request.id}
                 request={request}

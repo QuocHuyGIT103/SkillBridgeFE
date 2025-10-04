@@ -2,7 +2,14 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import toast from "react-hot-toast";
 import QualificationService from "../services/qualification.service";
-import { canDeleteCertificate } from "../utils/qualification.utils";
+import {
+  canDeleteCertificate,
+  getRejectedItems,
+  getModifiedAfterRejectionItems,
+  hasItemsNeedingReVerification,
+  getReVerificationCount,
+  getReVerificationSuggestionMessage,
+} from "../utils/qualification.utils";
 import type {
   QualificationsData,
   QualificationInfo,
@@ -52,6 +59,21 @@ interface QualificationState {
   getQualificationSuggestion: () => string | null;
   canSubmitVerification: () => boolean;
   getPendingCount: () => number;
+
+  // New utility actions for MODIFIED_AFTER_REJECTION
+  getRejectedItems: () => {
+    education?: any;
+    certificates: any[];
+    achievements: any[];
+  };
+  getModifiedAfterRejectionItems: () => {
+    education?: any;
+    certificates: any[];
+    achievements: any[];
+  };
+  hasItemsNeedingReVerification: () => boolean;
+  getReVerificationCount: () => number;
+  getReVerificationSuggestionMessage: () => string | null;
 }
 
 export const useQualificationStore = create<QualificationState>()(
@@ -529,6 +551,32 @@ export const useQualificationStore = create<QualificationState>()(
       getPendingCount: () => {
         const state = get();
         return state.qualificationInfo?.pendingVerificationCount || 0;
+      },
+
+      // ==================== NEW UTILITY FUNCTIONS ====================
+      getRejectedItems: () => {
+        const state = get();
+        return getRejectedItems(state.qualifications);
+      },
+
+      getModifiedAfterRejectionItems: () => {
+        const state = get();
+        return getModifiedAfterRejectionItems(state.qualifications);
+      },
+
+      hasItemsNeedingReVerification: () => {
+        const state = get();
+        return hasItemsNeedingReVerification(state.qualifications);
+      },
+
+      getReVerificationCount: () => {
+        const state = get();
+        return getReVerificationCount(state.qualifications);
+      },
+
+      getReVerificationSuggestionMessage: () => {
+        const state = get();
+        return getReVerificationSuggestionMessage(state.qualifications);
       },
     }),
     {

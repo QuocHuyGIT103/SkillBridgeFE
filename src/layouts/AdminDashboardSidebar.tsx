@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   HomeIcon,
   UserGroupIcon,
-  ClipboardDocumentCheckIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
   CogIcon,
@@ -13,7 +12,6 @@ import {
   CalendarDaysIcon,
   DocumentTextIcon,
   BellIcon,
-  AcademicCapIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   ArrowLeftOnRectangleIcon,
@@ -23,7 +21,6 @@ import {
 import {
   HomeIcon as HomeSolidIcon,
   UserGroupIcon as UserGroupSolidIcon,
-  ClipboardDocumentCheckIcon as ClipboardSolidIcon,
   CurrencyDollarIcon as CurrencySolidIcon,
   ChartBarIcon as ChartSolidIcon,
   CogIcon as CogSolidIcon,

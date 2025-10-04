@@ -12,7 +12,6 @@ import {
   CommandLineIcon,
   SunIcon,
   MoonIcon,
-  ComputerDesktopIcon,
 } from "@heroicons/react/24/outline";
 import { BellIcon as BellSolidIcon } from "@heroicons/react/24/solid";
 import { useAuthStore } from "../store/auth.store";
@@ -26,7 +25,6 @@ interface DashboardHeaderProps {
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onToggleMobileSidebar,
-  sidebarCollapsed,
 }) => {
   const location = useLocation();
   const { user, logout } = useAuthStore();

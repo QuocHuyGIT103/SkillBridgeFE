@@ -20,6 +20,8 @@ import CertificateForm from "../../components/qualification/CertificateForm";
 import AchievementForm from "../../components/qualification/AchievementForm";
 import VerificationRequestModal from "../../components/qualification/VerificationRequestModal";
 import WarningModal from "../../components/common/WarningModal";
+import ReVerificationNotification from "../../components/common/ReVerificationNotification";
+import InfoTooltip from "../../components/common/InfoTooltip";
 import QualificationStatusCard from "../../components/qualification/QualificationStatusCard";
 import OverviewTab from "../../components/qualification/OverviewTab";
 import EducationTab from "../../components/qualification/EducationTab";
@@ -53,6 +55,10 @@ const TutorEducationPage: React.FC = () => {
     deleteCertificate,
     deleteAchievement,
     canSubmitVerification,
+    getRejectedItems,
+    hasItemsNeedingReVerification,
+    getReVerificationCount,
+    getReVerificationSuggestionMessage,
   } = useQualificationStore();
 
   const { createVerificationRequest, isCreatingRequest, tutorRequests } =
@@ -67,6 +73,13 @@ const TutorEducationPage: React.FC = () => {
   const [showAchievementForm, setShowAchievementForm] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [showReVerificationSuggestion, setShowReVerificationSuggestion] =
+    useState(false);
+  const [notification, setNotification] = useState<{
+    type: "success" | "info";
+    title: string;
+    message: string;
+  } | null>(null);
 
   // Warning modal state
   const [warningModal, setWarningModal] = useState<{
@@ -92,10 +105,31 @@ const TutorEducationPage: React.FC = () => {
     console.log("Qualifications state changed:", qualifications);
   }, [qualifications]);
 
+  // Check if there are rejected items that need re-verification
+  const rejectedItems = getRejectedItems();
+  const hasReVerificationItems = hasItemsNeedingReVerification();
+  const reVerificationCount = getReVerificationCount();
+  const suggestionMessage = getReVerificationSuggestionMessage();
+
+  // Show suggestion when there are rejected items
+  useEffect(() => {
+    if (
+      rejectedItems.education ||
+      rejectedItems.certificates.length > 0 ||
+      rejectedItems.achievements.length > 0
+    ) {
+      setShowReVerificationSuggestion(true);
+    } else {
+      setShowReVerificationSuggestion(false);
+    }
+  }, [rejectedItems]);
+
   // Handlers
   const handleCreateEducation = async (data: CreateEducationRequest) => {
     try {
       console.log("Creating education with data:", data);
+      const wasRejected = editingItem?.status === "REJECTED";
+
       if (editingItem) {
         await updateEducation(data);
       } else {
@@ -105,7 +139,19 @@ const TutorEducationPage: React.FC = () => {
       setShowEducationForm(false);
       setEditingItem(null);
 
-      // Force refresh the qualifications data
+      // Show notification if rejected item was updated
+      if (wasRejected) {
+        setNotification({
+          type: "success",
+          title: "Cập nhật thành công",
+          message:
+            "Thông tin học vấn đã được cập nhật. Bạn có thể gửi lại yêu cầu xác thực.",
+        });
+        // Auto-hide notification after 5 seconds
+        setTimeout(() => setNotification(null), 5000);
+      }
+
+      // Force refresh to get updated status
       setTimeout(() => {
         fetchQualifications();
       }, 500);
@@ -116,6 +162,8 @@ const TutorEducationPage: React.FC = () => {
 
   const handleCreateCertificate = async (data: CreateCertificateRequest) => {
     try {
+      const wasRejected = editingItem?.status === "REJECTED";
+
       if (editingItem) {
         await updateCertificate(editingItem.id, data);
       } else {
@@ -123,6 +171,23 @@ const TutorEducationPage: React.FC = () => {
       }
       setShowCertificateForm(false);
       setEditingItem(null);
+
+      // Show notification if rejected item was updated
+      if (wasRejected) {
+        setNotification({
+          type: "success",
+          title: "Cập nhật thành công",
+          message:
+            "Chứng chỉ đã được cập nhật. Bạn có thể gửi lại yêu cầu xác thực.",
+        });
+        // Auto-hide notification after 5 seconds
+        setTimeout(() => setNotification(null), 5000);
+      }
+
+      // Force refresh to get updated status
+      setTimeout(() => {
+        fetchQualifications();
+      }, 500);
     } catch (error) {
       console.error("Error creating/updating certificate:", error);
     }
@@ -130,6 +195,8 @@ const TutorEducationPage: React.FC = () => {
 
   const handleCreateAchievement = async (data: CreateAchievementRequest) => {
     try {
+      const wasRejected = editingItem?.status === "REJECTED";
+
       if (editingItem) {
         await updateAchievement(editingItem.id, data);
       } else {
@@ -137,6 +204,23 @@ const TutorEducationPage: React.FC = () => {
       }
       setShowAchievementForm(false);
       setEditingItem(null);
+
+      // Show notification if rejected item was updated
+      if (wasRejected) {
+        setNotification({
+          type: "success",
+          title: "Cập nhật thành công",
+          message:
+            "Thành tích đã được cập nhật. Bạn có thể gửi lại yêu cầu xác thực.",
+        });
+        // Auto-hide notification after 5 seconds
+        setTimeout(() => setNotification(null), 5000);
+      }
+
+      // Force refresh to get updated status
+      setTimeout(() => {
+        fetchQualifications();
+      }, 500);
     } catch (error) {
       console.error("Error creating/updating achievement:", error);
     }
@@ -249,16 +333,44 @@ const TutorEducationPage: React.FC = () => {
               Quản lý thông tin học vấn, chứng chỉ và thành tích của bạn
             </p>
           </div>
-          {canSubmitVerification() && (
-            <button
-              onClick={() => setShowVerificationModal(true)}
-              disabled={isCreatingRequest}
-              className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              <PaperAirplaneIcon className="w-5 h-5" />
-              <span>Gửi yêu cầu xác thực</span>
-            </button>
-          )}
+          <div className="flex items-center space-x-3">
+            {/* Re-verification suggestion */}
+            {showReVerificationSuggestion && (
+              <div className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+                <p className="font-medium">💡 Gợi ý</p>
+                <p>{suggestionMessage}</p>
+              </div>
+            )}
+
+            {/* Verification buttons */}
+            {hasReVerificationItems && (
+              <InfoTooltip content="Bạn có thông tin bị từ chối hoặc đã được sửa đổi. Gửi lại yêu cầu xác thực để admin xem xét lại.">
+                <button
+                  onClick={() => setShowVerificationModal(true)}
+                  disabled={isCreatingRequest}
+                  className="flex items-center space-x-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                >
+                  <PaperAirplaneIcon className="w-5 h-5" />
+                  <span>
+                    {reVerificationCount > 1
+                      ? `Gửi lại ${reVerificationCount} yêu cầu xác thực`
+                      : "Gửi lại yêu cầu xác thực"}
+                  </span>
+                </button>
+              </InfoTooltip>
+            )}
+
+            {canSubmitVerification() && !hasReVerificationItems && (
+              <button
+                onClick={() => setShowVerificationModal(true)}
+                disabled={isCreatingRequest}
+                className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                <PaperAirplaneIcon className="w-5 h-5" />
+                <span>Gửi yêu cầu xác thực</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -428,6 +540,16 @@ const TutorEducationPage: React.FC = () => {
         message={warningModal.message}
         type={warningModal.type}
       />
+
+      {/* Notification */}
+      {notification && (
+        <ReVerificationNotification
+          type={notification.type}
+          title={notification.title}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 };

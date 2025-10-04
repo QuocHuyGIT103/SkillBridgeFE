@@ -6,12 +6,14 @@ import {
   AcademicCapIcon,
   DocumentTextIcon,
   TrophyIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 import type {
   VerificationRequest,
   VerificationStatus,
 } from "../../../types/qualification.types";
 import DataDisplay from "./DataDisplay";
+import TutorProfileVerificationDetail from "./TutorProfileVerificationDetail";
 
 interface VerificationDetailModalProps {
   isOpen: boolean;
@@ -47,8 +49,10 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
   React.useEffect(() => {
     if (request && isOpen) {
       // Initialize decisions for all pending details
+      // The response structure is { request: { id: "...", ... }, details: [...] }
+      const details = request.details || [];
       const initialDecisions =
-        request.details
+        details
           ?.filter((detail) => detail.status === "PENDING")
           .map((detail) => ({
             detailId: detail.id,
@@ -102,6 +106,8 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
         return <DocumentTextIcon className="w-5 h-5 text-green-600" />;
       case "ACHIEVEMENT":
         return <TrophyIcon className="w-5 h-5 text-yellow-600" />;
+      case "TUTOR_PROFILE":
+        return <UserIcon className="w-5 h-5 text-purple-600" />;
       default:
         return <DocumentTextIcon className="w-5 h-5 text-gray-600" />;
     }
@@ -115,6 +121,8 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
         return "Chứng chỉ";
       case "ACHIEVEMENT":
         return "Thành tích";
+      case "TUTOR_PROFILE":
+        return "Thông tin gia sư";
       default:
         return type;
     }
@@ -170,7 +178,8 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
               Chi tiết yêu cầu xác thực
             </h3>
             <p className="text-sm text-gray-600">
-              Gia sư: {request.tutor?.fullName} ({request.tutor?.email})
+              Gia sư: {request.request?.tutorId?.fullName} (
+              {request.request?.tutorId?.email})
             </p>
           </div>
           <button
@@ -191,26 +200,27 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">ID yêu cầu:</span> {request.id}
+                  <span className="font-medium">ID yêu cầu:</span>{" "}
+                  {request.request?.id}
                 </div>
                 <div>
                   <span className="font-medium">Trạng thái:</span>{" "}
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                      request.status
+                      request.request?.status
                     )}`}
                   >
-                    {request.status}
+                    {request.request?.status}
                   </span>
                 </div>
                 <div>
                   <span className="font-medium">Nộp lúc:</span>{" "}
-                  {formatDate(request.submittedAt)}
+                  {formatDate(request.request?.submittedAt)}
                 </div>
-                {request.reviewedAt && (
+                {request.request?.reviewedAt && (
                   <div>
                     <span className="font-medium">Xử lý lúc:</span>{" "}
-                    {formatDate(request.reviewedAt)}
+                    {formatDate(request.request?.reviewedAt)}
                   </div>
                 )}
               </div>
@@ -252,7 +262,15 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
                     </div>
 
                     {/* Data Display */}
-                    {detail.requestType === "NEW" ? (
+                    {detail.targetType === "TUTOR_PROFILE" ? (
+                      // Special handling for TUTOR_PROFILE
+                      <div className="mb-4">
+                        <TutorProfileVerificationDetail
+                          detail={detail}
+                          requestType={detail.requestType}
+                        />
+                      </div>
+                    ) : detail.requestType === "NEW" ? (
                       // For NEW requests, only show the submitted data
                       <div className="mb-4">
                         <DataDisplay
