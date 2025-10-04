@@ -14,7 +14,10 @@ export interface IPostInput {
   };
   availability?: string;
   requirements?: string;
-  expiry_date?: string; 
+  expiry_date?: string;
+  // Thêm các trường mới cho lịch học
+  selectedDays?: string[];
+  selectedTimes?: string[];
 }
 
 // Dữ liệu đầy đủ của một bài đăng từ API

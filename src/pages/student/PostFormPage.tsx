@@ -5,7 +5,8 @@ import Select from 'react-select';
 import usePostStore from '../../store/post.store';
 import type { IPostInput, IPost } from '../../types';
 import { toast } from 'react-hot-toast';
-import { subjectOptions, gradeLevelOptions } from '../../constants/formOptions';
+import { subjectOptions, gradeLevelOptions, availabilityOptions, timeOfDayOptions } from '../../constants/formOptions';
+import RangeSlider from '../../components/RangeSlider';
 
 const PostFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +21,8 @@ const PostFormPage: React.FC = () => {
     control,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<IPostInput>({
     defaultValues: {
       title: '',
@@ -43,8 +46,32 @@ const PostFormPage: React.FC = () => {
   }, [id, isEditMode, getPostById]);
 
   // Cập nhật form khi selectedPost thay đổi (chế độ chỉnh sửa)
+  // Cập nhật useEffect để phân tích availability khi load dữ liệu từ backend
   useEffect(() => {
     if (isEditMode && selectedPost) {
+      // Phân tích chuỗi availability để lấy ngày và thời gian
+      let selectedDaysArray: string[] = [];
+      let selectedTimesArray: string[] = [];
+      
+      const availability = (selectedPost as any).availability || '';
+      
+      if (availability) {
+        // Kiểm tra nếu có định dạng "ngày (thời gian)"
+        const match = availability.match(/^(.*?)\s*\((.*?)\)$/);
+        
+        if (match) {
+          // Trường hợp có cả ngày và thời gian
+          selectedDaysArray = match[1].split(', ').map((day: string) => day.trim());
+          selectedTimesArray = match[2].split(', ').map((time: string) => time.trim());
+        } else if (availability.includes('Các buổi')) {
+          // Trường hợp chỉ có thời gian  
+          selectedTimesArray = availability.replace('Các buổi ', '').split(', ').map((time: string) => time.trim());
+        } else {
+          // Trường hợp chỉ có ngày
+          selectedDaysArray = availability.split(', ').map((day: string) => day.trim());
+        }
+      }
+
       reset({
         title: selectedPost.title,
         content: selectedPost.content,
@@ -58,6 +85,8 @@ const PostFormPage: React.FC = () => {
         expiry_date: (selectedPost as any).expiry_date
           ? new Date((selectedPost as any).expiry_date).toISOString().split('T')[0]
           : '',
+        selectedDays: selectedDaysArray,
+        selectedTimes: selectedTimesArray,
       });
     }
   }, [selectedPost, isEditMode, reset]);
@@ -91,6 +120,25 @@ const PostFormPage: React.FC = () => {
       toast.error('Lỗi khi xử lý bài đăng.');
     }
   };
+
+  // Theo dõi giá trị của các trường lịch học
+  const selectedDays = watch('selectedDays') || [];
+  const selectedTimes = watch('selectedTimes') || [];
+
+  // Cập nhật trường availability khi selectedDays hoặc selectedTimes thay đổi
+  useEffect(() => {
+    if (selectedDays.length > 0 && selectedTimes.length > 0) {
+      const daysText = selectedDays.join(', ');
+      const timesText = selectedTimes.join(', ');
+      setValue('availability', `${daysText} (${timesText})`);
+    } else if (selectedDays.length > 0) {
+      setValue('availability', selectedDays.join(', '));
+    } else if (selectedTimes.length > 0) {
+      setValue('availability', `Các buổi ${selectedTimes.join(', ')}`);
+    } else {
+      setValue('availability', '');
+    }
+  }, [selectedDays, selectedTimes, setValue]);
 
   return (
     <div className="p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md">
@@ -185,7 +233,7 @@ const PostFormPage: React.FC = () => {
           {errors.grade_levels && <p className="text-red-600 text-sm mt-1">{errors.grade_levels.message}</p>}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           <div>
             <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
               Địa điểm
@@ -199,44 +247,78 @@ const PostFormPage: React.FC = () => {
             />
             {errors.location && <p className="text-red-600 text-sm mt-1">{errors.location.message}</p>}
           </div>
-          <div>
-            <label htmlFor="availability" className="block text-sm font-medium text-gray-700 mb-1">
-              Lịch học dự kiến
-            </label>
-            <input
-              id="availability"
-              type="text"
-              {...register('availability', { maxLength: { value: 500, message: 'Lịch học không được vượt quá 500 ký tự' } })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              placeholder="VD: Tối thứ 2, 4, 6"
+        </div>
+          
+        {/* Trường availability ẩn để lưu giá trị kết hợp */}
+        <input type="hidden" {...register('availability')} />
+        
+        {/* Thay thế input text bằng 2 Select cho ngày và thời gian */}
+        <div className="relative z-40">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Lịch học dự kiến
+          </label>
+          <div className="space-y-3">
+            <Controller
+              name="selectedDays"
+              control={control}
+              defaultValue={[]}
+              render={({ field }) => (
+                <Select
+                  isMulti
+                  options={availabilityOptions}
+                  placeholder="Chọn ngày học..."
+                  value={availabilityOptions.filter((option) => field.value?.includes(option.value))}
+                  onChange={(selected) => field.onChange(selected.map((option) => option.value))}
+                  className="basic-multi-select"
+                  classNamePrefix="select"
+                />
+              )}
             />
-            {errors.availability && <p className="text-red-600 text-sm mt-1">{errors.availability.message}</p>}
+            
+            <Controller
+              name="selectedTimes"
+              control={control}
+              defaultValue={[]}
+              render={({ field }) => (
+                <Select
+                  isMulti
+                  options={timeOfDayOptions}
+                  placeholder="Chọn thời gian trong ngày..."
+                  value={timeOfDayOptions.filter((option) => field.value?.includes(option.value))}
+                  onChange={(selected) => field.onChange(selected.map((option) => option.value))}
+                  className="basic-multi-select"
+                  classNamePrefix="select"
+                />
+              )}
+            />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 mt-8 relative z-30">
           <div>
-            <label htmlFor="hourly_rate.min" className="block text-sm font-medium text-gray-700 mb-1">
-              Lương tối thiểu (VNĐ/giờ)
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Học phí/buổi
             </label>
-            <input
-              id="hourly_rate.min"
-              type="number"
-              {...register('hourly_rate.min', { valueAsNumber: true, min: { value: 0, message: 'Lương tối thiểu không được âm' } })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            <div className="mb-2 flex justify-between">
+              <span>{watch('hourly_rate.min')?.toLocaleString() || '20,000'}đ</span>
+              <span>-</span>
+              <span>{watch('hourly_rate.max')?.toLocaleString() || '100,000'}đ</span>
+            </div>
+            
+            <RangeSlider
+              min={20000}
+              max={500000}
+              step={10000}
+              minValue={watch('hourly_rate.min') || 20000}
+              maxValue={watch('hourly_rate.max') || 100000}
+              onChange={(min, max) => {
+                setValue('hourly_rate.min', min);
+                setValue('hourly_rate.max', max);
+              }}
             />
+            
+            {/* Hiển thị lỗi nếu có */}
             {errors.hourly_rate?.min && <p className="text-red-600 text-sm mt-1">{errors.hourly_rate.min.message}</p>}
-          </div>
-          <div>
-            <label htmlFor="hourly_rate.max" className="block text-sm font-medium text-gray-700 mb-1">
-              Lương tối đa (VNĐ/giờ)
-            </label>
-            <input
-              id="hourly_rate.max"
-              type="number"
-              {...register('hourly_rate.max', { valueAsNumber: true, min: { value: 0, message: 'Lương tối đa không được âm' } })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            />
             {errors.hourly_rate?.max && <p className="text-red-600 text-sm mt-1">{errors.hourly_rate.max.message}</p>}
           </div>
         </div>

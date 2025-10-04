@@ -27,3 +27,21 @@ export const gradeLevelOptions = [
   { value: 'Luyện thi đại học', label: 'Luyện thi đại học' },
   { value: 'Tiếng Anh giao tiếp', label: 'Tiếng Anh giao tiếp' },
 ];
+
+// Thêm options cho lịch học
+export const availabilityOptions = [
+  { value: 'Thứ 2', label: 'Thứ 2' },
+  { value: 'Thứ 3', label: 'Thứ 3' },
+  { value: 'Thứ 4', label: 'Thứ 4' },
+  { value: 'Thứ 5', label: 'Thứ 5' },
+  { value: 'Thứ 6', label: 'Thứ 6' },
+  { value: 'Thứ 7', label: 'Thứ 7' },
+  { value: 'Chủ nhật', label: 'Chủ nhật' },
+];
+
+// Thêm options cho thời gian trong ngày
+export const timeOfDayOptions = [
+  { value: 'Sáng', label: 'Sáng' },
+  { value: 'Chiều', label: 'Chiều' },
+  { value: 'Tối', label: 'Tối' },
+];
