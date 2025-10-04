@@ -17,10 +17,13 @@ const TutorPostDetail: React.FC = () => {
   const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
-    if (postId) {
+    if (postId && postId !== "undefined") {
       getTutorPostById(postId);
+    } else {
+      // Redirect to tutors list if no valid postId
+      navigate("/tutors");
     }
-  }, [postId, getTutorPostById]);
+  }, [postId, getTutorPostById, navigate]);
 
   if (isLoading) {
     return (
@@ -91,7 +94,7 @@ const TutorPostDetail: React.FC = () => {
     }
 
     try {
-      await incrementContactCount(currentPost._id);
+      await incrementContactCount(currentPost.id);
       setShowContactModal(true);
     } catch (error) {
       toast.error("Có lỗi xảy ra, vui lòng thử lại");
@@ -108,7 +111,9 @@ const TutorPostDetail: React.FC = () => {
             <label className="text-sm font-medium text-gray-700">
               Tên gia sư:
             </label>
-            <p className="text-gray-900">{currentPost.tutorId.name}</p>
+            <p className="text-gray-900">
+              {currentPost.tutorId.full_name || "Gia sư"}
+            </p>
           </div>
 
           <div>
@@ -187,7 +192,7 @@ const TutorPostDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
@@ -209,18 +214,18 @@ const TutorPostDetail: React.FC = () => {
           Quay lại
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="xl:col-span-4 space-y-8">
             {/* Header */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <h1 className="text-2xl font-bold text-gray-900 flex-1 mr-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <div className="flex items-start justify-between mb-6">
+                <h1 className="text-3xl font-bold text-gray-900 flex-1 mr-6 leading-tight">
                   {currentPost.title}
                 </h1>
                 <span
                   className={`
-                  px-3 py-1 rounded-full text-sm font-medium
+                  px-4 py-2 rounded-full text-sm font-semibold
                   ${
                     currentPost.status === "ACTIVE"
                       ? "bg-green-100 text-green-800"
@@ -238,30 +243,11 @@ const TutorPostDetail: React.FC = () => {
                 </span>
               </div>
 
-              {/* Tutor Info */}
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600 font-medium">
-                    {currentPost.tutorId.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="ml-4">
-                  <h3 className="font-semibold text-gray-900">
-                    {currentPost.tutorId.name}
-                  </h3>
-                  {currentPost.tutorId.gender && (
-                    <p className="text-sm text-gray-500">
-                      {currentPost.tutorId.gender === "male" ? "Nam" : "Nữ"}
-                    </p>
-                  )}
-                </div>
-              </div>
-
               {/* Stats */}
-              <div className="flex items-center space-x-6 text-sm text-gray-600">
+              <div className="flex items-center space-x-8 text-base text-gray-600">
                 <div className="flex items-center">
                   <svg
-                    className="w-4 h-4 mr-1"
+                    className="w-5 h-5 mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -279,11 +265,13 @@ const TutorPostDetail: React.FC = () => {
                       d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                     />
                   </svg>
-                  {currentPost.viewCount} lượt xem
+                  <span className="font-medium">
+                    {currentPost.viewCount} lượt xem
+                  </span>
                 </div>
                 <div className="flex items-center">
                   <svg
-                    className="w-4 h-4 mr-1"
+                    className="w-5 h-5 mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -295,175 +283,256 @@ const TutorPostDetail: React.FC = () => {
                       d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                     />
                   </svg>
-                  {currentPost.contactCount} liên hệ
+                  <span className="font-medium">
+                    {currentPost.contactCount} liên hệ
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Description */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Mô tả
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Mô tả bài học
               </h2>
               <div className="prose prose-gray max-w-none">
-                <p className="whitespace-pre-line text-gray-700">
+                <p className="whitespace-pre-line text-gray-700 text-lg leading-relaxed">
                   {currentPost.description}
                 </p>
               </div>
             </div>
 
-            {/* Experience */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Kinh nghiệm
+            {/* Tutor Detailed Information */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-8">
+                Thông tin gia sư
               </h2>
-              <div className="prose prose-gray max-w-none">
-                <p className="whitespace-pre-line text-gray-700">
-                  {currentPost.experience}
-                </p>
-              </div>
-            </div>
 
-            {/* Video Introduction */}
-            {currentPost.videoIntroUrl && (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Video giới thiệu
-                </h2>
-                <div className="aspect-w-16 aspect-h-9">
-                  <iframe
-                    src={currentPost.videoIntroUrl}
-                    title="Video giới thiệu"
-                    className="w-full h-64 rounded-lg"
-                    allowFullScreen
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Achievements & Certifications - Only show when logged in */}
-            {isAuthenticated && (
-              <>
-                {/* Achievements Section */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Thành tích
-                    </h2>
-                    {!isAuthenticated && (
-                      <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                        Đăng nhập để xem chi tiết
-                      </div>
-                    )}
-                  </div>
-
-                  {isAuthenticated ? (
-                    <div className="space-y-4">
-                      {/* Mock achievements - Replace with real data */}
-                      <div className="border border-gray-100 rounded-lg p-4">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-16 h-16 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <svg
-                              className="w-8 h-8 text-yellow-600"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-medium text-gray-900">
-                                Giải nhất Olympic Toán học
-                              </h3>
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                Quốc gia
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 mt-1">
-                              Đại học Bách Khoa Hà Nội • 2023
-                            </p>
-                            <p className="text-sm text-gray-500 mt-2">
-                              Giải nhất cuộc thi Olympic Toán học cấp quốc gia
-                              dành cho sinh viên
-                            </p>
-
-                            {/* Image only visible to post owner and admin */}
-                            {(user?.id === currentPost.tutorId._id ||
-                              user?.role === "ADMIN") && (
-                              <div className="mt-3">
-                                <img
-                                  src="/placeholder-certificate.jpg"
-                                  alt="Chứng nhận thành tích"
-                                  className="w-32 h-24 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80"
-                                  onClick={() => {
-                                    /* Open full image modal */
-                                  }}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Chỉ bạn và quản trị viên có thể xem hình ảnh
-                                  này
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-center py-4">
-                        <p className="text-sm text-gray-500">
-                          {user?.id === currentPost.tutorId._id
-                            ? "Bạn có thể thêm thành tích khác trong phần quản lý hồ sơ"
-                            : "Gia sư này có 1 thành tích đã được xác thực"}
-                        </p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left Column - Basic Info */}
+                <div className="space-y-4">
+                  {/* Avatar and Basic Info */}
+                  <div className="flex items-center space-x-6">
+                    <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center shadow-sm">
+                      {currentPost.tutorId.avatar_url ? (
+                        <img
+                          src={currentPost.tutorId.avatar_url}
+                          alt="Avatar"
+                          className="w-20 h-20 rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-gray-600 font-medium text-2xl">
+                          {(
+                            currentPost.tutorId.full_name ||
+                            currentPost.tutorId._id ||
+                            "U"
+                          )
+                            .charAt(0)
+                            .toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                        {currentPost.tutorId.full_name || "Gia sư"}
+                      </h3>
+                      <div className="space-y-1">
+                        {currentPost.tutorId.gender && (
+                          <p className="text-base text-gray-600">
+                            <span className="font-medium">Giới tính:</span>{" "}
+                            {currentPost.tutorId.gender === "male"
+                              ? "Nam"
+                              : "Nữ"}
+                          </p>
+                        )}
+                        {currentPost.tutorId.structured_address
+                          ?.province_name && (
+                          <p className="text-base text-gray-600">
+                            <span className="font-medium">Đến từ:</span>{" "}
+                            {
+                              currentPost.tutorId.structured_address
+                                .province_name
+                            }
+                          </p>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <div className="text-center py-8 bg-gray-50 rounded-lg">
-                      <svg
-                        className="mx-auto h-12 w-12 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">
-                        Thông tin bảo mật
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Đăng nhập để xem thành tích của gia sư
-                      </p>
+                  </div>
+
+                  {/* Profile Information */}
+                  {currentPost.tutorId.profile && (
+                    <div className="space-y-3">
+                      {currentPost.tutorId.profile.headline && (
+                        <div>
+                          <label className="text-base font-semibold text-gray-800">
+                            Tiêu đề:
+                          </label>
+                          <p className="text-gray-900 text-base mt-1 text-justify">
+                            {currentPost.tutorId.profile.headline}
+                          </p>
+                        </div>
+                      )}
+
+                      {currentPost.tutorId.profile.introduction && (
+                        <div>
+                          <label className="text-base font-semibold text-gray-800">
+                            Giới thiệu:
+                          </label>
+                          <p className="text-gray-900 text-base mt-1 whitespace-pre-line text-justify">
+                            {currentPost.tutorId.profile.introduction}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
 
-                {/* Certificates Section */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Chứng chỉ
-                    </h2>
-                    {!isAuthenticated && (
-                      <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                        Đăng nhập để xem chi tiết
-                      </div>
-                    )}
-                  </div>
+                {/* Right Column - Professional Info */}
+                <div className="space-y-4">
+                  {/* Teaching Experience */}
+                  {currentPost.tutorId.profile?.teaching_experience && (
+                    <div>
+                      <label className="text-base font-semibold text-gray-800">
+                        Kinh nghiệm giảng dạy:
+                      </label>
+                      <p className="text-gray-900 text-base mt-1 whitespace-pre-line text-justify">
+                        {currentPost.tutorId.profile.teaching_experience}
+                      </p>
+                    </div>
+                  )}
 
-                  {isAuthenticated ? (
-                    <div className="space-y-4">
-                      {/* Mock certificates - Replace with real data */}
-                      <div className="border border-gray-100 rounded-lg p-4">
-                        <div className="flex items-start space-x-4">
-                          <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  {/* Student Levels */}
+                  {currentPost.tutorId.profile?.student_levels && (
+                    <div>
+                      <label className="text-base font-semibold text-gray-800">
+                        Trình độ học viên:
+                      </label>
+                      <p className="text-gray-900 text-base mt-1">
+                        {currentPost.tutorId.profile.student_levels}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Video Introduction */}
+                  {currentPost.tutorId.profile?.video_intro_link && (
+                    <div>
+                      <label className="text-base font-semibold text-gray-800">
+                        Video giới thiệu:
+                      </label>
+                      <div className="mt-2">
+                        <iframe
+                          src={currentPost.tutorId.profile.video_intro_link}
+                          title="Video giới thiệu"
+                          className="w-full h-48 rounded-lg"
+                          frameBorder="0"
+                          allowFullScreen
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Education Section */}
+            {currentPost.tutorId.education &&
+              currentPost.tutorId.education.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                    Trình độ học vấn
+                  </h2>
+                  <div className="space-y-6">
+                    {currentPost.tutorId.education.map((edu) => (
+                      <div
+                        key={edu._id}
+                        className="border border-gray-200 rounded-xl p-6 shadow-sm bg-gray-50"
+                      >
+                        <div className="flex items-start space-x-6">
+                          <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
                             <svg
-                              className="w-8 h-8 text-green-600"
+                              className="w-6 h-6 text-blue-600"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 14l9-5-9-5-9 5 9 5z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"
+                              />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="text-xl font-bold text-gray-900">
+                                {edu.level}
+                              </h3>
+                              <span
+                                className={`text-sm px-3 py-1 rounded-full font-medium ${
+                                  edu.status === "VERIFIED"
+                                    ? "bg-green-100 text-green-800"
+                                    : edu.status === "PENDING"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {edu.status === "VERIFIED"
+                                  ? "Đã xác thực"
+                                  : edu.status === "PENDING"
+                                  ? "Chờ xác thực"
+                                  : "Chưa xác thực"}
+                              </span>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-base text-gray-700">
+                                <span className="font-semibold">Trường:</span>{" "}
+                                {edu.school}
+                              </p>
+                              <p className="text-base text-gray-700">
+                                <span className="font-semibold">
+                                  Chuyên ngành:
+                                </span>{" "}
+                                {edu.major}
+                              </p>
+                              <p className="text-base text-gray-700">
+                                <span className="font-semibold">
+                                  Thời gian học:
+                                </span>{" "}
+                                {edu.startYear} - {edu.endYear}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* Certificates Section */}
+            {currentPost.tutorId.certificates &&
+              currentPost.tutorId.certificates.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                    Chứng chỉ
+                  </h2>
+                  <div className="space-y-6">
+                    {currentPost.tutorId.certificates.map((cert) => (
+                      <div
+                        key={cert._id}
+                        className="border border-gray-200 rounded-xl p-6 shadow-sm bg-gray-50"
+                      >
+                        <div className="flex items-start space-x-6">
+                          <div className="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                            <svg
+                              className="w-6 h-6 text-green-600"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -477,100 +546,150 @@ const TutorPostDetail: React.FC = () => {
                             </svg>
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-medium text-gray-900">
-                                Chứng chỉ Sư phạm Toán học
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="text-xl font-bold text-gray-900">
+                                {cert.name}
                               </h3>
-                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                                Đã xác thực
+                              <span
+                                className={`text-sm px-3 py-1 rounded-full font-medium ${
+                                  cert.status === "VERIFIED"
+                                    ? "bg-green-100 text-green-800"
+                                    : cert.status === "PENDING"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {cert.status === "VERIFIED"
+                                  ? "Đã xác thực"
+                                  : cert.status === "PENDING"
+                                  ? "Chờ xác thực"
+                                  : "Chưa xác thực"}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-600 mt-1">
-                              Trường Đại học Sư phạm Hà Nội • Cấp: 15/06/2022
-                            </p>
-                            <p className="text-sm text-gray-500 mt-2">
-                              Chứng chỉ nghiệp vụ sư phạm chuyên ngành Toán học
-                            </p>
-
-                            {/* Image only visible to post owner and admin */}
-                            {(user?.id === currentPost.tutorId._id ||
-                              user?.role === "ADMIN") && (
-                              <div className="mt-3">
-                                <img
-                                  src="/placeholder-certificate.jpg"
-                                  alt="Chứng chỉ"
-                                  className="w-32 h-24 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80"
-                                  onClick={() => {
-                                    /* Open full image modal */
-                                  }}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Chỉ bạn và quản trị viên có thể xem hình ảnh
-                                  này
-                                </p>
-                              </div>
-                            )}
+                            <div className="space-y-2">
+                              <p className="text-base text-gray-700">
+                                <span className="font-semibold">
+                                  Tổ chức cấp:
+                                </span>{" "}
+                                {cert.issuingOrganization}
+                              </p>
+                              <p className="text-base text-gray-700">
+                                <span className="font-semibold">Ngày cấp:</span>{" "}
+                                {new Date(cert.issueDate).toLocaleDateString(
+                                  "vi-VN"
+                                )}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
-
-                      <div className="text-center py-4">
-                        <p className="text-sm text-gray-500">
-                          {user?.id === currentPost.tutorId._id
-                            ? "Bạn có thể thêm chứng chỉ khác trong phần quản lý hồ sơ"
-                            : "Gia sư này có 1 chứng chỉ đã được xác thực"}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 bg-gray-50 rounded-lg">
-                      <svg
-                        className="mx-auto h-12 w-12 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">
-                        Thông tin bảo mật
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Đăng nhập để xem chứng chỉ của gia sư
-                      </p>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
-              </>
-            )}
+              )}
+
+            {/* Achievements Section */}
+            {currentPost.tutorId.achievements &&
+              currentPost.tutorId.achievements.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                    Thành tích
+                  </h2>
+                  <div className="space-y-6">
+                    {currentPost.tutorId.achievements.map((achievement) => (
+                      <div
+                        key={achievement._id}
+                        className="border border-gray-200 rounded-xl p-6 shadow-sm bg-gray-50"
+                      >
+                        <div className="flex items-start space-x-6">
+                          <div className="w-16 h-16 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                            <svg
+                              className="w-6 h-6 text-yellow-600"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="text-xl font-bold text-gray-900">
+                                {achievement.name}
+                              </h3>
+                              <span
+                                className={`text-sm px-3 py-1 rounded-full font-medium ${
+                                  achievement.status === "VERIFIED"
+                                    ? "bg-green-100 text-green-800"
+                                    : achievement.status === "PENDING"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {achievement.status === "VERIFIED"
+                                  ? "Đã xác thực"
+                                  : achievement.status === "PENDING"
+                                  ? "Chờ xác thực"
+                                  : "Chưa xác thực"}
+                              </span>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-base text-gray-700">
+                                <span className="font-semibold">
+                                  Tổ chức trao:
+                                </span>{" "}
+                                {achievement.awardingOrganization}
+                              </p>
+                              <p className="text-base text-gray-700">
+                                <span className="font-semibold">Cấp độ:</span>{" "}
+                                {achievement.level}
+                              </p>
+                              <p className="text-base text-gray-700">
+                                <span className="font-semibold">Ngày đạt:</span>{" "}
+                                {new Date(
+                                  achievement.achievedDate
+                                ).toLocaleDateString("vi-VN")}
+                              </p>
+                              {achievement.description && (
+                                <div className="mt-3 p-3 bg-white rounded-lg border">
+                                  <p className="text-sm font-medium text-gray-700 mb-1">
+                                    Mô tả:
+                                  </p>
+                                  <p className="text-sm text-gray-600 whitespace-pre-line">
+                                    {achievement.description}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Price & Contact */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-6">
-              <div className="text-center mb-6">
-                <div className="text-3xl font-bold text-gray-900 mb-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sticky top-6">
+              <div className="text-center mb-8">
+                <div className="text-4xl font-bold text-blue-600 mb-2">
                   {formatPrice(currentPost.pricePerSession)}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-lg text-gray-600 font-medium">
                   /{currentPost.sessionDuration} phút
                 </div>
               </div>
 
               <button
                 onClick={handleContactClick}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="w-full px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg"
               >
                 Liên hệ gia sư
               </button>
 
-              <div className="text-xs text-gray-500 text-center mt-3 space-y-1">
+              <div className="text-sm text-gray-500 text-center mt-4 space-y-2">
                 <p>
                   {isAuthenticated
                     ? "Click để xem thông tin liên hệ"
@@ -596,22 +715,22 @@ const TutorPostDetail: React.FC = () => {
             </div>
 
             {/* Quick Info */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">
                 Thông tin nhanh
               </h3>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Subjects */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-2">
-                    Môn học:
+                  <label className="text-base font-semibold text-gray-900 block mb-3">
+                    Môn học
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {currentPost.subjects.map((subject, index) => (
                       <span
                         key={index}
-                        className="px-2 py-1 bg-blue-50 text-blue-700 text-sm rounded"
+                        className="px-3 py-2 bg-blue-100 text-blue-800 text-sm rounded-lg font-medium"
                       >
                         {typeof subject === "string" ? subject : subject.name}
                       </span>
@@ -621,14 +740,14 @@ const TutorPostDetail: React.FC = () => {
 
                 {/* Student Levels */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-2">
-                    Đối tượng:
+                  <label className="text-base font-semibold text-gray-900 block mb-3">
+                    Đối tượng học viên
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {currentPost.studentLevel.map((level, index) => (
                       <span
                         key={index}
-                        className="px-2 py-1 bg-green-50 text-green-700 text-sm rounded"
+                        className="px-3 py-2 bg-green-100 text-green-800 text-sm rounded-lg font-medium"
                       >
                         {level}
                       </span>
@@ -638,12 +757,12 @@ const TutorPostDetail: React.FC = () => {
 
                 {/* Teaching Mode */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-2">
-                    Hình thức:
+                  <label className="text-base font-semibold text-gray-900 block mb-3">
+                    Hình thức dạy học
                   </label>
                   <span
                     className={`
-                    px-3 py-1 rounded text-sm
+                    px-4 py-2 rounded-lg text-sm font-medium
                     ${
                       currentPost.teachingMode === "ONLINE"
                         ? "bg-green-100 text-green-800"
@@ -660,10 +779,10 @@ const TutorPostDetail: React.FC = () => {
                 {/* Location */}
                 {currentPost.address && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">
-                      Địa điểm:
+                    <label className="text-base font-semibold text-gray-900 block mb-3">
+                      Đến từ:
                     </label>
-                    <p className="text-gray-900 text-sm">
+                    <p className="text-gray-700 text-sm bg-gray-50 p-3 rounded-lg">
                       {isAuthenticated
                         ? formatAddressDisplay(currentPost.address, true)
                         : formatShortAddress(currentPost.address)}
@@ -674,29 +793,29 @@ const TutorPostDetail: React.FC = () => {
             </div>
 
             {/* Schedule */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Lịch dạy</h3>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Lịch dạy</h3>
 
               {currentPost.teachingSchedule.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {currentPost.teachingSchedule
                     .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
                     .map((slot, index) => (
                       <div
                         key={index}
-                        className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0"
+                        className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg border border-gray-200"
                       >
-                        <span className="font-medium text-gray-700 text-sm">
+                        <span className="font-semibold text-gray-800 text-base">
                           {getDayName(slot.dayOfWeek)}
                         </span>
-                        <span className="text-gray-900 text-sm font-mono">
+                        <span className="text-gray-700 text-base font-mono bg-white px-3 py-1 rounded">
                           {slot.startTime} - {slot.endTime}
                         </span>
                       </div>
                     ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-sm">
+                <p className="text-gray-500 text-base text-center py-4 bg-gray-50 rounded-lg">
                   Chưa có lịch dạy cố định
                 </p>
               )}

@@ -20,20 +20,71 @@ export interface Address {
   specificAddress: string; // Detail address (street number, street name)
 }
 
-export interface TutorInfo {
+export interface TutorProfileInfo {
+  headline?: string;
+  introduction?: string;
+  teaching_experience?: string;
+  student_levels?: string;
+  video_intro_link?: string;
+  status?: string;
+}
+
+export interface EducationInfo {
+  _id: string;
+  level: string;
+  school: string;
+  major: string;
+  startYear: number;
+  endYear: number;
+  status: string;
+}
+
+export interface CertificateInfo {
   _id: string;
   name: string;
+  issuingOrganization: string;
+  issueDate: string;
+  status: string;
+}
+
+export interface AchievementInfo {
+  _id: string;
+  name: string;
+  level: string;
+  achievedDate: string;
+  awardingOrganization: string;
+  type: string;
+  field: string;
+  description?: string;
+  status: string;
+}
+
+export interface TutorInfo {
+  _id: string;
+  full_name: string;
   email?: string;
   gender?: string;
+  avatar_url?: string;
+         structured_address?: {
+           province_code?: string;
+           district_code?: string;
+           ward_code?: string;
+           detail_address?: string;
+           province_name?: string;
+           district_name?: string;
+           ward_name?: string;
+         };
+  profile?: TutorProfileInfo;
+  education?: EducationInfo[];
+  certificates?: CertificateInfo[];
+  achievements?: AchievementInfo[];
 }
 
 export interface TutorPost {
-  _id: string;
+  id: string;
   tutorId: TutorInfo;
   title: string;
   description: string;
-  experience: string;
-  videoIntroUrl?: string;
   subjects: Subject[];
   pricePerSession: number;
   sessionDuration: number;
@@ -51,8 +102,6 @@ export interface TutorPost {
 export interface CreateTutorPostRequest {
   title: string;
   description: string;
-  experience: string;
-  videoIntroUrl?: string;
   subjects: string[]; // Subject IDs
   pricePerSession: number;
   sessionDuration: number;
@@ -65,8 +114,6 @@ export interface CreateTutorPostRequest {
 export interface UpdateTutorPostRequest {
   title?: string;
   description?: string;
-  experience?: string;
-  videoIntroUrl?: string;
   subjects?: string[];
   pricePerSession?: number;
   sessionDuration?: number;

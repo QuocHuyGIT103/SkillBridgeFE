@@ -38,14 +38,27 @@ const TutorPostListPage: React.FC = () => {
   };
 
   const handleEdit = (postId: string) => {
-    navigate(`/tutor/posts/edit/${postId}`);
+    if (postId && postId !== "undefined") {
+      navigate(`/tutor/posts/edit/${postId}`);
+    } else {
+      toast.error("Không tìm thấy ID bài đăng");
+    }
   };
 
   const handleView = (postId: string) => {
-    navigate(`/tutors/${postId}`);
+    if (postId && postId !== "undefined") {
+      navigate(`/tutors/${postId}`);
+    } else {
+      toast.error("Không tìm thấy ID bài đăng");
+    }
   };
 
   const handleActivate = async (postId: string) => {
+    if (!postId || postId === "undefined") {
+      toast.error("Không tìm thấy ID bài đăng");
+      return;
+    }
+
     try {
       await activatePost(postId);
       toast.success("Kích hoạt bài đăng thành công");
@@ -56,6 +69,11 @@ const TutorPostListPage: React.FC = () => {
   };
 
   const handleDeactivate = async (postId: string) => {
+    if (!postId || postId === "undefined") {
+      toast.error("Không tìm thấy ID bài đăng");
+      return;
+    }
+
     try {
       await deactivatePost(postId);
       toast.success("Tạm dừng bài đăng thành công");
@@ -66,6 +84,11 @@ const TutorPostListPage: React.FC = () => {
   };
 
   const handleDelete = (postId: string) => {
+    if (!postId || postId === "undefined") {
+      toast.error("Không tìm thấy ID bài đăng");
+      return;
+    }
+
     setSelectedPost(postId);
     setShowDeleteModal(true);
   };
@@ -144,7 +167,7 @@ const TutorPostListPage: React.FC = () => {
               <div className="py-1">
                 <button
                   onClick={() => {
-                    handleView(post._id);
+                    handleView(post.id);
                     setIsOpen(false);
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -154,7 +177,7 @@ const TutorPostListPage: React.FC = () => {
 
                 <button
                   onClick={() => {
-                    handleEdit(post._id);
+                    handleEdit(post.id);
                     setIsOpen(false);
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -165,7 +188,7 @@ const TutorPostListPage: React.FC = () => {
                 {post.status === "ACTIVE" ? (
                   <button
                     onClick={() => {
-                      handleDeactivate(post._id);
+                      handleDeactivate(post.id);
                       setIsOpen(false);
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-gray-100"
@@ -175,7 +198,7 @@ const TutorPostListPage: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => {
-                      handleActivate(post._id);
+                      handleActivate(post.id);
                       setIsOpen(false);
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-gray-100"
@@ -187,7 +210,7 @@ const TutorPostListPage: React.FC = () => {
                 <div className="border-t border-gray-100">
                   <button
                     onClick={() => {
-                      handleDelete(post._id);
+                      handleDelete(post.id);
                       setIsOpen(false);
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
@@ -296,17 +319,6 @@ const TutorPostListPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Page Header */}
           <div className="mb-8">
-            <nav className="flex text-sm text-gray-500 mb-4">
-              <button
-                onClick={() => navigate("/tutor/dashboard")}
-                className="hover:text-gray-700"
-              >
-                Dashboard
-              </button>
-              <span className="mx-2">/</span>
-              <span className="text-gray-900">Quản lý bài đăng</span>
-            </nav>
-
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
@@ -415,9 +427,9 @@ const TutorPostListPage: React.FC = () => {
           ) : (
             <>
               <div className="space-y-6">
-                {myPosts.map((post) => (
+                {myPosts.map((post, index) => (
                   <div
-                    key={post._id}
+                    key={post.id || `post-${index}`}
                     className="bg-white rounded-lg border border-gray-200 overflow-hidden"
                   >
                     <div className="p-6">

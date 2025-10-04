@@ -33,7 +33,14 @@ const DAYS_OF_WEEK = [
   "Thứ bảy",
 ];
 
-const STUDENT_LEVELS = ["Tiểu học", "THCS", "THPT", "Đại học", "Người đi làm"];
+// Student levels mapping: Frontend display -> Backend values
+const STUDENT_LEVELS = [
+  { label: "Tiểu học", value: "TIEU_HOC" },
+  { label: "THCS", value: "TRUNG_HOC_CO_SO" },
+  { label: "THPT", value: "TRUNG_HOC_PHO_THONG" },
+  { label: "Đại học", value: "DAI_HOC" },
+  { label: "Người đi làm", value: "NGUOI_DI_LAM" },
+];
 
 const TutorPostForm: React.FC<TutorPostFormProps> = ({
   tutorPost,
@@ -47,8 +54,6 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
   const [formData, setFormData] = useState<CreateTutorPostRequest>({
     title: "",
     description: "",
-    experience: "",
-    videoIntroUrl: "",
     subjects: [],
     pricePerSession: 200000,
     sessionDuration: 60,
@@ -77,8 +82,6 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
       setFormData({
         title: tutorPost.title,
         description: tutorPost.description,
-        experience: tutorPost.experience,
-        videoIntroUrl: tutorPost.videoIntroUrl || "",
         subjects: tutorPost.subjects.map((s) =>
           typeof s === "string" ? s : s._id
         ),
@@ -109,8 +112,6 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
 
     if (!formData.description.trim()) {
       newErrors.description = "Mô tả là bắt buộc";
-    } else if (formData.description.length < 50) {
-      newErrors.description = "Mô tả phải có ít nhất 50 ký tự";
     }
 
     if (formData.subjects.length === 0) {
@@ -130,10 +131,6 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
       formData.pricePerSession > 10000000
     ) {
       newErrors.pricePerSession = "Học phí phải từ 100,000đ đến 10,000,000đ";
-    }
-
-    if (!formData.experience.trim()) {
-      newErrors.experience = "Kinh nghiệm giảng dạy là bắt buộc";
     }
 
     // Address validation for offline teaching
@@ -171,7 +168,7 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
         await createTutorPost(formData);
         toast.success("Tạo bài đăng thành công!");
       } else {
-        await updateTutorPost(tutorPost!._id, formData);
+        await updateTutorPost(tutorPost!.id, formData);
         toast.success("Cập nhật bài đăng thành công!");
       }
 
@@ -315,11 +312,11 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
             <div className="grid grid-cols-3 gap-2">
               {STUDENT_LEVELS.map((level) => (
                 <label
-                  key={level}
+                  key={level.value}
                   className={`
                     flex items-center p-3 border rounded-lg cursor-pointer transition-colors
                     ${
-                      formData.studentLevel.includes(level)
+                      formData.studentLevel.includes(level.value)
                         ? "border-blue-500 bg-blue-50 text-blue-700"
                         : "border-gray-200 hover:border-gray-300"
                     }
@@ -327,16 +324,18 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
                 >
                   <input
                     type="checkbox"
-                    checked={formData.studentLevel.includes(level)}
+                    checked={formData.studentLevel.includes(level.value)}
                     onChange={(e) => {
                       const newLevels = e.target.checked
-                        ? [...formData.studentLevel, level]
-                        : formData.studentLevel.filter((l) => l !== level);
+                        ? [...formData.studentLevel, level.value]
+                        : formData.studentLevel.filter(
+                            (l) => l !== level.value
+                          );
                       updateFormData("studentLevel", newLevels);
                     }}
                     className="mr-2"
                   />
-                  <span className="text-sm">{level}</span>
+                  <span className="text-sm">{level.label}</span>
                 </label>
               ))}
             </div>
@@ -591,50 +590,6 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
               )}
             </div>
           )}
-        </div>
-
-        {/* Experience and Video */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Kinh nghiệm và giới thiệu
-          </h3>
-
-          {/* Experience */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Kinh nghiệm giảng dạy <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              value={formData.experience}
-              onChange={(e) => updateFormData("experience", e.target.value)}
-              placeholder="Mô tả kinh nghiệm giảng dạy của bạn: số năm kinh nghiệm, các thành tích, chứng chỉ..."
-              rows={4}
-              className={`
-                w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500
-                ${errors.experience ? "border-red-500" : "border-gray-300"}
-              `}
-            />
-            {errors.experience && (
-              <span className="text-sm text-red-600">{errors.experience}</span>
-            )}
-          </div>
-
-          {/* Video Introduction */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Video giới thiệu (tùy chọn)
-            </label>
-            <input
-              type="url"
-              value={formData.videoIntroUrl}
-              onChange={(e) => updateFormData("videoIntroUrl", e.target.value)}
-              placeholder="https://youtube.com/watch?v=..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Link video YouTube giới thiệu bản thân và phương pháp giảng dạy
-            </p>
-          </div>
         </div>
 
         {/* Submit Buttons */}

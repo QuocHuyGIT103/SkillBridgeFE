@@ -168,17 +168,6 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
     );
   }
 
-  // Debug: Log current state
-  console.log("AddressSelector state:", {
-    provinces: provinces.length,
-    districts: districts.length,
-    wards: wards.length,
-    loading,
-    selectedProvince,
-    selectedDistrict,
-    selectedWard,
-  });
-
   // Edit mode - compact version
   return (
     <div className={`space-y-3 ${className}`}>

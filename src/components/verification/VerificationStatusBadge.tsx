@@ -144,3 +144,4 @@ const VerificationStatusBadge: React.FC<VerificationStatusBadgeProps> = ({
 };
 
 export default VerificationStatusBadge;
+

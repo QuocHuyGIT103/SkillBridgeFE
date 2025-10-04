@@ -79,59 +79,6 @@ const CreateTutorPostPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Page Header */}
-          <div className="mb-8">
-            <nav className="flex text-sm text-gray-500 mb-4">
-              <button
-                onClick={() => navigate("/tutor/dashboard")}
-                className="hover:text-gray-700"
-              >
-                Dashboard
-              </button>
-              <span className="mx-2">/</span>
-              <button
-                onClick={() => navigate("/tutor/posts")}
-                className="hover:text-gray-700"
-              >
-                Quản lý bài đăng
-              </button>
-              <span className="mx-2">/</span>
-              <span className="text-gray-900">Tạo bài đăng mới</span>
-            </nav>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Tạo bài đăng mới
-                </h1>
-                <p className="mt-2 text-gray-600">
-                  Tạo một bài đăng để thu hút học viên phù hợp với khả năng
-                  giảng dạy của bạn.
-                </p>
-              </div>
-
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 flex items-center"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-                Hủy
-              </button>
-            </div>
-          </div>
-
           {/* Eligibility Warning */}
           {eligibilityData && !eligibilityData.isEligible && (
             <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">

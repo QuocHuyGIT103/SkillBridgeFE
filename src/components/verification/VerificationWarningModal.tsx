@@ -120,3 +120,4 @@ const VerificationWarningModal: React.FC<VerificationWarningModalProps> = ({
 };
 
 export default VerificationWarningModal;
+

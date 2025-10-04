@@ -275,26 +275,18 @@ export const getMockEligibilityData = () => {
       id: "tutor-profile",
       title: "Hồ sơ gia sư đã được xác thực",
       description:
-        "Thông tin cá nhân, kinh nghiệm giảng dạy và CCCD đã được xác minh",
+        "Thông tin cá nhân và kinh nghiệm giảng dạy đã được xác minh",
       status: "completed", // Change to 'pending' or 'missing' for testing
       actionText: "Hoàn thiện hồ sơ",
       actionPath: "/tutor/profile",
     },
     {
       id: "education",
-      title: "Có ít nhất 1 bằng cấp được xác thực",
-      description: "Bằng cấp/chứng chỉ học vấn đã được kiểm tra và xác nhận",
+      title: "Trình độ học vấn được xác thực",
+      description: "Trình độ học vấn đã được kiểm tra và xác nhận",
       status: "completed", // Change for testing
       actionText: "Thêm bằng cấp",
       actionPath: "/tutor/qualifications?tab=education",
-    },
-    {
-      id: "identity-verification",
-      title: "Xác thực danh tính",
-      description: "CCCD/CMND đã được xác minh để đảm bảo an toàn",
-      status: "pending", // Change for testing
-      actionText: "Chờ xác minh",
-      actionPath: "/tutor/profile",
     },
   ];
 

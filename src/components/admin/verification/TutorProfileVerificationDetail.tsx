@@ -336,3 +336,4 @@ const TutorProfileVerificationDetail: React.FC<
 };
 
 export default TutorProfileVerificationDetail;
+
