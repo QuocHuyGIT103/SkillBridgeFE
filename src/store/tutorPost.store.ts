@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import TutorPostService from "../services/tutorPost.service";
+import {PostService} from "../services/post.service";
+
 import type {
   TutorPost,
   TutorPostSearchQuery,

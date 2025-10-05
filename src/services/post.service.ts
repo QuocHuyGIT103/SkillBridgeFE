@@ -1,4 +1,5 @@
 import type { IPost, IPostInput, IPostReviewInput, IPaginatedPosts } from '../types';
+import type { TutorPost } from './tutorPost.service';
 import axiosClient from '../api/axiosClient';
 import type { ApiResponse } from '../types/index';
 
@@ -49,5 +50,16 @@ export class PostService {
   // Student/Admin: Xóa bài đăng
   static async deletePost(postId: string): Promise<ApiResponse<any>> {
     return axiosClient.delete<any>(`/posts/${postId}`);
+  }
+
+  // Student: Tìm kiếm gia sư thông minh dựa trên bài đăng
+  static async smartSearchTutors(postId: string, query: { page?: number; limit?: number; sortBy?: string; sortOrder?: string } = {}): Promise<ApiResponse<{ tutors: TutorPost[]; pagination: { currentPage: number; totalPages: number; totalItems: number; hasNext: boolean; hasPrev: boolean } }>> {
+    const params = new URLSearchParams();
+    if (query.page) params.append('page', query.page.toString());
+    if (query.limit) params.append('limit', query.limit.toString());
+    if (query.sortBy) params.append('sortBy', query.sortBy);
+    if (query.sortOrder) params.append('sortOrder', query.sortOrder);
+
+    return axiosClient.get(`/posts/${postId}/smart-tutors?${params.toString()}`);
   }
 }

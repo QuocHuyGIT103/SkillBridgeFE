@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTutorPostStore } from "../../store/tutorPost.store";
+import usePostStore from "../../store/post.store";
 import TutorPostCard from "../../components/tutorPost/TutorPostCard";
 import SearchFilters from "../../components/tutorPost/SearchFilters";
 import { debounce } from "../../utils/tutorUtils";
+import toast from "react-hot-toast";
 
 interface TutorPostSearchQuery {
   subjects?: string[];
@@ -16,23 +18,58 @@ interface TutorPostSearchQuery {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: "createdAt" | "pricePerSession" | "viewCount";
+  sortBy?: "createdAt" | "pricePerSession" | "viewCount" | "compatibility";
   sortOrder?: "asc" | "desc";
 }
 
 const StudentTutorSearchPage: React.FC = () => {
-  const { posts, pagination, searchLoading, searchTutorPosts } =
-    useTutorPostStore();
+  // ✅ Regular search from TutorPostStore
+  const { posts, pagination, searchLoading, searchTutorPosts } = useTutorPostStore();
+  
+  // ✅ Smart search from PostStore
+  const { 
+    posts: myStudentPosts, 
+    fetchMyPosts,
+    smartSearchTutors,
+    smartSearchResults,
+    smartSearchPagination,
+    smartSearchLoading,
+    error: postStoreError
+  } = usePostStore();
+
   const [currentFilters, setCurrentFilters] = useState<TutorPostSearchQuery>({
     page: 1,
     limit: 12,
     sortBy: "createdAt",
     sortOrder: "desc",
   });
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isSmartSearchMode, setIsSmartSearchMode] = useState(false);
 
-  // Debounced search function with error handling
+  // ✅ Debounced smart search function
+  const debouncedSmartSearch = debounce(async (postId: string, query: any = {}) => {
+    try {
+      setError(null);
+      console.log('🚀 Triggering Smart Search:', { postId, query });
+      
+      await smartSearchTutors(postId, {
+        page: query.page || 1,
+        limit: query.limit || 12,
+        sortBy: query.sortBy || 'compatibility',
+        sortOrder: query.sortOrder || 'desc'
+      });
+      
+      toast.success('Tìm kiếm gia sư thông minh thành công!');
+    } catch (error: any) {
+      console.error("Smart search error:", error);
+      setError("Có lỗi xảy ra khi tìm kiếm gia sư thông minh. Vui lòng thử lại.");
+      toast.error("Lỗi khi tìm kiếm gia sư thông minh");
+    }
+  }, 500);
+
+  // ✅ Debounced regular search function
   const debouncedSearch = debounce(async (filters: TutorPostSearchQuery) => {
     try {
       setError(null);
@@ -45,12 +82,25 @@ const StudentTutorSearchPage: React.FC = () => {
 
   // Handle filters change
   const handleFiltersChange = (filters: TutorPostSearchQuery) => {
-    const newFilters = { ...filters, page: 1 }; // Reset to page 1 when filters change
+    const newFilters = { ...filters, page: 1 };
     setCurrentFilters(newFilters);
-    debouncedSearch(newFilters);
+    
+    if (selectedPostId) {
+      // ✅ Use smart search
+      const smartQuery = {
+        page: 1,
+        limit: 12,
+        sortBy: 'compatibility' as const,
+        sortOrder: 'desc' as const
+      };
+      debouncedSmartSearch(selectedPostId, smartQuery);
+    } else {
+      // ✅ Use regular search
+      debouncedSearch(newFilters);
+    }
   };
 
-  // Load initial data with loading state
+  // Load initial data
   useEffect(() => {
     const loadInitialData = async () => {
       try {
@@ -66,19 +116,36 @@ const StudentTutorSearchPage: React.FC = () => {
     };
 
     loadInitialData();
-  }, []);
+  }, [searchTutorPosts]);
 
-  // Handle pagination with error handling
+  // Load my posts
+  useEffect(() => {
+    fetchMyPosts();
+  }, [fetchMyPosts]);
+
+  // Handle pagination
   const handleLoadMore = async () => {
-    if (pagination && pagination.hasNext) {
+    const currentPag = isSmartSearchMode ? smartSearchPagination : pagination;
+    
+    if (currentPag && currentPag.hasNext) {
       try {
         setError(null);
-        const newFilters = {
-          ...currentFilters,
-          page: (currentFilters.page || 1) + 1,
-        };
+        const newPage = (currentFilters.page || 1) + 1;
+        const newFilters = { ...currentFilters, page: newPage };
         setCurrentFilters(newFilters);
-        await searchTutorPosts(newFilters);
+
+        if (selectedPostId) {
+          // ✅ Smart search pagination
+          await smartSearchTutors(selectedPostId, {
+            page: newPage,
+            limit: newFilters.limit,
+            sortBy: 'compatibility',
+            sortOrder: 'desc'
+          });
+        } else {
+          // ✅ Regular search pagination
+          await searchTutorPosts(newFilters);
+        }
       } catch (error) {
         console.error("Load more error:", error);
         setError("Không thể tải thêm gia sư. Vui lòng thử lại.");
@@ -89,8 +156,22 @@ const StudentTutorSearchPage: React.FC = () => {
   // Retry function
   const handleRetry = () => {
     setError(null);
-    debouncedSearch(currentFilters);
+    if (selectedPostId) {
+      debouncedSmartSearch(selectedPostId, {
+        page: 1,
+        limit: 12,
+        sortBy: 'compatibility',
+        sortOrder: 'desc'
+      });
+    } else {
+      debouncedSearch(currentFilters);
+    }
   };
+
+  // ✅ Get current data based on search mode
+  const currentPosts = isSmartSearchMode ? smartSearchResults : posts;
+  const currentPagination = isSmartSearchMode ? smartSearchPagination : pagination;
+  const currentLoading = isSmartSearchMode ? smartSearchLoading : searchLoading;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -104,16 +185,19 @@ const StudentTutorSearchPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between">
             <div className="mb-4 sm:mb-0">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                Tìm gia sư
+                Tìm gia sư {isSmartSearchMode && '🤖'}
               </h1>
               <p className="text-sm sm:text-base text-gray-600">
-                Tìm kiếm gia sư phù hợp với nhu cầu học tập của bạn
+                {isSmartSearchMode 
+                  ? "Tìm kiếm gia sư thông minh dựa trên bài đăng của bạn"
+                  : "Tìm kiếm gia sư phù hợp với nhu cầu học tập của bạn"
+                }
               </p>
             </div>
             <div className="flex items-center justify-between sm:justify-end">
               <span className="text-sm text-gray-500">
-                {pagination
-                  ? `Tìm thấy ${pagination.totalItems} gia sư`
+                {currentPagination
+                  ? `Tìm thấy ${currentPagination.totalItems || currentPagination.total || 0} gia sư`
                   : "Đang tải..."}
               </span>
             </div>
@@ -126,12 +210,79 @@ const StudentTutorSearchPage: React.FC = () => {
           <div className="xl:col-span-1 order-2 xl:order-1">
             <SearchFilters
               onFiltersChange={handleFiltersChange}
-              isLoading={searchLoading}
+              isLoading={currentLoading}
+              disabled={isSmartSearchMode} // ✅ Pass disabled prop
+              isSmartSearchMode={isSmartSearchMode} // ✅ Pass smart search mode
             />
           </div>
 
           {/* Right Content - Results */}
           <div className="xl:col-span-4 order-1 xl:order-2">
+            {/* Smart Search Selector */}
+            <div className="bg-white rounded-xl p-4 mb-6 shadow-sm border border-gray-200">
+              <h3 className="text-lg font-medium mb-2">
+                🤖 Tìm gia sư thông minh dựa trên bài đăng của bạn
+              </h3>
+              <select
+                value={selectedPostId || ''}
+                onChange={(e) => {
+                  const id = e.target.value || null;
+                  setSelectedPostId(id);
+                  setIsSmartSearchMode(!!id);
+                  
+                  if (id) {
+                    // ✅ Switch to smart search mode
+                    console.log('🎯 Switching to Smart Search Mode:', id);
+                    const smartQuery = {
+                      page: 1,
+                      limit: 12,
+                      sortBy: 'compatibility' as const,
+                      sortOrder: 'desc' as const
+                    };
+                    setCurrentFilters(smartQuery);
+                    debouncedSmartSearch(id, smartQuery);
+                  } else {
+                    // ✅ Switch back to regular search
+                    console.log('🔄 Switching to Regular Search Mode');
+                    setIsSmartSearchMode(false);
+                    const regularQuery = {
+                      page: 1,
+                      limit: 12,
+                      sortBy: 'createdAt' as const,
+                      sortOrder: 'desc' as const
+                    };
+                    setCurrentFilters(regularQuery);
+                    debouncedSearch(regularQuery);
+                  }
+                }}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Tìm kiếm thông thường (không dựa trên bài đăng)</option>
+                {myStudentPosts
+                  .filter((p: any) => p.status === 'approved')
+                  .map((post: any) => (
+                    <option key={post.id} value={post.id}>
+                      📝 {post.title}
+                    </option>
+                  ))}
+              </select>
+              
+              {/* ✅ Smart Search Mode Indicator */}
+              {isSmartSearchMode && (
+                <div className="mt-2 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center text-sm">
+                    <span className="text-blue-600 mr-2">🎯</span>
+                    <span className="text-blue-700 font-medium">
+                      Chế độ tìm kiếm thông minh đang hoạt động
+                    </span>
+                  </div>
+                  <div className="text-xs text-blue-600 mt-1">
+                    Kết quả được sắp xếp theo độ phù hợp với bài đăng của bạn
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Initial Loading State */}
             {isInitialLoading && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
@@ -145,19 +296,22 @@ const StudentTutorSearchPage: React.FC = () => {
             )}
 
             {/* Search Loading State */}
-            {!isInitialLoading && searchLoading && posts.length === 0 && (
+            {!isInitialLoading && currentLoading && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
                   <span className="ml-3 text-gray-600">
-                    Đang tìm kiếm gia sư...
+                    {isSmartSearchMode 
+                      ? "🤖 Đang tìm gia sư thông minh..." 
+                      : "Đang tìm kiếm gia sư..."
+                    }
                   </span>
                 </div>
               </div>
             )}
 
             {/* Error State */}
-            {!isInitialLoading && error && (
+            {!isInitialLoading && (error || postStoreError) && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -181,7 +335,7 @@ const StudentTutorSearchPage: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   Có lỗi xảy ra
                 </h3>
-                <p className="text-gray-600 mb-6">{error}</p>
+                <p className="text-gray-600 mb-6">{error || postStoreError}</p>
                 <button
                   onClick={handleRetry}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
@@ -194,24 +348,28 @@ const StudentTutorSearchPage: React.FC = () => {
             {/* Results Grid */}
             {!isInitialLoading &&
               !error &&
-              !searchLoading &&
-              posts.length > 0 && (
+              !postStoreError &&
+              !currentLoading &&
+              currentPosts.length > 0 && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                    {posts.map((post, index) => (
+                    {currentPosts.map((post: any, index: number) => (
                       <motion.div
-                        key={post.id}
+                        key={post.id || post._id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
                       >
-                        <TutorPostCard post={post} />
+                        <TutorPostCard 
+                          post={post} 
+                          showCompatibility={isSmartSearchMode} // ✅ Pass compatibility display flag
+                        />
                       </motion.div>
                     ))}
                   </div>
 
                   {/* Load More Button */}
-                  {pagination && pagination.hasNext && (
+                  {currentPagination && currentPagination.hasNext && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -222,18 +380,18 @@ const StudentTutorSearchPage: React.FC = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleLoadMore}
-                        disabled={searchLoading}
+                        disabled={currentLoading}
                         className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-3 rounded-lg font-medium transition-colors"
                       >
-                        {searchLoading ? "Đang tải..." : "Xem thêm gia sư"}
+                        {currentLoading ? "Đang tải..." : "Xem thêm gia sư"}
                       </motion.button>
                     </motion.div>
                   )}
 
                   {/* Pagination Info */}
-                  {pagination && (
+                  {currentPagination && (
                     <div className="text-center text-sm text-gray-500">
-                      Trang {pagination.currentPage} / {pagination.totalPages}
+                      Trang {currentPagination.currentPage || currentPagination.page || 1} / {currentPagination.totalPages || currentPagination.pages || 1}
                     </div>
                   )}
                 </div>
@@ -242,8 +400,9 @@ const StudentTutorSearchPage: React.FC = () => {
             {/* Empty State */}
             {!isInitialLoading &&
               !error &&
-              !searchLoading &&
-              posts.length === 0 && (
+              !postStoreError &&
+              !currentLoading &&
+              currentPosts.length === 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -265,25 +424,51 @@ const StudentTutorSearchPage: React.FC = () => {
                     </svg>
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Không tìm thấy gia sư nào
+                    {isSmartSearchMode 
+                      ? "Không tìm thấy gia sư phù hợp 🤖"
+                      : "Không tìm thấy gia sư nào"
+                    }
                   </h3>
                   <p className="text-gray-600 mb-6">
-                    Thử điều chỉnh bộ lọc tìm kiếm hoặc tìm kiếm với từ khóa
-                    khác
-                  </p>
-                  <button
-                    onClick={() =>
-                      handleFiltersChange({
-                        page: 1,
-                        limit: 12,
-                        sortBy: "createdAt",
-                        sortOrder: "desc",
-                      })
+                    {isSmartSearchMode 
+                      ? "Thử chọn bài đăng khác hoặc chuyển về tìm kiếm thông thường"
+                      : "Thử điều chỉnh bộ lọc tìm kiếm hoặc tìm kiếm với từ khóa khác"
                     }
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Xóa bộ lọc
-                  </button>
+                  </p>
+                  <div className="space-x-3">
+                    {isSmartSearchMode && (
+                      <button
+                        onClick={() => {
+                          setSelectedPostId(null);
+                          setIsSmartSearchMode(false);
+                          const regularQuery = {
+                            page: 1,
+                            limit: 12,
+                            sortBy: "createdAt" as const,
+                            sortOrder: "desc" as const,
+                          };
+                          setCurrentFilters(regularQuery);
+                          debouncedSearch(regularQuery);
+                        }}
+                        className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Tìm kiếm thông thường
+                      </button>
+                    )}
+                    <button
+                      onClick={() =>
+                        handleFiltersChange({
+                          page: 1,
+                          limit: 12,
+                          sortBy: "createdAt",
+                          sortOrder: "desc",
+                        })
+                      }
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Xóa bộ lọc
+                    </button>
+                  </div>
                 </motion.div>
               )}
           </div>

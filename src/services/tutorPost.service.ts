@@ -99,6 +99,7 @@ export interface TutorPost {
   contactCount: number;
   createdAt: string;
   updatedAt: string;
+  compatibility?: number;
 }
 
 export interface CreateTutorPostRequest {
@@ -148,7 +149,7 @@ export interface TutorPostSearchQuery {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: "createdAt" | "pricePerSession" | "viewCount";
+  sortBy?: "createdAt" | "pricePerSession" | "viewCount" | "compatibility";
   sortOrder?: "asc" | "desc";
 }
 

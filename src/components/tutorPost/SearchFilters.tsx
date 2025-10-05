@@ -4,11 +4,14 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   XMarkIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 
 interface SearchFiltersProps {
   onFiltersChange: (filters: TutorPostSearchQuery) => void;
   isLoading?: boolean;
+  disabled?: boolean; // ✅ Add disabled prop for smart search mode
+  isSmartSearchMode?: boolean; // ✅ Add smart search mode indicator
 }
 
 interface TutorPostSearchQuery {
@@ -22,13 +25,15 @@ interface TutorPostSearchQuery {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: "createdAt" | "pricePerSession" | "viewCount";
+  sortBy?: "createdAt" | "pricePerSession" | "viewCount" | "compatibility"; // ✅ Add compatibility
   sortOrder?: "asc" | "desc";
 }
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({
   onFiltersChange,
   isLoading = false,
+  disabled = false,
+  isSmartSearchMode = false,
 }) => {
   const [filters, setFilters] = useState<TutorPostSearchQuery>({
     search: "",
@@ -94,12 +99,16 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   ];
 
   const handleFilterChange = (key: keyof TutorPostSearchQuery, value: any) => {
+    if (disabled) return; // ✅ Prevent changes when disabled
+    
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
     onFiltersChange(newFilters);
   };
 
   const handleSubjectToggle = (subjectId: string) => {
+    if (disabled) return;
+    
     const currentSubjects = filters.subjects || [];
     const newSubjects = currentSubjects.includes(subjectId)
       ? currentSubjects.filter((id) => id !== subjectId)
@@ -109,6 +118,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   };
 
   const handleStudentLevelToggle = (level: string) => {
+    if (disabled) return;
+    
     const currentLevels = filters.studentLevel || [];
     const newLevels = currentLevels.includes(level)
       ? currentLevels.filter((l) => l !== level)
@@ -118,11 +129,15 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   };
 
   const handlePriceRangeChange = (min: number, max: number) => {
+    if (disabled) return;
+    
     handleFilterChange("priceMin", min);
     handleFilterChange("priceMax", max);
   };
 
   const clearFilters = () => {
+    if (disabled) return;
+    
     const clearedFilters: TutorPostSearchQuery = {
       search: "",
       subjects: [],
@@ -132,7 +147,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
       priceMax: undefined,
       province: "",
       district: "",
-      sortBy: "createdAt",
+      sortBy: isSmartSearchMode ? "compatibility" : "createdAt", // ✅ Set appropriate default
       sortOrder: "desc",
     };
     setFilters(clearedFilters);
@@ -144,7 +159,22 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   );
 
   const FilterSection = () => (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+      {/* ✅ Smart Search Mode Warning */}
+      {isSmartSearchMode && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start">
+            <ExclamationTriangleIcon className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <h4 className="text-sm font-medium text-blue-800">Chế độ tìm kiếm thông minh</h4>
+              <p className="text-xs text-blue-600 mt-1">
+                Kết quả được sắp xếp theo độ phù hợp với bài đăng của bạn. Bộ lọc tìm kiếm bị vô hiệu hóa.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Search */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
@@ -154,11 +184,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Tìm gia sư, môn học..."
+            placeholder={disabled ? "Tìm kiếm bị vô hiệu hóa" : "Tìm gia sư, môn học..."}
             value={filters.search || ""}
             onChange={(e) => handleFilterChange("search", e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isLoading}
+            disabled={isLoading || disabled}
           />
         </div>
       </div>
@@ -176,7 +206,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 checked={filters.subjects?.includes(subject.id) || false}
                 onChange={() => handleSubjectToggle(subject.id)}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                disabled={isLoading}
+                disabled={isLoading || disabled}
               />
               <span className="ml-2 text-sm text-gray-700">{subject.name}</span>
             </label>
@@ -205,7 +235,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                   handleFilterChange("teachingMode", e.target.value)
                 }
                 className="border-gray-300 text-blue-600 focus:ring-blue-500"
-                disabled={isLoading}
+                disabled={isLoading || disabled}
               />
               <span className="ml-2 text-sm text-gray-700">{mode.label}</span>
             </label>
@@ -226,7 +256,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 checked={filters.studentLevel?.includes(level.value) || false}
                 onChange={() => handleStudentLevelToggle(level.value)}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                disabled={isLoading}
+                disabled={isLoading || disabled}
               />
               <span className="ml-2 text-sm text-gray-700">{level.label}</span>
             </label>
@@ -251,7 +281,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 }
                 onChange={() => handlePriceRangeChange(range.min, range.max)}
                 className="border-gray-300 text-blue-600 focus:ring-blue-500"
-                disabled={isLoading}
+                disabled={isLoading || disabled}
               />
               <span className="ml-2 text-sm text-gray-700">{range.label}</span>
             </label>
@@ -271,7 +301,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             handleFilterChange("district", ""); // Reset district when province changes
           }}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          disabled={isLoading}
+          disabled={isLoading || disabled}
         >
           <option value="">Tất cả tỉnh/thành</option>
           {provinces.map((province) => (
@@ -291,7 +321,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             value={filters.district || ""}
             onChange={(e) => handleFilterChange("district", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isLoading}
+            disabled={isLoading || disabled}
           >
             <option value="">Tất cả quận/huyện</option>
             {filteredDistricts.map((district) => (
@@ -303,7 +333,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
         </div>
       )}
 
-      {/* Sort */}
+      {/* Sort - ✅ Updated with compatibility option */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
           Sắp xếp theo
@@ -313,6 +343,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             { value: "createdAt", label: "Mới nhất" },
             { value: "pricePerSession", label: "Giá tiền" },
             { value: "viewCount", label: "Lượt xem" },
+            ...(isSmartSearchMode ? [{ value: "compatibility", label: "Độ phù hợp 🎯" }] : []), // ✅ Only show in smart mode
           ].map((sort) => (
             <label key={sort.value} className="flex items-center">
               <input
@@ -322,9 +353,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 checked={filters.sortBy === sort.value}
                 onChange={(e) => handleFilterChange("sortBy", e.target.value)}
                 className="border-gray-300 text-blue-600 focus:ring-blue-500"
-                disabled={isLoading}
+                disabled={isLoading || disabled}
               />
-              <span className="ml-2 text-sm text-gray-700">{sort.label}</span>
+              <span className={`ml-2 text-sm ${sort.value === 'compatibility' ? 'font-medium text-blue-700' : 'text-gray-700'}`}>
+                {sort.label}
+              </span>
             </label>
           ))}
         </div>
@@ -334,9 +367,9 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
       <button
         onClick={clearFilters}
         className="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        disabled={isLoading}
+        disabled={isLoading || disabled}
       >
-        Xóa bộ lọc
+        {disabled ? "Không thể xóa bộ lọc" : "Xóa bộ lọc"}
       </button>
     </div>
   );
@@ -347,11 +380,17 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
       <div className="lg:hidden mb-4">
         <button
           onClick={() => setShowMobileFilters(!showMobileFilters)}
-          className="flex items-center justify-center w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
-          disabled={isLoading}
+          className={`flex items-center justify-center w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm transition-colors ${
+            disabled 
+              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+              : 'bg-white hover:bg-gray-50'
+          }`}
+          disabled={isLoading || disabled}
         >
           <FunnelIcon className="w-5 h-5 mr-2" />
-          <span className="font-medium">Bộ lọc tìm kiếm</span>
+          <span className="font-medium">
+            {disabled ? "Bộ lọc (Vô hiệu hóa)" : "Bộ lọc tìm kiếm"}
+          </span>
           {showMobileFilters ? <XMarkIcon className="w-5 h-5 ml-2" /> : null}
         </button>
       </div>
@@ -364,8 +403,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           transition={{ duration: 0.3 }}
           className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6"
         >
-          <h3 className="text-lg font-bold text-gray-900 mb-6">
-            Bộ lọc tìm kiếm
+          <h3 className={`text-lg font-bold mb-6 ${disabled ? 'text-gray-500' : 'text-gray-900'}`}>
+            Bộ lọc tìm kiếm {disabled && '(Vô hiệu hóa)'}
           </h3>
           <FilterSection />
         </motion.div>
@@ -382,8 +421,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           {/* Mobile Filter Header - Sticky */}
           <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-gray-900">
-                Bộ lọc tìm kiếm
+              <h3 className={`text-lg font-bold ${disabled ? 'text-gray-500' : 'text-gray-900'}`}>
+                Bộ lọc tìm kiếm {disabled && '(Vô hiệu hóa)'}
               </h3>
               <button
                 onClick={() => setShowMobileFilters(false)}
@@ -403,9 +442,14 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 rounded-b-xl">
             <button
               onClick={() => setShowMobileFilters(false)}
-              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className={`w-full px-4 py-3 rounded-lg font-medium transition-colors ${
+                disabled 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+              disabled={disabled}
             >
-              Áp dụng bộ lọc
+              {disabled ? "Bộ lọc bị vô hiệu hóa" : "Áp dụng bộ lọc"}
             </button>
           </div>
         </motion.div>

@@ -7,6 +7,7 @@ import {
   CurrencyDollarIcon,
   UserIcon,
   BookOpenIcon,
+  FireIcon,
 } from "@heroicons/react/24/outline";
 
 interface TutorPostCardProps {
@@ -47,10 +48,23 @@ interface TutorPostCardProps {
     viewCount: number;
     contactCount: number;
     createdAt: string;
+    // ✅ Smart search compatibility score
+    compatibility?: number;
+    matchDetails?: {
+      subjectMatch: number;
+      locationMatch: number;
+      priceMatch: number;
+      scheduleMatch: number;
+      overallScore: number;
+    };
   };
+  showCompatibility?: boolean;
 }
 
-const TutorPostCard: React.FC<TutorPostCardProps> = ({ post }) => {
+const TutorPostCard: React.FC<TutorPostCardProps> = ({ 
+  post, 
+  showCompatibility = false 
+}) => {
   // Guard clause to prevent rendering if post or tutorId is undefined
   if (!post || !post.tutorId) {
     return (
@@ -67,6 +81,7 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({ post }) => {
       </div>
     );
   }
+  
   const navigate = useNavigate();
 
   // Utility functions
@@ -133,6 +148,31 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({ post }) => {
     return "Linh hoạt";
   };
 
+  // ✅ Compatibility score utilities
+  const getCompatibilityColor = (score: number): string => {
+    if (score >= 90) return "bg-green-100 text-green-800 border-green-200";
+    if (score >= 80) return "bg-blue-100 text-blue-800 border-blue-200";
+    if (score >= 70) return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    if (score >= 60) return "bg-orange-100 text-orange-800 border-orange-200";
+    return "bg-red-100 text-red-800 border-red-200";
+  };
+
+  const getCompatibilityIcon = (score: number): string => {
+    if (score >= 90) return "🎯";
+    if (score >= 80) return "✅";
+    if (score >= 70) return "👍";
+    if (score >= 60) return "👌";
+    return "🤔";
+  };
+
+  const getCompatibilityText = (score: number): string => {
+    if (score >= 90) return "Rất phù hợp";
+    if (score >= 80) return "Phù hợp cao";
+    if (score >= 70) return "Phù hợp";
+    if (score >= 60) return "Tương đối phù hợp";
+    return "Ít phù hợp";
+  };
+
   const handleViewDetails = () => {
     navigate(`/tutors/${post._id || post.id}`);
   };
@@ -142,9 +182,56 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({ post }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden"
+      className={`bg-white rounded-xl shadow-sm border hover:shadow-md transition-all duration-300 overflow-hidden ${
+        showCompatibility && post.compatibility && post.compatibility >= 80
+          ? 'border-blue-300 ring-1 ring-blue-100'
+          : 'border-gray-200'
+      }`}
     >
       <div className="p-6">
+        {/* ✅ Compatibility Score Badge - Top Priority */}
+        {showCompatibility && post.compatibility !== undefined && (
+          <div className="mb-4">
+            <div className={`inline-flex items-center px-3 py-2 rounded-lg text-sm font-semibold border ${getCompatibilityColor(post.compatibility)}`}>
+              <span className="mr-2">{getCompatibilityIcon(post.compatibility)}</span>
+              <span>{getCompatibilityText(post.compatibility)}: {post.compatibility}%</span>
+              {post.compatibility >= 90 && (
+                <FireIcon className="w-4 h-4 ml-2 text-red-500" />
+              )}
+            </div>
+            
+            {/* ✅ Match Details Breakdown */}
+            {post.matchDetails && (
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                {post.matchDetails.subjectMatch > 0 && (
+                  <div className="flex items-center text-gray-600">
+                    <BookOpenIcon className="w-3 h-3 mr-1" />
+                    <span>Môn học: {post.matchDetails.subjectMatch}%</span>
+                  </div>
+                )}
+                {post.matchDetails.locationMatch > 0 && (
+                  <div className="flex items-center text-gray-600">
+                    <MapPinIcon className="w-3 h-3 mr-1" />
+                    <span>Địa điểm: {post.matchDetails.locationMatch}%</span>
+                  </div>
+                )}
+                {post.matchDetails.priceMatch > 0 && (
+                  <div className="flex items-center text-gray-600">
+                    <CurrencyDollarIcon className="w-3 h-3 mr-1" />
+                    <span>Giá: {post.matchDetails.priceMatch}%</span>
+                  </div>
+                )}
+                {post.matchDetails.scheduleMatch > 0 && (
+                  <div className="flex items-center text-gray-600">
+                    <ClockIcon className="w-3 h-3 mr-1" />
+                    <span>Lịch: {post.matchDetails.scheduleMatch}%</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Header with Avatar and Basic Info */}
         <div className="flex items-start space-x-4 mb-4">
           {/* Avatar */}
@@ -253,9 +340,16 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({ post }) => {
         {/* Action Button */}
         <button
           onClick={handleViewDetails}
-          className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-center"
+          className={`w-full px-4 py-3 rounded-lg transition-colors font-semibold text-center ${
+            showCompatibility && post.compatibility && post.compatibility >= 80
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-gray-600 text-white hover:bg-gray-700'
+          }`}
         >
-          Xem chi tiết
+          {showCompatibility && post.compatibility && post.compatibility >= 90 
+            ? '🎯 Liên hệ ngay' 
+            : 'Xem chi tiết'
+          }
         </button>
       </div>
     </motion.div>
