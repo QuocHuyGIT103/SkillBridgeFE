@@ -14,6 +14,10 @@ import type {
   QualificationsData,
   VerificationRequest,
 } from "../../types/qualification.types";
+import {
+  translateEducationLevel,
+  translateVerificationStatus,
+} from "../../utils/enumTranslations";
 import { canEditItem, getDisplayData } from "../../utils/qualification.utils";
 
 interface EducationTabProps {
@@ -168,7 +172,9 @@ const EducationTab: React.FC<EducationTabProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Trình độ
                   </label>
-                  <p className="text-gray-900">{displayData.level}</p>
+                  <p className="text-gray-900">
+                    {translateEducationLevel(displayData.level)}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

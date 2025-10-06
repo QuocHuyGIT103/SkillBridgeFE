@@ -134,13 +134,13 @@ export const useTutorPostStore = create<TutorPostState>((set) => ({
           isLoading: false,
         }));
 
-        toast.success(response.message || "Tutor post created successfully");
+        toast.success(response.message || "Tạo bài đăng thành công");
       } else {
         throw new Error(response.message || "Failed to create tutor post");
       }
     } catch (error: any) {
       set({ isLoading: false });
-      toast.error(error.message || "Failed to create tutor post");
+      toast.error(error.message || "Không thể tạo bài đăng");
       throw error;
     }
   },
@@ -184,13 +184,13 @@ export const useTutorPostStore = create<TutorPostState>((set) => ({
           isLoading: false,
         }));
 
-        toast.success(response.message || "Tutor post updated successfully");
+        toast.success(response.message || "Cập nhật bài đăng thành công");
       } else {
         throw new Error(response.message || "Failed to update tutor post");
       }
     } catch (error: any) {
       set({ isLoading: false });
-      toast.error(error.message || "Failed to update tutor post");
+      toast.error(error.message || "Không thể cập nhật bài đăng");
       throw error;
     }
   },

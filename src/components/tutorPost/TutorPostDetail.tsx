@@ -6,6 +6,11 @@ import {
   formatShortAddress,
   formatAddressDisplay,
 } from "../../utils/addressUtils";
+import {
+  translateStudentLevel,
+  translateEducationLevel,
+  translateVerificationStatus,
+} from "../../utils/enumTranslations";
 import toast from "react-hot-toast";
 
 const TutorPostDetail: React.FC = () => {
@@ -90,7 +95,7 @@ const TutorPostDetail: React.FC = () => {
   const getLocationText = () => {
     if (currentPost.teachingMode === "ONLINE") return "Trực tuyến";
     if (currentPost.teachingMode === "OFFLINE" && currentPost.address) {
-      return formatShortAddress(currentPost.address);
+      return "Tại nhà";
     }
     if (currentPost.teachingMode === "BOTH") return "Cả hai hình thức";
     return "Linh hoạt";
@@ -425,7 +430,7 @@ const TutorPostDetail: React.FC = () => {
                   {currentPost.tutorId.profile?.student_levels && (
                     <div>
                       <label className="text-base font-semibold text-gray-800">
-                        Trình độ học viên:
+                        Trình độ học viên phù hợp:
                       </label>
                       <p className="text-gray-900 text-base mt-1">
                         {currentPost.tutorId.profile.student_levels}
@@ -492,7 +497,7 @@ const TutorPostDetail: React.FC = () => {
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-2">
                               <h3 className="text-xl font-bold text-gray-900">
-                                {edu.level}
+                                {translateEducationLevel(edu.level)}
                               </h3>
                               <span
                                 className={`text-sm px-3 py-1 rounded-full font-medium ${
@@ -503,11 +508,7 @@ const TutorPostDetail: React.FC = () => {
                                     : "bg-gray-100 text-gray-800"
                                 }`}
                               >
-                                {edu.status === "VERIFIED"
-                                  ? "Đã xác thực"
-                                  : edu.status === "PENDING"
-                                  ? "Chờ xác thực"
-                                  : "Chưa xác thực"}
+                                {translateVerificationStatus(edu.status)}
                               </span>
                             </div>
                             <div className="space-y-2">
@@ -788,7 +789,7 @@ const TutorPostDetail: React.FC = () => {
                         key={index}
                         className="px-3 py-2 bg-green-100 text-green-800 text-sm rounded-lg font-medium"
                       >
-                        {level}
+                        {translateStudentLevel(level)}
                       </span>
                     ))}
                   </div>
@@ -819,7 +820,7 @@ const TutorPostDetail: React.FC = () => {
                 {currentPost.address && (
                   <div>
                     <label className="text-base font-semibold text-gray-900 block mb-3">
-                      Đến từ:
+                      Địa chỉ:
                     </label>
                     <p className="text-gray-700 text-sm bg-gray-50 p-3 rounded-lg">
                       {isAuthenticated

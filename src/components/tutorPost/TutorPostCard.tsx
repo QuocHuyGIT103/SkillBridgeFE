@@ -44,6 +44,7 @@ interface TutorPostCardProps {
         status?: string;
       };
     };
+    address?: any;
     viewCount: number;
     contactCount: number;
     createdAt: string;
@@ -127,8 +128,9 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({ post }) => {
 
   const getLocationText = (): string => {
     if (post.teachingMode === "ONLINE") return "Trực tuyến";
-    if (post.tutorId.structured_address?.province_name) {
-      return post.tutorId.structured_address.province_name;
+    if (post.teachingMode === "BOTH") return "Linh hoạt";
+    if (post.address?.province?.name) {
+      return post.address?.province?.name;
     }
     return "Linh hoạt";
   };

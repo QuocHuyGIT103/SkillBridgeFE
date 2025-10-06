@@ -3,6 +3,7 @@ import { useTutorPostStore } from "../../store/tutorPost.store";
 import SubjectSelector from "./SubjectSelector";
 import PriceInput from "./PriceInput";
 import AddressSelector from "../AddressSelector";
+import TimePicker24h from "../common/TimePicker24h";
 import type {
   CreateTutorPostRequest,
   TutorPost,
@@ -157,7 +158,6 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error("Vui lòng kiểm tra lại thông tin đã nhập");
       return;
     }
 
@@ -166,15 +166,12 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
     try {
       if (mode === "create") {
         await createTutorPost(formData);
-        toast.success("Tạo bài đăng thành công!");
       } else {
         await updateTutorPost(tutorPost!.id, formData);
-        toast.success("Cập nhật bài đăng thành công!");
       }
 
       onSuccess?.();
     } catch (error: any) {
-      toast.error(error.message || "Có lỗi xảy ra, vui lòng thử lại");
     } finally {
       setIsSubmitting(false);
     }
@@ -371,7 +368,7 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
                       dayOfWeek: Number(e.target.value),
                     })
                   }
-                  className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {DAYS_OF_WEEK.map((day, index) => (
                     <option key={index} value={index}>
@@ -380,25 +377,27 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
                   ))}
                 </select>
 
-                <input
-                  type="time"
+                <TimePicker24h
                   value={newTimeSlot.startTime}
-                  onChange={(e) =>
+                  onChange={(time) =>
                     setNewTimeSlot({
                       ...newTimeSlot,
-                      startTime: e.target.value,
+                      startTime: time,
                     })
                   }
-                  className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Giờ bắt đầu"
+                  sessionDuration={formData.sessionDuration}
                 />
 
-                <input
-                  type="time"
+                <TimePicker24h
                   value={newTimeSlot.endTime}
-                  onChange={(e) =>
-                    setNewTimeSlot({ ...newTimeSlot, endTime: e.target.value })
+                  onChange={(time) =>
+                    setNewTimeSlot({ ...newTimeSlot, endTime: time })
                   }
-                  className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Giờ kết thúc"
+                  sessionDuration={formData.sessionDuration}
+                  startTimeValue={newTimeSlot.startTime}
+                  isEndTime={true}
                 />
 
                 <button

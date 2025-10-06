@@ -2,15 +2,15 @@
 // TODO: This should be replaced with proper backend population of address names
 
 export interface AddressInfo {
-  province?: string;
-  district?: string;
-  ward?: string;
+  province?: string | { _id: string; name: string };
+  district?: string | { _id: string; name: string };
+  ward?: string | { _id: string; name: string };
   specificAddress?: string;
 }
 
 /**
  * Format address for display
- * This is a temporary solution until backend properly populates address names
+ * Now handles both old format (string codes) and new format (objects with _id and name)
  */
 export const formatAddressDisplay = (
   address: AddressInfo,
@@ -25,15 +25,27 @@ export const formatAddressDisplay = (
   }
 
   if (address.ward) {
-    parts.push(getAddressName(address.ward, "ward"));
+    const wardName =
+      typeof address.ward === "object"
+        ? address.ward.name
+        : getAddressName(address.ward, "ward");
+    parts.push(wardName);
   }
 
   if (address.district) {
-    parts.push(getAddressName(address.district, "district"));
+    const districtName =
+      typeof address.district === "object"
+        ? address.district.name
+        : getAddressName(address.district, "district");
+    parts.push(districtName);
   }
 
   if (address.province) {
-    parts.push(getAddressName(address.province, "province"));
+    const provinceName =
+      typeof address.province === "object"
+        ? address.province.name
+        : getAddressName(address.province, "province");
+    parts.push(provinceName);
   }
 
   return parts.join(", ");
@@ -91,10 +103,14 @@ export const formatShortAddress = (address: AddressInfo): string => {
   if (!address) return "";
 
   const district = address.district
-    ? getAddressName(address.district, "district")
+    ? typeof address.district === "object"
+      ? address.district.name
+      : getAddressName(address.district, "district")
     : "";
   const province = address.province
-    ? getAddressName(address.province, "province")
+    ? typeof address.province === "object"
+      ? address.province.name
+      : getAddressName(address.province, "province")
     : "";
 
   if (district && province) {
@@ -103,7 +119,14 @@ export const formatShortAddress = (address: AddressInfo): string => {
     return province;
   }
 
-  return address.province || ""; // Fallback to code
+  // Fallback to code or name
+  if (address.province) {
+    return typeof address.province === "object"
+      ? address.province.name
+      : address.province;
+  }
+
+  return "";
 };
 
 /**

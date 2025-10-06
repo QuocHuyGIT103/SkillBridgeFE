@@ -13,6 +13,10 @@ import type {
   QualificationsData,
   VerificationRequest,
 } from "../../types/qualification.types";
+import {
+  translateEducationLevel,
+  translateVerificationStatus,
+} from "../../utils/enumTranslations";
 import { canEditItem, getDisplayData } from "../../utils/qualification.utils";
 
 interface OverviewTabProps {
@@ -55,20 +59,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case "DRAFT":
-        return "Bản nháp";
-      case "VERIFIED":
-        return "Đã xác thực";
-      case "PENDING":
-        return "Đang chờ";
-      case "REJECTED":
-        return "Bị từ chối";
-      case "MODIFIED_PENDING":
-        return "Cần xác thực lại";
-      default:
-        return "Không xác định";
-    }
+    return translateVerificationStatus(status);
   };
 
   const getStatusColor = (status: string) => {
@@ -201,8 +192,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
                           {displayData.major || "Không có chuyên ngành"}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {displayData.level} • {displayData.startYear} -{" "}
-                          {displayData.endYear}
+                          {translateEducationLevel(displayData.level)} •{" "}
+                          {displayData.startYear} - {displayData.endYear}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">

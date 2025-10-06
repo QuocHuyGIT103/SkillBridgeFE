@@ -8,6 +8,10 @@ import type {
   CreateVerificationRequest,
   QualificationsData,
 } from "../../types/qualification.types";
+import {
+  translateEducationLevel,
+  translateVerificationStatus,
+} from "../../utils/enumTranslations";
 
 interface VerificationRequestModalProps {
   isOpen: boolean;
@@ -161,20 +165,7 @@ const VerificationRequestModal: React.FC<VerificationRequestModalProps> = ({
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case "DRAFT":
-        return "Bản nháp";
-      case "VERIFIED":
-        return "Đã xác thực";
-      case "PENDING":
-        return "Đang chờ";
-      case "REJECTED":
-        return "Bị từ chối";
-      case "MODIFIED_PENDING":
-        return "Cần xác thực lại";
-      default:
-        return "Không xác định";
-    }
+    return translateVerificationStatus(status);
   };
 
   if (!isOpen) return null;
@@ -275,8 +266,10 @@ const VerificationRequestModal: React.FC<VerificationRequestModalProps> = ({
                             "Không có chuyên ngành"}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {qualifications.education.level} •{" "}
-                          {qualifications.education.startYear} -{" "}
+                          {translateEducationLevel(
+                            qualifications.education.level
+                          )}{" "}
+                          • {qualifications.education.startYear} -{" "}
                           {qualifications.education.endYear}
                         </p>
                         {qualifications.education.rejectionReason && (

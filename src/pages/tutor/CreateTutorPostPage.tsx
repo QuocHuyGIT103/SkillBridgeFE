@@ -34,7 +34,6 @@ const CreateTutorPostPage: React.FC = () => {
   const handleSuccess = () => {
     navigate("/tutor/posts", {
       replace: true,
-      state: { message: "Tạo bài đăng thành công!" },
     });
   };
 

@@ -93,7 +93,7 @@ export interface TutorPost {
   teachingMode: "ONLINE" | "OFFLINE" | "BOTH";
   studentLevel: string[];
   teachingSchedule: TeachingSchedule[];
-  address?: Address;
+  address?: any;
   status: "ACTIVE" | "INACTIVE" | "PENDING";
   viewCount: number;
   contactCount: number;

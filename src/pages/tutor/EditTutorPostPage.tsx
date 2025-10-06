@@ -32,7 +32,6 @@ const EditTutorPostPage: React.FC = () => {
   const handleSuccess = () => {
     navigate("/tutor/posts", {
       replace: true,
-      state: { message: "Cập nhật bài đăng thành công!" },
     });
   };
 
