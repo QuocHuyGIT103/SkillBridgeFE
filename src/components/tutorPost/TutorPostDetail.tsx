@@ -15,6 +15,7 @@ const TutorPostDetail: React.FC = () => {
     useTutorPostStore();
   const { user, isAuthenticated } = useAuthStore();
   const [showContactModal, setShowContactModal] = useState(false);
+  const [hasViewed, setHasViewed] = useState(false);
 
   useEffect(() => {
     if (postId && postId !== "undefined") {
@@ -24,6 +25,20 @@ const TutorPostDetail: React.FC = () => {
       navigate("/tutors");
     }
   }, [postId, getTutorPostById, navigate]);
+
+  // Check if current user is the tutor of this post
+  const isOwnPost = currentPost && user?.id === currentPost.tutorId._id;
+
+  // Mark as viewed after a delay to prevent multiple increments
+  useEffect(() => {
+    if (currentPost && isAuthenticated && !isOwnPost && !hasViewed) {
+      const timer = setTimeout(() => {
+        setHasViewed(true);
+      }, 2000); // Wait 2 seconds before marking as viewed
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentPost, isAuthenticated, isOwnPost, hasViewed]);
 
   if (isLoading) {
     return (
@@ -94,7 +109,7 @@ const TutorPostDetail: React.FC = () => {
     }
 
     try {
-      await incrementContactCount(currentPost.id);
+      await incrementContactCount(currentPost._id || currentPost.id || "");
       setShowContactModal(true);
     } catch (error) {
       toast.error("Có lỗi xảy ra, vui lòng thử lại");
@@ -267,6 +282,11 @@ const TutorPostDetail: React.FC = () => {
                   </svg>
                   <span className="font-medium">
                     {currentPost.viewCount} lượt xem
+                    {isOwnPost && (
+                      <span className="text-xs text-gray-500 ml-1">
+                        (không tính lượt xem của bạn)
+                      </span>
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center">
@@ -682,34 +702,53 @@ const TutorPostDetail: React.FC = () => {
                 </div>
               </div>
 
-              <button
-                onClick={handleContactClick}
-                className="w-full px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg"
-              >
-                Liên hệ gia sư
-              </button>
+              {isOwnPost ? (
+                <button
+                  onClick={() =>
+                    navigate(
+                      `/tutor/posts/${currentPost._id || currentPost.id}/edit`
+                    )
+                  }
+                  className="w-full px-6 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg"
+                >
+                  Chỉnh sửa bài đăng
+                </button>
+              ) : (
+                <button
+                  onClick={handleContactClick}
+                  className="w-full px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg"
+                >
+                  Liên hệ gia sư
+                </button>
+              )}
 
               <div className="text-sm text-gray-500 text-center mt-4 space-y-2">
-                <p>
-                  {isAuthenticated
-                    ? "Click để xem thông tin liên hệ"
-                    : "Đăng nhập để xem thông tin liên hệ"}
-                </p>
-                {!isAuthenticated && (
-                  <div className="flex items-center justify-center space-x-1">
-                    <svg
-                      className="w-3 h-3"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span>Thông tin được bảo vệ</span>
-                  </div>
+                {isOwnPost ? (
+                  <p>Đây là bài đăng của bạn</p>
+                ) : (
+                  <>
+                    <p>
+                      {isAuthenticated
+                        ? "Click để xem thông tin liên hệ"
+                        : "Đăng nhập để xem thông tin liên hệ"}
+                    </p>
+                    {!isAuthenticated && (
+                      <div className="flex items-center justify-center space-x-1">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span>Thông tin được bảo vệ</span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
