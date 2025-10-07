@@ -14,7 +14,17 @@ export interface IPostInput {
   };
   availability?: string;
   requirements?: string;
-  expiry_date?: string; 
+  expiry_date?: string;
+  // Thêm các trường mới cho lịch học và địa điểm
+  teachingSchedule?: TeachingTimeSlot[];
+  sessionDuration?: number;
+  teachingMode?: 'ONLINE' | 'OFFLINE' | 'BOTH';
+  address?: {
+    province: string;
+    district: string;
+    ward: string;
+    specificAddress: string;
+  };
 }
 
 // Dữ liệu đầy đủ của một bài đăng từ API
@@ -35,11 +45,30 @@ export interface IPost {
     min: number;
     max: number;
   };
+  availability?: string;
+  requirements?: string;
+  expiry_date?: string;
   status: PostStatus;
   admin_note?: string;
   created_at: string;
   updated_at: string;
   reviewed_at?: string;
+  // Thêm các trường mới cho lịch học và địa điểm
+  teachingSchedule?: TeachingTimeSlot[];
+  sessionDuration?: number;
+  teachingMode?: 'ONLINE' | 'OFFLINE' | 'BOTH';
+  address?: {
+    province: string;
+    district: string;
+    ward: string;
+    specificAddress: string;
+  };
+}
+
+export interface TeachingTimeSlot {
+  dayOfWeek: number; // 0-6 (0=Sunday)
+  startTime: string; // "HH:mm" format
+  endTime: string; // "HH:mm" format
 }
 
 // Dữ liệu đầu vào khi admin duyệt bài
