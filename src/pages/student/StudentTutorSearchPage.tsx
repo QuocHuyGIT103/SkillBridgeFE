@@ -308,12 +308,13 @@ const StudentTutorSearchPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-        {/* ✅ Header */}
+      {/* ✅ Use content-wrapper class for consistent spacing */}
+      <div className="content-wrapper py-6 lg:py-8">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/50 mb-8"
+          className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-xl border border-white/50 mb-8"
         >
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
@@ -351,12 +352,12 @@ const StudentTutorSearchPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* ✅ Main Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-          {/* Left Sidebar - Filters */}
+        {/* ✅ FIXED: Main Layout Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 lg:gap-8">
+          {/* ✅ Left Sidebar - Fixed span */}
           <div className="xl:col-span-1 order-2 xl:order-1">
             <div className="sticky top-6 space-y-6">
-              {/* Smart Search Selector */}
+              {/* Smart Search Toggle */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -425,7 +426,7 @@ const StudentTutorSearchPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Content - Results */}
+          {/* ✅ Right Content - Fixed span */}
           <div className="xl:col-span-3 order-1 xl:order-2">
             <AnimatePresence mode="wait">
               {/* Initial Loading */}
@@ -517,15 +518,15 @@ const StudentTutorSearchPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* ✅ Grid với chiều cao đồng đều */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {/* ✅ FIXED: Results Grid */}
+                  <div className="responsive-grid grid gap-6">
                     {currentPosts.map((post: any, index: number) => (
                       <motion.div
                         key={post.id || post._id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="h-full" // Đảm bảo container có chiều cao đầy đủ
+                        className="card-equal-height" // ✅ Use custom class
                       >
                         <TutorPostCard 
                           post={post} 

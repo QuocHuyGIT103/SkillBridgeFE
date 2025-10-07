@@ -64,16 +64,16 @@ const TEACHING_MODES = [
 
 const SORT_OPTIONS = [
   { value: "createdAt", label: "Mới nhất", order: "desc", icon: "⏰" },
-  { value: "pricePerSession", label: "Giá thấp nhất", order: "asc", icon: "💰" },
-  { value: "pricePerSession", label: "Giá cao nhất", order: "desc", icon: "💎" },
-  { value: "viewCount", label: "Xem nhiều nhất", order: "desc", icon: "👁️" },
-  { value: "contactCount", label: "Liên hệ nhiều nhất", order: "desc", icon: "📞" },
+  { value: "pricePerSession", label: "Giá thấp", order: "asc", icon: "💰" },
+  { value: "pricePerSession", label: "Giá cao", order: "desc", icon: "💎" },
+  { value: "viewCount", label: "Phổ biến", order: "desc", icon: "👁️" },
+  { value: "contactCount", label: "Hot", order: "desc", icon: "📞" },
 ];
 
 const PRICE_PRESETS = [
-  { label: "100K - 300K", min: 100000, max: 300000 },
-  { label: "300K - 500K", min: 300000, max: 500000 },
-  { label: "500K - 1M", min: 500000, max: 1000000 },
+  { label: "100K-300K", min: 100000, max: 300000 },
+  { label: "300K-500K", min: 300000, max: 500000 },
+  { label: "500K-1M", min: 500000, max: 1000000 },
   { label: "Trên 1M", min: 1000000, max: undefined },
 ];
 
@@ -260,49 +260,29 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
     >
       {/* Header */}
       <div className="px-4 py-4 sm:px-6 sm:py-5 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-white rounded-xl shadow-sm">
-              <FunnelIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                Bộ lọc tìm kiếm 
-                {isSmartSearchMode && <span className="text-lg">🤖</span>}
-              </h3>
-              <div className="flex items-center gap-3 mt-1">
-                {isSmartSearchMode && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700">
-                    AI đang hoạt động
-                  </span>
-                )}
-                {getActiveFilterCount() > 0 && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                    {getActiveFilterCount()} bộ lọc đang áp dụng
-                  </span>
-                )}
+        <div className="flex flex-col gap-3">
+          {/* Top row - Title and toggle button */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center space-x-3 min-w-0 flex-1">
+              <div className="flex items-center justify-center w-10 h-10 bg-white rounded-xl shadow-sm flex-shrink-0">
+                <FunnelIcon className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2 truncate">
+                  Bộ lọc tìm kiếm 
+                  {isSmartSearchMode && <span className="text-lg flex-shrink-0">🤖</span>}
+                </h3>
               </div>
             </div>
-          </div>
-          
-          <div className="flex items-center justify-between sm:justify-end gap-3">
-            {resultCount !== undefined && (
-              <div className="bg-white px-3 py-2 rounded-lg border border-gray-200">
-                <span className="text-sm font-semibold text-gray-900">
-                  {resultCount.toLocaleString()}
-                </span>
-                <span className="text-xs text-gray-500 ml-1">kết quả</span>
-              </div>
-            )}
             
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all duration-200"
+              className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all duration-200 flex-shrink-0"
               disabled={disabled}
             >
-              <span>{isExpanded ? 'Thu gọn' : 'Mở rộng'}</span>
+              <span className="hidden sm:inline">{isExpanded ? 'Thu gọn' : 'Mở rộng'}</span>
               <motion.div
                 animate={{ rotate: isExpanded ? 180 : 0 }}
                 transition={{ duration: 0.2 }}
@@ -311,26 +291,48 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
               </motion.div>
             </motion.button>
           </div>
+
+          {/* Bottom row - Badges and result count */}
+          <div className="flex flex-wrap items-center gap-2">
+            {isSmartSearchMode && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 flex-shrink-0">
+                AI đang hoạt động
+              </span>
+            )}
+            {getActiveFilterCount() > 0 && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 flex-shrink-0">
+                {getActiveFilterCount()} bộ lọc
+              </span>
+            )}
+            {resultCount !== undefined && (
+              <div className="bg-white px-3 py-1 rounded-lg border border-gray-200 flex-shrink-0">
+                <span className="text-sm font-semibold text-gray-900">
+                  {resultCount.toLocaleString()}
+                </span>
+                <span className="text-xs text-gray-500 ml-1">kết quả</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Quick Search Bar */}
+      {/* Search Bar */}
       <div className="px-4 py-4 sm:px-6 border-b border-gray-100">
         <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 flex-shrink-0" />
           <input
             type="text"
             placeholder={disabled ? "Tìm kiếm bị tắt trong chế độ AI" : "Tìm kiếm gia sư theo tên, môn học, khu vực..."}
             value={localFilters.search || ""}
             onChange={(e) => updateFilter("search", e.target.value || undefined)}
             onKeyPress={(e) => e.key === 'Enter' && !disabled && onSearch()}
-            className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed transition-all duration-200 text-sm placeholder-gray-500"
+            className="w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed transition-all duration-200 text-sm placeholder-gray-500"
             disabled={disabled}
           />
           {localFilters.search && (
             <button
               onClick={() => updateFilter("search", undefined)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
             >
               <XMarkIcon className="w-4 h-4 text-gray-400" />
             </button>
@@ -356,16 +358,16 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, scale: 1 }}
                   className="p-4 bg-red-50 border border-red-200 rounded-xl"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start min-w-0 flex-1">
                       <div className="flex-shrink-0">
                         <XMarkIcon className="w-5 h-5 text-red-400" />
                       </div>
-                      <p className="ml-3 text-sm text-red-600">{error}</p>
+                      <p className="ml-3 text-sm text-red-600 break-words">{error}</p>
                     </div>
                     <button
                       onClick={clearError}
-                      className="text-red-400 hover:text-red-600 transition-colors"
+                      className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
                     >
                       <XMarkIcon className="w-4 h-4" />
                     </button>
@@ -375,13 +377,13 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
               {/* Subjects */}
               <div>
-                <div className="flex items-center mb-4">
-                  <AcademicCapIcon className="w-5 h-5 text-blue-600 mr-2" />
-                  <label className="text-base font-semibold text-gray-900">
+                <div className="flex items-center mb-4 gap-2">
+                  <AcademicCapIcon className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                  <label className="text-base font-semibold text-gray-900 truncate flex-1">
                     Môn học
                   </label>
                   {localFilters.subjects?.length && (
-                    <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full flex-shrink-0">
                       {localFilters.subjects.length}
                     </span>
                   )}
@@ -401,18 +403,19 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
               {/* Student Level */}
               <div>
-                <div className="flex items-center mb-4">
-                  <div className="w-5 h-5 text-green-600 mr-2 text-lg">🎓</div>
-                  <label className="text-base font-semibold text-gray-900">
+                <div className="flex items-center mb-4 gap-2">
+                  <div className="w-5 h-5 text-green-600 text-lg flex-shrink-0">🎓</div>
+                  <label className="text-base font-semibold text-gray-900 flex-1">
                     Đối tượng học viên
                   </label>
                   {localFilters.studentLevel?.length && (
-                    <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full flex-shrink-0">
                       {localFilters.studentLevel.length}
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {/* ✅ Fixed grid với auto height cho cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                   {STUDENT_LEVELS.map((level) => {
                     const isSelected = (localFilters.studentLevel || []).includes(level.value);
                     return (
@@ -421,7 +424,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                         whileHover={!disabled ? { scale: 1.02 } : {}}
                         whileTap={!disabled ? { scale: 0.98 } : {}}
                         className={`
-                          relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 
+                          relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200
                           ${disabled 
                             ? 'cursor-not-allowed opacity-50'
                             : isSelected 
@@ -447,17 +450,19 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                           className="sr-only"
                           disabled={disabled}
                         />
-                        <div className="flex items-center justify-between flex-1 w-full">
-                          <div className="flex items-center">
-                            <span className="text-2xl mr-3 flex-shrink-0">{level.icon}</span>
-                            <span className="text-sm font-semibold text-gray-900">
+                        {/* ✅ Layout mới để text hiển thị đầy đủ */}
+                        <div className="flex items-center w-full gap-3">
+                          <span className="text-2xl flex-shrink-0">{level.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            {/* ✅ Bỏ truncate, để text wrap tự nhiên */}
+                            <span className="text-sm font-semibold text-gray-900 leading-tight">
                               {level.label}
                             </span>
                           </div>
                           {isSelected && (
                             <div className="flex-shrink-0">
-                              <div className="w-5 h-5 bg-current rounded-full flex items-center justify-center">
-                                <CheckIcon className="w-3 h-3 text-white" />
+                              <div className="w-6 h-6 bg-current rounded-full flex items-center justify-center">
+                                <CheckIcon className="w-4 h-4 text-white" />
                               </div>
                             </div>
                           )}
@@ -470,18 +475,18 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
               {/* Teaching Mode */}
               <div>
-                <div className="flex items-center mb-4">
-                  <ComputerDesktopIcon className="w-5 h-5 text-purple-600 mr-2" />
-                  <label className="text-base font-semibold text-gray-900">
+                <div className="flex items-center mb-4 gap-2">
+                  <ComputerDesktopIcon className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                  <label className="text-base font-semibold text-gray-900 flex-1">
                     Hình thức dạy học
                   </label>
                   {localFilters.teachingMode && (
-                    <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                    <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full flex-shrink-0">
                       Đã chọn
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   {TEACHING_MODES.map((mode) => {
                     const isSelected = localFilters.teachingMode === mode.value;
                     return (
@@ -506,19 +511,25 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                         `}
                         disabled={disabled}
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="text-3xl mb-2">{mode.icon}</div>
-                            <div className="font-bold text-gray-900 mb-1">{mode.label}</div>
-                            <p className="text-xs text-gray-600">{mode.description}</p>
-                          </div>
-                          {isSelected && (
-                            <div className="absolute top-3 right-3">
-                              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                                <CheckIcon className="w-4 h-4 text-white" />
+                        {/* ✅ Layout mới với flexible height */}
+                        <div className="flex flex-col">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="text-3xl flex-shrink-0">{mode.icon}</div>
+                            {isSelected && (
+                              <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                <CheckIcon className="w-5 h-5 text-white" />
                               </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            {/* ✅ Bỏ truncate, để text hiển thị đầy đủ */}
+                            <div className="font-bold text-gray-900 mb-2 text-base leading-tight">
+                              {mode.label}
                             </div>
-                          )}
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                              {mode.description}
+                            </p>
+                          </div>
                         </div>
                       </motion.button>
                     );
@@ -528,13 +539,13 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
               {/* Price Range */}
               <div>
-                <div className="flex items-center mb-4">
-                  <CurrencyDollarIcon className="w-5 h-5 text-green-600 mr-2" />
-                  <label className="text-base font-semibold text-gray-900">
+                <div className="flex items-center mb-4 gap-2">
+                  <CurrencyDollarIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  <label className="text-base font-semibold text-gray-900 truncate flex-1">
                     Khoảng giá mong muốn
                   </label>
                   {(localFilters.priceMin || localFilters.priceMax) && (
-                    <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full flex-shrink-0">
                       Đã đặt
                     </span>
                   )}
@@ -543,14 +554,14 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 {/* Price Presets */}
                 <div className="mb-4">
                   <p className="text-sm text-gray-600 mb-3">Khoảng giá phổ biến:</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                     {PRICE_PRESETS.map((preset, index) => (
                       <motion.button
                         key={index}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handlePricePreset(preset)}
-                        className="px-3 py-2 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                        className="px-3 py-2 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-center truncate"
                       >
                         {preset.label}
                       </motion.button>
@@ -560,9 +571,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
                 {/* Custom Price Range */}
                 <div className="bg-gray-50 p-4 rounded-xl">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 truncate">
                         Giá tối thiểu (VNĐ/buổi)
                       </label>
                       <PriceInput
@@ -575,7 +586,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 truncate">
                         Giá tối đa (VNĐ/buổi)
                       </label>
                       <PriceInput
@@ -593,26 +604,26 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
               {/* Location */}
               <div>
-                <div className="flex items-center mb-4">
-                  <MapPinIcon className="w-5 h-5 text-red-600 mr-2" />
-                  <label className="text-base font-semibold text-gray-900">
+                <div className="flex items-center mb-4 gap-2">
+                  <MapPinIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
+                  <label className="text-base font-semibold text-gray-900 truncate flex-1">
                     Khu vực mong muốn
                   </label>
                   {localFilters.province && (
-                    <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                    <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full flex-shrink-0">
                       Đã chọn
                     </span>
                   )}
                 </div>
                 <div className="bg-gray-50 p-4 rounded-xl space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 truncate">
                       Tỉnh/Thành phố
                     </label>
                     <select
                       value={localFilters.province || ""}
                       onChange={(e) => handleProvinceChange(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 truncate"
                       disabled={disabled || locationLoading}
                     >
                       <option value="">Tất cả tỉnh/thành</option>
@@ -630,13 +641,13 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                     >
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2 truncate">
                         Quận/Huyện
                       </label>
                       <select
                         value={localFilters.district || ""}
                         onChange={(e) => handleDistrictChange(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 truncate"
                         disabled={disabled || locationLoading}
                       >
                         <option value="">Tất cả quận/huyện</option>
@@ -653,14 +664,15 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
               {/* Sort */}
               <div>
-                <div className="flex items-center mb-4">
-                  <div className="w-5 h-5 text-indigo-600 mr-2 text-lg">📊</div>
-                  <label className="text-base font-semibold text-gray-900">
+                <div className="flex items-center mb-4 gap-2">
+                  <div className="w-5 h-5 text-indigo-600 text-lg flex-shrink-0">📊</div>
+                  <label className="text-base font-semibold text-gray-900 flex-1">
                     Sắp xếp kết quả
                   </label>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-xl">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {/* ✅ Adjusted responsive grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                     {SORT_OPTIONS.map((option, index) => {
                       const isSelected = getCurrentSortValue() === `${option.value}_${option.order}`;
                       return (
@@ -670,21 +682,24 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                           whileTap={!disabled ? { scale: 0.98 } : {}}
                           onClick={() => handleSortChange(`${option.value}_${option.order}`)}
                           className={`
-                            p-3 rounded-lg border transition-all duration-200 text-left
+                            p-3 rounded-lg border transition-all duration-200 text-center
                             ${isSelected
                               ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                              : "border-gray-200 hover:border-gray-300 text-gray-700"
+                              : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
                             }
                           `}
                         >
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center">
-                              <span className="text-lg mr-2 flex-shrink-0">{option.icon}</span>
-                              <span className="text-sm font-medium">{option.label}</span>
+                          {/* ✅ Simplified layout với text wrapping */}
+                          <div className="flex flex-col items-center gap-2">
+                            <span className="text-2xl">{option.icon}</span>
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-sm font-medium leading-tight text-center">
+                                {option.label}
+                              </span>
+                              {isSelected && (
+                                <CheckIcon className="w-4 h-4 text-indigo-600" />
+                              )}
                             </div>
-                            {isSelected && (
-                              <CheckIcon className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-                            )}
                           </div>
                         </motion.button>
                       );
@@ -702,17 +717,17 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   whileTap={!isLoading ? { scale: 0.98 } : {}}
                   onClick={onSearch}
                   disabled={isLoading || disabled}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold shadow-lg transition-all duration-200"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-semibold shadow-lg transition-all duration-200 min-h-[48px]"
                 >
                   {isLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                      {isSmartSearchMode ? 'AI đang tìm kiếm...' : 'Đang tìm kiếm...'}
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3 flex-shrink-0"></div>
+                      <span className="truncate">{isSmartSearchMode ? 'AI đang tìm kiếm...' : 'Đang tìm kiếm...'}</span>
                     </>
                   ) : (
                     <>
-                      <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
-                      {isSmartSearchMode ? 'Tìm kiếm thông minh' : 'Tìm kiếm ngay'}
+                      <MagnifyingGlassIcon className="w-5 h-5 mr-2 flex-shrink-0" />
+                      <span className="truncate">{isSmartSearchMode ? 'Tìm kiếm thông minh' : 'Tìm kiếm ngay'}</span>
                     </>
                   )}
                 </motion.button>
@@ -722,10 +737,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={onReset}
-                    className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 font-semibold transition-all duration-200"
+                    className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 font-semibold transition-all duration-200 flex items-center justify-center min-h-[48px] whitespace-nowrap"
                   >
-                    <XMarkIcon className="w-5 h-5 mr-2 inline" />
-                    Xóa bộ lọc
+                    <XMarkIcon className="w-5 h-5 mr-2 flex-shrink-0" />
+                    <span>Xóa bộ lọc</span>
                   </motion.button>
                 )}
               </div>
