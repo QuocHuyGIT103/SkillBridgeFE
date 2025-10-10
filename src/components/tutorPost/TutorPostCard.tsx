@@ -372,6 +372,10 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
         {/* Action Button - Fixed at Bottom */}
         <div className="flex-shrink-0">
           <button
+            onClick={(e) => {
+                e.stopPropagation(); // Ngăn sự kiện chạy 2 lần
+                handleViewDetails();
+            }}
             className={`
               w-full px-4 py-3 rounded-xl transition-all duration-200 font-semibold text-sm
               ${showCompatibility && post.compatibility && post.compatibility >= 80

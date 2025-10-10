@@ -44,6 +44,7 @@ import { useFirebase } from "./hooks/useFirebase";
 import MyPostsPage from "./pages/student/MyPostsPage";
 import PostFormPage from "./pages/student/PostFormPage"; // Thay thế CreatePostPage và EditPostPage
 import AdminPostReviewPage from "./pages/admin/posts/AdminPostReviewPage";
+import PostDetailPage from "./pages/student/PostDetailPage";
 
 // Protected Route wrapper for role-based access
 const ProtectedRoute = ({
@@ -124,6 +125,7 @@ function App() {
               <Route path="posts/create" element={<PostFormPage />} />
               <Route path="posts/edit/:id" element={<PostFormPage />} />
               <Route path="my-posts" element={<MyPostsPage />} />
+              <Route path="posts/:id" element={<PostDetailPage />} />
               <Route
                 path="classes"
                 element={
