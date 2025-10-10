@@ -62,7 +62,7 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       id: "tutor-search",
       label: "Tìm gia sư",
       icon: "search",
-      path: "/search",
+      path: "/tutors",
     },
     {
       id: "create-post",
