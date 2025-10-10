@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { IPost, IPostInput, IPostReviewInput, IPagination } from '../types/post.types';
 import { PostService } from '../services/post.service';
 import type { TutorPost } from '../services/tutorPost.service';
+import toast from 'react-hot-toast';
 
 interface PostState {
   posts: IPost[];
@@ -92,14 +93,17 @@ const usePostStore = create<PostState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await PostService.createPost(data);
-      if (response.success) {
-        set((state) => ({ posts: [response.data, ...state.posts], isLoading: false }));
-        return true;
-      }
-      set({ error: response.message || 'Lỗi khi tạo bài đăng', isLoading: false });
-      return false;
-    } catch (err) {
-      set({ error: 'Lỗi khi tạo bài đăng', isLoading: false });
+      set((state) => ({ 
+        posts: [response.data, ...state.posts], 
+        isLoading: false 
+      }));
+      toast.success('Tạo bài đăng thành công! Chờ admin duyệt.');
+      return true;
+    } catch (err: any) {
+      // [SỬA LỖI QUAN TRỌNG] Đọc message trực tiếp từ `err` object
+      const errorMessage = err.message || 'Có lỗi không xác định khi tạo bài đăng.';
+      set({ error: errorMessage, isLoading: false });
+      toast.error(errorMessage); // Hiển thị lỗi chi tiết ngay lập tức
       return false;
     }
   },
@@ -140,19 +144,19 @@ const usePostStore = create<PostState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await PostService.updatePost(postId, data);
-      if (response.success) {
-        const updatedPost = response.data;
-        set((state) => ({
-          posts: state.posts.map((p) => (p.id === postId ? updatedPost : p)),
-          selectedPost: state.selectedPost?.id === postId ? updatedPost : state.selectedPost,
-          isLoading: false,
-        }));
-        return true;
-      }
-      set({ error: response.message || 'Lỗi khi cập nhật bài đăng', isLoading: false });
-      return false;
-    } catch (err) {
-      set({ error: 'Lỗi khi cập nhật bài đăng', isLoading: false });
+      const updatedPost = response.data;
+      set((state) => ({
+        posts: state.posts.map((p) => (p.id === postId ? updatedPost : p)),
+        selectedPost: state.selectedPost?.id === postId ? updatedPost : state.selectedPost,
+        isLoading: false,
+      }));
+      toast.success('Cập nhật bài đăng thành công!');
+      return true;
+    } catch (err: any) {
+      // [SỬA LỖI QUAN TRỌNG] Đọc message trực tiếp từ `err` object
+      const errorMessage = err.message || 'Có lỗi xảy ra khi cập nhật bài đăng.';
+      set({ error: errorMessage, isLoading: false });
+      toast.error(errorMessage);
       return false;
     }
   },

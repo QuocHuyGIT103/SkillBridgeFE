@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  FunnelIcon, 
-  ChevronUpIcon, 
-  ChevronDownIcon,
-  XMarkIcon,
-  MagnifyingGlassIcon,
-  MapPinIcon,
-  CurrencyDollarIcon,
-  AcademicCapIcon,
-  ComputerDesktopIcon,
-  CheckIcon
+  FunnelIcon, 
+  ChevronDownIcon,
+  XMarkIcon,
+  MagnifyingGlassIcon,
+  MapPinIcon,
+  CurrencyDollarIcon,
+  AcademicCapIcon,
+  ComputerDesktopIcon,
+  CheckIcon
 } from "@heroicons/react/24/outline";
 import SubjectSelector from "./SubjectSelector";
-import PriceInput from "./PriceInput";
+import PriceInput from "./PriceInput"; // Đảm bảo import đúng
 import { useTutorPostStore } from "../../store/tutorPost.store";
 import type { TutorPostSearchQuery } from "../../services/tutorPost.service";
 
@@ -342,269 +341,177 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
       {/* Expanded Filters */}
       <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 py-6 sm:px-6 space-y-8">
-              {/* Error Display */}
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="p-4 bg-red-50 border border-red-200 rounded-xl"
+  {isExpanded && (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="overflow-hidden"
+    >
+      {/* KHOẢNG CÁCH CHUNG ĐÃ GIẢM */}
+      <div className="px-4 py-6 sm:px-6 space-y-6">
+        
+        {/* Error Display */}
+        {error && (
+          <motion.div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start min-w-0 flex-1">
+                <div className="flex-shrink-0">
+                  <XMarkIcon className="w-5 h-5 text-red-400" />
+                </div>
+                <p className="ml-3 text-sm text-red-600 break-words">{error}</p>
+              </div>
+              <button onClick={clearError} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Subjects */}
+        <div>
+          <div className="flex items-center mb-3 gap-2">
+            <AcademicCapIcon className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <label className="text-base font-semibold text-gray-900 truncate flex-1">
+              Môn học
+            </label>
+            {localFilters.subjects?.length && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full flex-shrink-0">
+                {localFilters.subjects.length}
+              </span>
+            )}
+          </div>
+          <div className="bg-gray-50 p-3 rounded-xl">
+            <SubjectSelector
+              selectedSubjects={localFilters.subjects || []}
+              onChange={(subjects) => updateFilter("subjects", subjects.length > 0 ? subjects : undefined)}
+              placeholder={filterLoading ? "Đang tải môn học..." : "Chọn môn học..."}
+              multiple={true}
+              disabled={disabled || filterLoading}
+            />
+          </div>
+        </div>
+
+        {/* Student Level */}
+        <div>
+          <div className="flex items-center mb-3 gap-2">
+            <div className="w-5 h-5 text-green-600 text-lg flex-shrink-0">🎓</div>
+            <label className="text-base font-semibold text-gray-900 flex-1">
+              Đối tượng học viên
+            </label>
+            {localFilters.studentLevel?.length && (
+              <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full flex-shrink-0">
+                {localFilters.studentLevel.length}
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {STUDENT_LEVELS.map((level) => {
+              const isSelected = (localFilters.studentLevel || []).includes(level.value);
+              return (
+                <motion.label
+                  key={level.value}
+                  whileHover={!disabled ? { scale: 1.02 } : {}}
+                  whileTap={!disabled ? { scale: 0.98 } : {}}
+                  className={`relative flex items-center p-3 border-2 rounded-xl cursor-pointer transition-all duration-200 ${disabled ? 'cursor-not-allowed opacity-50' : isSelected ? `${level.color} border-current shadow-md` : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start min-w-0 flex-1">
-                      <div className="flex-shrink-0">
-                        <XMarkIcon className="w-5 h-5 text-red-400" />
-                      </div>
-                      <p className="ml-3 text-sm text-red-600 break-words">{error}</p>
+                  <input type="checkbox" checked={isSelected} onChange={(e) => { if (disabled) return; const currentLevels = localFilters.studentLevel || []; const newLevels = e.target.checked ? [...currentLevels, level.value] : currentLevels.filter((l) => l !== level.value); updateFilter("studentLevel", newLevels.length > 0 ? newLevels : undefined); }} className="sr-only" disabled={disabled} />
+                  <div className="flex items-center w-full gap-2">
+                    <span className="text-xl flex-shrink-0">{level.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-semibold text-gray-900 leading-tight">{level.label}</span>
                     </div>
-                    <button
-                      onClick={clearError}
-                      className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
-                    >
-                      <XMarkIcon className="w-4 h-4" />
-                    </button>
+                    {isSelected && (<div className="flex-shrink-0"><div className="w-5 h-5 bg-current rounded-full flex items-center justify-center"><CheckIcon className="w-3 h-3 text-white" /></div></div>)}
                   </div>
-                </motion.div>
-              )}
+                </motion.label>
+              );
+            })}
+          </div>
+        </div>
 
-              {/* Subjects */}
-              <div>
-                <div className="flex items-center mb-4 gap-2">
-                  <AcademicCapIcon className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                  <label className="text-base font-semibold text-gray-900 truncate flex-1">
-                    Môn học
-                  </label>
-                  {localFilters.subjects?.length && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full flex-shrink-0">
-                      {localFilters.subjects.length}
-                    </span>
-                  )}
-                </div>
-                <div className="bg-gray-50 p-4 rounded-xl">
-                  <SubjectSelector
-                    selectedSubjects={localFilters.subjects || []}
-                    onChange={(subjects) =>
-                      updateFilter("subjects", subjects.length > 0 ? subjects : undefined)
-                    }
-                    placeholder={filterLoading ? "Đang tải môn học..." : "Chọn môn học bạn cần tìm gia sư..."}
-                    multiple={true}
-                    disabled={disabled || filterLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Student Level */}
-              <div>
-                <div className="flex items-center mb-4 gap-2">
-                  <div className="w-5 h-5 text-green-600 text-lg flex-shrink-0">🎓</div>
-                  <label className="text-base font-semibold text-gray-900 flex-1">
-                    Đối tượng học viên
-                  </label>
-                  {localFilters.studentLevel?.length && (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full flex-shrink-0">
-                      {localFilters.studentLevel.length}
-                    </span>
-                  )}
-                </div>
-                {/* ✅ Fixed grid với auto height cho cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {STUDENT_LEVELS.map((level) => {
-                    const isSelected = (localFilters.studentLevel || []).includes(level.value);
-                    return (
-                      <motion.label
-                        key={level.value}
-                        whileHover={!disabled ? { scale: 1.02 } : {}}
-                        whileTap={!disabled ? { scale: 0.98 } : {}}
-                        className={`
-                          relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200
-                          ${disabled 
-                            ? 'cursor-not-allowed opacity-50'
-                            : isSelected 
-                              ? `${level.color} border-current shadow-md` 
-                              : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'
-                          }
-                        `}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => {
-                            if (disabled) return;
-                            const currentLevels = localFilters.studentLevel || [];
-                            const newLevels = e.target.checked
-                              ? [...currentLevels, level.value]
-                              : currentLevels.filter((l) => l !== level.value);
-                            updateFilter(
-                              "studentLevel",
-                              newLevels.length > 0 ? newLevels : undefined
-                            );
-                          }}
-                          className="sr-only"
-                          disabled={disabled}
-                        />
-                        {/* ✅ Layout mới để text hiển thị đầy đủ */}
-                        <div className="flex items-center w-full gap-3">
-                          <span className="text-2xl flex-shrink-0">{level.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            {/* ✅ Bỏ truncate, để text wrap tự nhiên */}
-                            <span className="text-sm font-semibold text-gray-900 leading-tight">
-                              {level.label}
-                            </span>
-                          </div>
-                          {isSelected && (
-                            <div className="flex-shrink-0">
-                              <div className="w-6 h-6 bg-current rounded-full flex items-center justify-center">
-                                <CheckIcon className="w-4 h-4 text-white" />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </motion.label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Teaching Mode */}
-              <div>
-                <div className="flex items-center mb-4 gap-2">
-                  <ComputerDesktopIcon className="w-5 h-5 text-purple-600 flex-shrink-0" />
-                  <label className="text-base font-semibold text-gray-900 flex-1">
-                    Hình thức dạy học
-                  </label>
-                  {localFilters.teachingMode && (
-                    <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full flex-shrink-0">
-                      Đã chọn
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  {TEACHING_MODES.map((mode) => {
-                    const isSelected = localFilters.teachingMode === mode.value;
-                    return (
-                      <motion.button
-                        key={mode.value}
-                        whileHover={!disabled ? { scale: 1.02 } : {}}
-                        whileTap={!disabled ? { scale: 0.98 } : {}}
-                        onClick={() => {
-                          if (disabled) return;
-                          updateFilter(
-                            "teachingMode",
-                            isSelected ? undefined : (mode.value as any)
-                          );
-                        }}
-                        className={`
-                          p-5 rounded-xl border-2 transition-all duration-200 text-left relative overflow-hidden
-                          ${isSelected
-                            ? "border-blue-500 bg-blue-50 shadow-lg"
-                            : `${mode.color} border-gray-200 hover:shadow-md`
-                          }
-                          ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
-                        `}
-                        disabled={disabled}
-                      >
-                        {/* ✅ Layout mới với flexible height */}
-                        <div className="flex flex-col">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="text-3xl flex-shrink-0">{mode.icon}</div>
-                            {isSelected && (
-                              <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                <CheckIcon className="w-5 h-5 text-white" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            {/* ✅ Bỏ truncate, để text hiển thị đầy đủ */}
-                            <div className="font-bold text-gray-900 mb-2 text-base leading-tight">
-                              {mode.label}
-                            </div>
-                            <p className="text-sm text-gray-600 leading-relaxed">
-                              {mode.description}
-                            </p>
-                          </div>
-                        </div>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Price Range */}
-              <div>
-                <div className="flex items-center mb-4 gap-2">
-                  <CurrencyDollarIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
-                  <label className="text-base font-semibold text-gray-900 truncate flex-1">
-                    Khoảng giá mong muốn
-                  </label>
-                  {(localFilters.priceMin || localFilters.priceMax) && (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full flex-shrink-0">
-                      Đã đặt
-                    </span>
-                  )}
-                </div>
-                
-                {/* Price Presets */}
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-3">Khoảng giá phổ biến:</p>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                    {PRICE_PRESETS.map((preset, index) => (
-                      <motion.button
-                        key={index}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => handlePricePreset(preset)}
-                        className="px-3 py-2 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-center truncate"
-                      >
-                        {preset.label}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Custom Price Range */}
-                <div className="bg-gray-50 p-4 rounded-xl">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 truncate">
-                        Giá tối thiểu (VNĐ/buổi)
-                      </label>
-                      <PriceInput
-                        value={localFilters.priceMin || 0}
-                        onChange={(value) => handlePriceChange("min", value)}
-                        placeholder="Ví dụ: 200,000"
-                        showPresets={false}
-                        min={0}
-                        max={10000000}
-                      />
+        {/* Teaching Mode */}
+        <div>
+          <div className="flex items-center mb-3 gap-2">
+            <ComputerDesktopIcon className="w-5 h-5 text-purple-600 flex-shrink-0" />
+            <label className="text-base font-semibold text-gray-900 flex-1">Hình thức dạy học</label>
+            {localFilters.teachingMode && (<span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full flex-shrink-0">Đã chọn</span>)}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            {TEACHING_MODES.map((mode) => {
+              const isSelected = localFilters.teachingMode === mode.value;
+              return (
+                <motion.button key={mode.value} whileHover={!disabled ? { scale: 1.02 } : {}} whileTap={!disabled ? { scale: 0.98 } : {}} onClick={() => { if (disabled) return; updateFilter("teachingMode", isSelected ? undefined : (mode.value as any)); }} className={`p-3 rounded-xl border-2 transition-all duration-200 text-left relative overflow-hidden ${isSelected ? "border-blue-500 bg-blue-50 shadow-lg" : `${mode.color} border-gray-200 hover:shadow-md`} ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`} disabled={disabled}>
+                  <div className="flex flex-col">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="text-2xl flex-shrink-0">{mode.icon}</div>
+                      {isSelected && (<div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0"><CheckIcon className="w-4 h-4 text-white" /></div>)}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 truncate">
-                        Giá tối đa (VNĐ/buổi)
-                      </label>
-                      <PriceInput
-                        value={localFilters.priceMax || 0}
-                        onChange={(value) => handlePriceChange("max", value)}
-                        placeholder="Ví dụ: 500,000"
-                        showPresets={false}
-                        min={0}
-                        max={10000000}
-                      />
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900 mb-1 text-sm leading-tight">{mode.label}</div>
+                      <p className="text-xs text-gray-600 leading-normal">{mode.description}</p>
                     </div>
                   </div>
-                </div>
-              </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* --- Price Range --- */}
+        <div>
+          <div className="flex items-center mb-3 gap-2">
+            <CurrencyDollarIcon className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <label className="text-base font-semibold text-gray-900 truncate flex-1">
+              Khoảng giá mong muốn
+            </label>
+            {(localFilters.priceMin || localFilters.priceMax) ? (
+              <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full flex-shrink-0">
+                Đã đặt
+              </span>
+            ) : null}
+          </div>
+          
+          <div className="mb-3">
+            <p className="text-xs text-gray-600 mb-2">Khoảng giá phổ biến (VNĐ/buổi):</p>
+            <div className="grid grid-cols-4 gap-2">
+              {PRICE_PRESETS.map((preset, index) => (
+                <motion.button
+                  key={index}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handlePricePreset(preset)}
+                  className="px-2 py-1 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors text-center truncate"
+                >
+                  {preset.label}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-gray-50 p-3 rounded-xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <PriceInput
+                label="Giá tối thiểu"
+                value={localFilters.priceMin || 0}
+                onChange={(value) => handlePriceChange("min", value)}
+                min={0}
+                max={10000000}
+              />
+              <PriceInput
+                label="Giá tối đa"
+                value={localFilters.priceMax || 0}
+                onChange={(value) => handlePriceChange("max", value)}
+                min={0}
+                max={10000000}
+              />
+            </div>
+          </div>
+        </div>
 
               {/* Location */}
               <div>
-                <div className="flex items-center mb-4 gap-2">
+                <div className="flex items-center mb-3 gap-2">
                   <MapPinIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
                   <label className="text-base font-semibold text-gray-900 truncate flex-1">
                     Khu vực mong muốn
@@ -615,7 +522,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                     </span>
                   )}
                 </div>
-                <div className="bg-gray-50 p-4 rounded-xl space-y-4">
+                {/* [SỬA] Giảm padding, khoảng cách */}
+                <div className="bg-gray-50 p-3 rounded-xl space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2 truncate">
                       Tỉnh/Thành phố
@@ -634,7 +542,6 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                       ))}
                     </select>
                   </div>
-
                   {localFilters.province && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
@@ -664,15 +571,15 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
               {/* Sort */}
               <div>
-                <div className="flex items-center mb-4 gap-2">
+                <div className="flex items-center mb-3 gap-2">
                   <div className="w-5 h-5 text-indigo-600 text-lg flex-shrink-0">📊</div>
                   <label className="text-base font-semibold text-gray-900 flex-1">
                     Sắp xếp kết quả
                   </label>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-xl">
-                  {/* ✅ Adjusted responsive grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {/* [SỬA] Giảm padding */}
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                     {SORT_OPTIONS.map((option, index) => {
                       const isSelected = getCurrentSortValue() === `${option.value}_${option.order}`;
                       return (
@@ -681,24 +588,22 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                           whileHover={!disabled ? { scale: 1.02 } : {}}
                           whileTap={!disabled ? { scale: 0.98 } : {}}
                           onClick={() => handleSortChange(`${option.value}_${option.order}`)}
+                          // [SỬA] Giảm padding
                           className={`
-                            p-3 rounded-lg border transition-all duration-200 text-center
+                            p-2 rounded-lg border transition-all duration-200 text-center
                             ${isSelected
                               ? "border-indigo-500 bg-indigo-50 text-indigo-700"
                               : "border-gray-200 hover:border-gray-300 text-gray-700 bg-white"
                             }
                           `}
                         >
-                          {/* ✅ Simplified layout với text wrapping */}
-                          <div className="flex flex-col items-center gap-2">
-                            <span className="text-2xl">{option.icon}</span>
-                            <div className="flex flex-col items-center gap-1">
-                              <span className="text-sm font-medium leading-tight text-center">
+                          {/* [SỬA] Giảm khoảng cách, giảm kích thước icon, font */}
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-xl">{option.icon}</span>
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs font-medium leading-tight text-center">
                                 {option.label}
                               </span>
-                              {isSelected && (
-                                <CheckIcon className="w-4 h-4 text-indigo-600" />
-                              )}
                             </div>
                           </div>
                         </motion.button>

@@ -3,23 +3,31 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import Select from 'react-select';
 import usePostStore from '../../store/post.store';
+import { useSubjectStore } from '../../store/subject.store';
 import type { IPostInput, IPost, TeachingTimeSlot } from '../../types';
 import { toast } from 'react-hot-toast';
-import { subjectOptions, gradeLevelOptions } from '../../constants/formOptions';
+import { gradeLevelOptions } from '../../constants/formOptions';
 import RangeSlider from '../../components/RangeSlider';
-import AddressSelector from '../../components/AddressSelector'; // Assuming the same path as in tutor form
+import AddressSelector from '../../components/AddressSelector';
 
 const PostFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { selectedPost, isLoading, error, getPostById, createPost, updatePost } = usePostStore();
+  
+  // ✅ Use subject store
+  const { 
+    activeSubjects, 
+    isLoading: subjectsLoading, 
+    getActiveSubjects 
+  } = useSubjectStore();
 
   const isEditMode = !!id;
 
   interface TeachingTimeSlot {
-    dayOfWeek: number; // 0-6 (0=Sunday)
-    startTime: string; // "HH:mm" format
-    endTime: string; // "HH:mm" format
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
   }
 
   const DAYS_OF_WEEK = [
@@ -31,6 +39,15 @@ const PostFormPage: React.FC = () => {
     "Thứ sáu",
     "Thứ bảy",
   ];
+
+  // ✅ Category mapping for display
+  const CATEGORY_LABELS = {
+    'TOAN_HOC': 'Toán học',
+    'KHOA_HOC_TU_NHIEN': 'Khoa học tự nhiên',
+    'VAN_HOC_XA_HOI': 'Văn học - Xã hội',
+    'NGOAI_NGU': 'Ngoại ngữ',
+    'KHAC': 'Khác'
+  };
 
   const {
     register,
@@ -70,6 +87,46 @@ const PostFormPage: React.FC = () => {
     endTime: "10:00",
   });
 
+  // ✅ Add address key for force re-render
+  const [addressKey, setAddressKey] = useState(0);
+
+  // ✅ Load subjects on component mount
+  useEffect(() => {
+    getActiveSubjects();
+  }, [getActiveSubjects]);
+
+  // ✅ Convert subjects to options for Select component
+  const subjectOptions = React.useMemo(() => {
+    return activeSubjects.map(subject => ({
+      value: subject.name, // Use name as value for backend compatibility
+      label: subject.name,
+      category: subject.category
+    }));
+  }, [activeSubjects]);
+
+  // ✅ Group subjects by category for better UX
+  const groupedSubjectOptions = React.useMemo(() => {
+    if (activeSubjects.length === 0) return [];
+
+    const grouped = activeSubjects.reduce((acc, subject) => {
+      const categoryLabel = CATEGORY_LABELS[subject.category as keyof typeof CATEGORY_LABELS] || 'Khác';
+      if (!acc[categoryLabel]) {
+        acc[categoryLabel] = [];
+      }
+      acc[categoryLabel].push({
+        value: subject.name,
+        label: subject.name,
+        category: subject.category
+      });
+      return acc;
+    }, {} as Record<string, Array<{ value: string; label: string; category: string }>>);
+
+    return Object.entries(grouped).map(([label, options]) => ({
+      label,
+      options: options.sort((a, b) => a.label.localeCompare(b.label))
+    }));
+  }, [activeSubjects]);
+
   // Lấy chi tiết bài đăng khi ở chế độ chỉnh sửa
   useEffect(() => {
     if (isEditMode && id) {
@@ -79,9 +136,8 @@ const PostFormPage: React.FC = () => {
 
   // Cập nhật form khi selectedPost thay đổi (chế độ chỉnh sửa)
   useEffect(() => {
-    if (isEditMode && selectedPost) {
+    if (isEditMode && selectedPost && activeSubjects.length > 0) {
       const availability = selectedPost.availability || '';
-      // Simple parse for schedule - assume default times if not detailed
       const schedule: TeachingTimeSlot[] = [];
       const daysMatch = availability.match(/^(.*?)(?:\s*\((.*?)\))?/);
       if (daysMatch) {
@@ -95,10 +151,15 @@ const PostFormPage: React.FC = () => {
         });
       }
 
+      // ✅ Validate subjects exist in current active subjects
+      const validSubjects = (selectedPost.subjects || []).filter(subjectName => 
+        activeSubjects.some(subject => subject.name === subjectName)
+      );
+
       reset({
         title: selectedPost.title,
         content: selectedPost.content,
-        subjects: selectedPost.subjects || [],
+        subjects: validSubjects,
         grade_levels: selectedPost.grade_levels || [],
         location: selectedPost.location || '',
         is_online: selectedPost.is_online || false,
@@ -119,10 +180,21 @@ const PostFormPage: React.FC = () => {
         sessionDuration: 60,
       });
     }
-  }, [selectedPost, isEditMode, reset]);
+  }, [selectedPost, isEditMode, reset, activeSubjects]);
 
   const teachingSchedule = watch('teachingSchedule') || [];
   const teachingMode = watch('teachingMode') || 'BOTH';
+  const addressData = watch('address') || { province: '', district: '', ward: '', specificAddress: '' };
+
+  // ✅ Reset address when teaching mode changes to ONLINE
+  useEffect(() => {
+    if (teachingMode === 'ONLINE') {
+      setValue('address', { province: '', district: '', ward: '', specificAddress: '' });
+      setAddressKey(prev => prev + 1);
+    } else {
+      setAddressKey(prev => prev + 1);
+    }
+  }, [teachingMode, setValue]);
 
   // Cập nhật trường availability khi teachingSchedule thay đổi
   useEffect(() => {
@@ -141,6 +213,48 @@ const PostFormPage: React.FC = () => {
     }
   }, [teachingSchedule, setValue]);
 
+  // ✅ Teaching mode change handler
+  const handleTeachingModeChange = (mode: 'ONLINE' | 'OFFLINE' | 'BOTH') => {
+    setValue('teachingMode', mode);
+    
+    if (mode === 'ONLINE') {
+      setValue('address', { province: '', district: '', ward: '', specificAddress: '' });
+    }
+    
+    setAddressKey(prev => prev + 1);
+  };
+
+  // ✅ Address change handlers
+  const handleAddressChange = {
+    province: (provinceCode: string) => {
+      setValue('address', {
+        province: provinceCode,
+        district: '',
+        ward: '',
+        specificAddress: addressData.specificAddress || '',
+      });
+    },
+    district: (districtCode: string) => {
+      setValue('address', {
+        ...addressData,
+        district: districtCode,
+        ward: '',
+      });
+    },
+    ward: (wardCode: string) => {
+      setValue('address', {
+        ...addressData,
+        ward: wardCode,
+      });
+    },
+    detail: (detailAddress: string) => {
+      setValue('address', {
+        ...addressData,
+        specificAddress: detailAddress,
+      });
+    },
+  };
+
   // Xử lý submit form
   const onSubmit = async (data: any) => {
     // Validation
@@ -158,7 +272,7 @@ const PostFormPage: React.FC = () => {
     const formattedData: IPostInput = {
       title: data.title,
       content: data.content,
-      subjects: data.subjects,
+      subjects: data.subjects, // Already using subject names
       grade_levels: data.grade_levels,
       location: data.address?.specificAddress?.trim() || '',
       is_online: data.teachingMode !== 'OFFLINE',
@@ -172,18 +286,12 @@ const PostFormPage: React.FC = () => {
     };
 
     try {
-      let success: boolean;
-      if (isEditMode && id) {
-        success = await updatePost(id, formattedData);
-      } else {
-        success = await createPost(formattedData);
-      }
+      const success = isEditMode && id 
+      ? await updatePost(id, formattedData)
+      : await createPost(formattedData);
 
       if (success) {
-        toast.success(isEditMode ? 'Cập nhật bài đăng thành công!' : 'Tạo bài đăng thành công! Chờ admin duyệt.');
         navigate('/student/my-posts');
-      } else {
-        toast.error(error || (isEditMode ? 'Cập nhật bài đăng thất bại.' : 'Tạo bài đăng thất bại.'));
       }
     } catch (err) {
       toast.error('Lỗi khi xử lý bài đăng.');
@@ -220,6 +328,20 @@ const PostFormPage: React.FC = () => {
     const newSchedule = teachingSchedule.filter((_, i) => i !== index);
     setValue('teachingSchedule', newSchedule);
   };
+
+  // ✅ Show loading state for subjects
+  if (subjectsLoading && activeSubjects.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+            <p className="text-gray-600">Đang tải dữ liệu môn học...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -285,7 +407,7 @@ const PostFormPage: React.FC = () => {
             {errors.content && <span className="text-sm text-red-600 mt-1 block">{errors.content.message}</span>}
           </div>
 
-          {/* Subjects */}
+          {/* ✅ Dynamic Subjects from Store */}
           <div className="mb-4 relative z-60">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Môn học <span className="text-red-500">*</span>
@@ -300,16 +422,34 @@ const PostFormPage: React.FC = () => {
               render={({ field: { onChange, value } }) => (
                 <Select
                   isMulti
-                  options={subjectOptions}
+                  options={groupedSubjectOptions.length > 0 ? groupedSubjectOptions : subjectOptions}
                   placeholder="Chọn môn học..."
                   value={subjectOptions.filter((option) => value.includes(option.value))}
                   onChange={(selected) => onChange(selected.map((option) => option.value))}
                   className="basic-multi-select"
                   classNamePrefix="select"
+                  noOptionsMessage={() => "Không tìm thấy môn học"}
+                  loadingMessage={() => "Đang tải..."}
+                  isLoading={subjectsLoading}
+                  isDisabled={subjectsLoading || activeSubjects.length === 0}
                 />
               )}
             />
             {errors.subjects && <span className="text-sm text-red-600 mt-1 block">{errors.subjects.message}</span>}
+            
+            {/* ✅ Show selected subjects info */}
+            {watch('subjects')?.length > 0 && (
+              <p className="text-sm text-gray-600 mt-1">
+                Đã chọn {watch('subjects').length} môn học
+              </p>
+            )}
+
+            {/* ✅ Show warning if no subjects available */}
+            {!subjectsLoading && activeSubjects.length === 0 && (
+              <p className="text-sm text-orange-600 mt-1">
+                Không có môn học nào khả dụng. Vui lòng liên hệ admin.
+              </p>
+            )}
           </div>
 
           {/* Grade Levels */}
@@ -502,7 +642,7 @@ const PostFormPage: React.FC = () => {
                     name="teachingMode"
                     value={option.value}
                     checked={teachingMode === option.value}
-                    onChange={(e) => setValue("teachingMode", e.target.value as any)}
+                    onChange={(e) => handleTeachingModeChange(e.target.value as any)}
                     className="sr-only"
                   />
                   <div className="font-medium text-sm">{option.label}</div>
@@ -512,44 +652,22 @@ const PostFormPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Address - only show for offline/both */}
+          {/* ✅ Address with force re-render */}
           {(teachingMode === "OFFLINE" || teachingMode === "BOTH") && (
             <div className="space-y-4 mt-6 p-4 bg-gray-50 rounded-lg">
               <h4 className="font-medium text-sm text-gray-700">
                 Thông tin địa chỉ học
               </h4>
               <AddressSelector
-                selectedProvince={watch("address.province") || ""}
-                selectedDistrict={watch("address.district") || ""}
-                selectedWard={watch("address.ward") || ""}
-                detailAddress={watch("address.specificAddress") || ""}
-                onProvinceChange={(provinceCode) => {
-                  setValue("address", {
-                    province: provinceCode,
-                    district: "",
-                    ward: "",
-                    specificAddress: watch("address.specificAddress") || "",
-                  });
-                }}
-                onDistrictChange={(districtCode) => {
-                  setValue("address", {
-                    ...watch("address"),
-                    district: districtCode,
-                    ward: "",
-                  });
-                }}
-                onWardChange={(wardCode) => {
-                  setValue("address", {
-                    ...watch("address"),
-                    ward: wardCode,
-                  });
-                }}
-                onDetailAddressChange={(detailAddress) => {
-                  setValue("address", {
-                    ...watch("address"),
-                    specificAddress: detailAddress,
-                  });
-                }}
+                key={addressKey}
+                selectedProvince={addressData.province}
+                selectedDistrict={addressData.district}
+                selectedWard={addressData.ward}
+                detailAddress={addressData.specificAddress}
+                onProvinceChange={handleAddressChange.province}
+                onDistrictChange={handleAddressChange.district}
+                onWardChange={handleAddressChange.ward}
+                onDetailAddressChange={handleAddressChange.detail}
                 isEditing={true}
                 className="space-y-4"
               />
@@ -610,10 +728,10 @@ const PostFormPage: React.FC = () => {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || subjectsLoading || activeSubjects.length === 0}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
-                {isLoading && (
+                {(isLoading || subjectsLoading) && (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 )}
                 <span>
