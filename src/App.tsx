@@ -45,6 +45,7 @@ import MyPostsPage from "./pages/student/MyPostsPage";
 import PostFormPage from "./pages/student/PostFormPage"; // Thay thế CreatePostPage và EditPostPage
 import AdminPostReviewPage from "./pages/admin/posts/AdminPostReviewPage";
 import PostDetailPage from "./pages/student/PostDetailPage";
+import StudentSmartSearchPage from "./pages/student/StudentSmartSearchPage";
 
 // Protected Route wrapper for role-based access
 const ProtectedRoute = ({
@@ -98,13 +99,14 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/tutors" element={<StudentTutorSearchPage />} />
+            <Route path="/tutors" element={<TutorSearchPage />} />
             <Route path="/tutors/:postId" element={<TutorPostDetailPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/verify-otp" element={<VerifyOTPPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+
 
             {/* Role-based redirect route */}
             <Route path="/dashboard" element={<RoleBasedRedirect />} />
@@ -119,7 +121,7 @@ function App() {
               }
             >
               <Route path="dashboard" element={<StudentDashboardOverview />} />
-              <Route path="tutor-search" element={<StudentTutorSearchPage />} />
+              <Route path="smart-search" element={<StudentSmartSearchPage />} />
               <Route path="schedule" element={<StudentSchedulePage />} />
               <Route path="messages" element={<StudentMessagesPage />} />
               <Route path="posts/create" element={<PostFormPage />} />

@@ -353,13 +353,12 @@ const TutorPostSearch: React.FC<TutorPostSearchProps> = ({
                 {posts.map((post) => (
                   <TutorPostCard
                     key={post._id}
-                    tutorPost={post}
-                    onContactClick={handleContactClick}
-                    compact={compact}
+                    post={post}
+                    
                   />
                 ))}
               </div>
-
+                
               <PaginationComponent />
             </>
           )}

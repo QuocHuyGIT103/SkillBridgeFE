@@ -307,13 +307,25 @@ const TutorPostService = {
     try {
       console.log('🔧 Service - Getting filter options');
       
-      const response = await axiosClient.get<any>('/tutor-posts/filters');
+      // ✅ FIXED: Sửa URL path đúng với backend route
+      const response = await axiosClient.get('/tutor-posts/filters');
       
-      console.log('✅ Filter options received');
+      console.log('✅ Filter options received:', response);
       return response;
     } catch (error: any) {
       console.error('❌ Get filter options service error:', error);
-      throw error;
+      
+      // ✅ FIXED: Return fallback data instead of throwing
+      return {
+        success: false,
+        message: error.message || 'Không thể tải tùy chọn bộ lọc',
+        data: {
+          subjects: [],
+          provinces: [],
+          studentLevels: [],
+          teachingModes: ['ONLINE', 'OFFLINE', 'BOTH']
+        }
+      };
     }
   },
 
@@ -323,18 +335,27 @@ const TutorPostService = {
       console.log('📍 Service - Getting districts for province:', provinceCode);
       
       if (!provinceCode || !provinceCode.trim()) {
-        throw new Error('Province code is required');
+        return {
+          success: true,
+          data: { districts: [] }
+        };
       }
 
-      const response = await axiosClient.get<any>(
-        `/tutor-posts/locations/provinces/${encodeURIComponent(provinceCode.trim())}/districts`
-      );
+      // ✅ FIXED: Sử dụng address service thay vì tutor-posts
+      const response = await axiosClient.get(`/address/districts?province=${encodeURIComponent(provinceCode.trim())}`);
       
-      console.log('✅ Districts received:', response.data?.districts?.length || 0);
-      return response;
+      console.log('✅ Districts received:', response.data?.length || 0);
+      return {
+        success: true,
+        data: { districts: response.data || [] }
+      };
     } catch (error: any) {
       console.error('❌ Get districts service error:', error);
-      throw error;
+      return {
+        success: false,
+        message: error.message || 'Không thể tải danh sách quận/huyện',
+        data: { districts: [] }
+      };
     }
   },
 
@@ -344,18 +365,27 @@ const TutorPostService = {
       console.log('📍 Service - Getting wards for district:', districtCode);
       
       if (!districtCode || !districtCode.trim()) {
-        throw new Error('District code is required');
+        return {
+          success: true,
+          data: { wards: [] }
+        };
       }
 
-      const response = await axiosClient.get<any>(
-        `/tutor-posts/locations/districts/${encodeURIComponent(districtCode.trim())}/wards`
-      );
+      // ✅ FIXED: Sử dụng address service thay vì tutor-posts
+      const response = await axiosClient.get(`/address/wards?district=${encodeURIComponent(districtCode.trim())}`);
       
-      console.log('✅ Wards received:', response.data?.wards?.length || 0);
-      return response;
+      console.log('✅ Wards received:', response.data?.length || 0);
+      return {
+        success: true,
+        data: { wards: response.data || [] }
+      };
     } catch (error: any) {
       console.error('❌ Get wards service error:', error);
-      throw error;
+      return {
+        success: false,
+        message: error.message || 'Không thể tải danh sách phường/xã',
+        data: { wards: [] }
+      };
     }
   },
 

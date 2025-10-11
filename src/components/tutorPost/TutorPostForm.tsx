@@ -167,7 +167,10 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
       if (mode === "create") {
         await createTutorPost(formData);
       } else {
-        await updateTutorPost(tutorPost!.id, formData);
+        if (!tutorPost?.id) {
+          throw new Error("Tutor post ID is required for update");
+        }
+        await updateTutorPost(tutorPost.id, formData);
       }
 
       onSuccess?.();
