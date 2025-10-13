@@ -28,6 +28,12 @@ import StudentSchedulePage from "./pages/student/StudentSchedulePage";
 import StudentTutorSearchPage from "./pages/student/StudentTutorSearchPage";
 import StudentMessagesPage from "./pages/student/StudentMessagesPage";
 import StudentAssignmentsPage from "./pages/student/StudentAssignmentsPage";
+
+// ✅ Thêm Student Profile Pages
+import StudentProfilePage from "./pages/student/profile/StudentProfilePage";
+import StudentPersonalProfilePage from "./pages/student/profile/StudentPersonalProfilePage";
+import StudentPreferencesPage from "./pages/student/profile/StudentPreferencesPage";
+
 import AdminDashboardLayout from "./layouts/AdminDashboardLayout";
 import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
 import UserManagementList from "./pages/admin/users/UserManagementList";
@@ -42,7 +48,7 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import { useAuthStore } from "./store/auth.store";
 import { useFirebase } from "./hooks/useFirebase";
 import MyPostsPage from "./pages/student/MyPostsPage";
-import PostFormPage from "./pages/student/PostFormPage"; // Thay thế CreatePostPage và EditPostPage
+import PostFormPage from "./pages/student/PostFormPage";
 import AdminPostReviewPage from "./pages/admin/posts/AdminPostReviewPage";
 import PostDetailPage from "./pages/student/PostDetailPage";
 import StudentSmartSearchPage from "./pages/student/StudentSmartSearchPage";
@@ -107,7 +113,6 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-
             {/* Role-based redirect route */}
             <Route path="/dashboard" element={<RoleBasedRedirect />} />
 
@@ -128,6 +133,12 @@ function App() {
               <Route path="posts/edit/:id" element={<PostFormPage />} />
               <Route path="my-posts" element={<MyPostsPage />} />
               <Route path="posts/:id" element={<PostDetailPage />} />
+
+              {/* ✅ Student Profile Routes */}
+              <Route path="profile" element={<StudentProfilePage />} />
+              <Route path="profile/personal" element={<StudentPersonalProfilePage />} />
+              <Route path="profile/preferences" element={<StudentPreferencesPage />} />
+
               <Route
                 path="classes"
                 element={
@@ -227,7 +238,7 @@ function App() {
               />
             </Route>
 
-            {/* Admin Dashboard Routes */}
+            {/* Admin Dashboard Routes - giữ nguyên như cũ */}
             <Route
               path="/admin/*"
               element={
@@ -236,6 +247,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              {/* Admin routes giữ nguyên */}
               <Route path="dashboard" element={<AdminDashboardOverview />} />
 
               {/* User Management */}

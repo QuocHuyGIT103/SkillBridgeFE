@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +15,8 @@ import {
   Bars3Icon,
   XMarkIcon,
   ChevronRightIcon,
+  ChevronDownIcon,
+  UserIcon, // ✅ Thêm UserIcon
 } from "@heroicons/react/24/outline";
 import {
   HomeIcon as HomeSolidIcon,
@@ -26,6 +28,7 @@ import {
   StarIcon as StarSolidIcon,
   SparklesIcon as SparklesSolidIcon,
   CogIcon as CogSolidIcon,
+  UserIcon as UserSolidIcon, // ✅ Thêm UserSolidIcon
 } from "@heroicons/react/24/solid";
 
 interface StudentNavigationItem {
@@ -34,6 +37,7 @@ interface StudentNavigationItem {
   icon: string;
   path: string;
   badge?: number;
+  children?: StudentNavigationItem[]; // ✅ Thêm children cho submenu
 }
 
 interface StudentDashboardSidebarProps {
@@ -50,6 +54,7 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
   onCloseMobile,
 }) => {
   const location = useLocation();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]); // ✅ State cho expanded items
 
   const studentNavigationItems: StudentNavigationItem[] = [
     {
@@ -68,7 +73,7 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       id: "create-post",
       label: "Tạo Bài Đăng",
       icon: "document",
-      path: "/student/posts/create", // Cập nhật đường dẫn
+      path: "/student/posts/create",
     },
     {
       id: "my-posts",
@@ -102,6 +107,27 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       path: "/student/assignments",
       badge: 5,
     },
+    // ✅ Thêm Profile menu với submenu
+    {
+      id: "profile",
+      label: "Hồ sơ của tôi",
+      icon: "user",
+      path: "/student/profile",
+      children: [
+        {
+          id: "profile-personal",
+          label: "Thông tin cá nhân",
+          icon: "user",
+          path: "/student/profile/personal",
+        },
+        {
+          id: "profile-preferences",
+          label: "Sở thích học tập",
+          icon: "heart",
+          path: "/student/profile/preferences",
+        },
+      ],
+    },
     {
       id: "ratings",
       label: "Đánh giá",
@@ -121,6 +147,15 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       path: "/student/settings",
     },
   ];
+
+  // ✅ Function để toggle expanded items
+  const toggleExpanded = (itemId: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
 
   const getIcon = (iconName: string, isActive: boolean) => {
     const className = `w-6 h-6 ${isActive ? "text-blue-500" : "text-gray-600"}`;
@@ -180,13 +215,34 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
         ) : (
           <CogIcon className={className} />
         );
+      // ✅ Thêm user icon
+      case "user":
+        return isActive ? (
+          <UserSolidIcon className={className} />
+        ) : (
+          <UserIcon className={className} />
+        );
       default:
         return <HomeIcon className={className} />;
     }
   };
 
+  // ✅ Function kiểm tra item active (bao gồm cả children)
   const isItemActive = (item: StudentNavigationItem) => {
-    return location.pathname === item.path;
+    if (location.pathname === item.path) return true;
+
+    // Kiểm tra children
+    if (item.children) {
+      return item.children.some((child) => location.pathname === child.path);
+    }
+
+    return false;
+  };
+
+  // ✅ Function kiểm tra có children active không
+  const hasActiveChildren = (item: StudentNavigationItem) => {
+    if (!item.children) return false;
+    return item.children.some((child) => location.pathname === child.path);
   };
 
   const sidebarContent = (
@@ -235,39 +291,109 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
         <nav className="space-y-2 px-3">
           {studentNavigationItems.map((item) => {
             const isActive = isItemActive(item);
+            const isExpanded = expandedItems.includes(item.id);
+            const hasChildren = item.children && item.children.length > 0;
 
             return (
-              <Link
-                key={item.id}
-                to={item.path}
-                className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${
-                  isActive
-                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-105"
-                    : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 hover:shadow-sm"
-                }`}
-              >
-                {getIcon(item.icon, isActive)}
-                {!collapsed && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex-1 flex items-center justify-between"
+              <div key={item.id}>
+                {/* Main Item */}
+                {hasChildren ? (
+                  // ✅ Item với children - clickable để expand/collapse
+                  <button
+                    onClick={() => toggleExpanded(item.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${
+                      isActive || hasActiveChildren(item)
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
+                        : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 hover:shadow-sm"
+                    }`}
                   >
-                    <span className="font-medium">{item.label}</span>
-                    {item.badge && (
-                      <span
-                        className={`px-2 py-1 text-xs font-bold rounded-full ${
-                          isActive
-                            ? "bg-white/20 text-white backdrop-blur-sm"
-                            : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm"
+                    <div className="flex items-center space-x-3">
+                      {getIcon(item.icon, isActive || hasActiveChildren(item))}
+                      {!collapsed && (
+                        <motion.span
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="font-medium"
+                        >
+                          {item.label}
+                        </motion.span>
+                      )}
+                    </div>
+                    {!collapsed && hasChildren && (
+                      <ChevronDownIcon
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          isExpanded ? "transform rotate-180" : ""
                         }`}
-                      >
-                        {item.badge}
-                      </span>
+                      />
                     )}
-                  </motion.div>
+                  </button>
+                ) : (
+                  // ✅ Item thường - Link
+                  <Link
+                    to={item.path}
+                    className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${
+                      isActive
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-105"
+                        : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 hover:shadow-sm"
+                    }`}
+                  >
+                    {getIcon(item.icon, isActive)}
+                    {!collapsed && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex-1 flex items-center justify-between"
+                      >
+                        <span className="font-medium">{item.label}</span>
+                        {item.badge && (
+                          <span
+                            className={`px-2 py-1 text-xs font-bold rounded-full ${
+                              isActive
+                                ? "bg-white/20 text-white backdrop-blur-sm"
+                                : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm"
+                            }`}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </motion.div>
+                    )}
+                  </Link>
                 )}
-              </Link>
+
+                {/* ✅ Submenu (Children) */}
+                {hasChildren && !collapsed && (
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="ml-6 mt-1 space-y-1"
+                      >
+                        {item.children?.map((child) => {
+                          const isChildActive = location.pathname === child.path;
+                          return (
+                            <Link
+                              key={child.id}
+                              to={child.path}
+                              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                                isChildActive
+                                  ? "bg-blue-100 text-blue-700 font-medium"
+                                  : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                              }`}
+                            >
+                              <div className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+                              <span>{child.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )}
+              </div>
             );
           })}
         </nav>
