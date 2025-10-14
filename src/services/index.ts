@@ -7,4 +7,5 @@ export { default as SocketService } from "./socket.service";
 export { default as SubjectService } from "./subject.service";
 export { default as TutorPostService } from "./tutorPost.service";
 export { default as StudentProfileService } from "./studentProfile.service";
+export { contactRequestService } from "./contactRequest.service";
 

@@ -25,7 +25,6 @@ import TutorPostDetailPage from "./pages/TutorPostDetailPage";
 import StudentDashboardLayout from "./layouts/StudentDashboardLayout";
 import StudentDashboardOverview from "./pages/student/StudentDashboardOverview";
 import StudentSchedulePage from "./pages/student/StudentSchedulePage";
-import StudentTutorSearchPage from "./pages/student/StudentTutorSearchPage";
 import StudentMessagesPage from "./pages/student/StudentMessagesPage";
 import StudentAssignmentsPage from "./pages/student/StudentAssignmentsPage";
 
@@ -33,6 +32,7 @@ import StudentAssignmentsPage from "./pages/student/StudentAssignmentsPage";
 import StudentProfilePage from "./pages/student/profile/StudentProfilePage";
 import StudentPersonalProfilePage from "./pages/student/profile/StudentPersonalProfilePage";
 import StudentPreferencesPage from "./pages/student/profile/StudentPreferencesPage";
+import StudentContactRequestsPage from "./pages/student/StudentContactRequestsPage";
 
 import AdminDashboardLayout from "./layouts/AdminDashboardLayout";
 import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
@@ -52,6 +52,8 @@ import PostFormPage from "./pages/student/PostFormPage";
 import AdminPostReviewPage from "./pages/admin/posts/AdminPostReviewPage";
 import PostDetailPage from "./pages/student/PostDetailPage";
 import StudentSmartSearchPage from "./pages/student/StudentSmartSearchPage";
+import ContactRequestDetail from "./components/contactRequest/ContactRequestDetail";
+import TutorContactRequestsPage from "./pages/tutor/TutorContactRequestsPage";
 
 // Protected Route wrapper for role-based access
 const ProtectedRoute = ({
@@ -134,7 +136,11 @@ function App() {
               <Route path="my-posts" element={<MyPostsPage />} />
               <Route path="posts/:id" element={<PostDetailPage />} />
 
-              {/* ✅ Student Profile Routes */}
+              {/* ✅ Thêm Contact Requests routes cho Student */}
+              <Route path="contact-requests" element={<StudentContactRequestsPage />} />
+              <Route path="contact-requests/:requestId" element={<ContactRequestDetail />} />
+
+              {/* Student Profile Routes */}
               <Route path="profile" element={<StudentProfilePage />} />
               <Route path="profile/personal" element={<StudentPersonalProfilePage />} />
               <Route path="profile/preferences" element={<StudentPreferencesPage />} />
@@ -196,6 +202,11 @@ function App() {
               <Route path="profile/*" element={<TutorProfilePage />} />
               <Route path="schedule" element={<TutorSchedulePage />} />
               <Route path="schedule/*" element={<TutorSchedulePage />} />
+
+              {/* ✅ Thêm Contact Requests routes cho Tutor */}
+              <Route path="contact-requests" element={<TutorContactRequestsPage />} />
+              <Route path="contact-requests/:requestId" element={<ContactRequestDetail />} />
+
               <Route
                 path="academics"
                 element={

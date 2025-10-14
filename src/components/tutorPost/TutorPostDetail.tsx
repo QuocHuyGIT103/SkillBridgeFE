@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import {
+  PaperAirplaneIcon,
+  ChatBubbleLeftRightIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+} from "@heroicons/react/24/outline";
 import { useTutorPostStore } from "../../store/tutorPost.store";
 import { useAuthStore } from "../../store/auth.store";
+import toast from "react-hot-toast";
 import {
   formatShortAddress,
   formatAddressDisplay,
@@ -11,9 +18,16 @@ import {
   translateEducationLevel,
   translateVerificationStatus,
 } from "../../utils/enumTranslations";
-import toast from "react-hot-toast";
 
-const TutorPostDetail: React.FC = () => {
+interface TutorPostDetailProps {
+  onContactClick?: () => void;
+  canSendRequest?: boolean;
+}
+
+const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
+  onContactClick,
+  canSendRequest = false,
+}) => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const { currentPost, getTutorPostById, incrementContactCount, isLoading } =
@@ -45,6 +59,172 @@ const TutorPostDetail: React.FC = () => {
     }
   }, [currentPost, isAuthenticated, isOwnPost, hasViewed]);
 
+  const formatPrice = (amount: number): string => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const getDayName = (dayOfWeek: number): string => {
+    const days = [
+      "Chủ nhật",
+      "Thứ hai",
+      "Thứ ba",
+      "Thứ tư",
+      "Thứ năm",
+      "Thứ sáu",
+      "Thứ bảy",
+    ];
+    return days[dayOfWeek];
+  };
+
+  // ✅ FIX: Thêm kiểm tra `currentPost`
+  const getLocationText = () => {
+    if (!currentPost) return "Linh hoạt"; // Guard clause
+    if (currentPost.teachingMode === "ONLINE") return "Trực tuyến";
+    if (currentPost.teachingMode === "OFFLINE" && currentPost.address) {
+      return "Tại nhà";
+    }
+    if (currentPost.teachingMode === "BOTH") return "Cả hai hình thức";
+    return "Linh hoạt";
+  };
+
+
+  const handleContactClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    debugger;
+    e.preventDefault();
+    if (!isAuthenticated) {
+      toast.error("Vui lòng đăng nhập để liên hệ với gia sư");
+      navigate("/auth/login");
+      return;
+    }
+
+    if (user?.role !== "STUDENT") {
+      toast.error("Chỉ học viên mới có thể gửi yêu cầu học tập");
+      return;
+    }
+
+    if (user?.id === currentPost?.tutorId._id) {
+      toast.error("Bạn không thể gửi yêu cầu đến chính mình");
+      return;
+    }
+
+    // Use the new contact request flow
+    if (onContactClick) {
+      onContactClick();
+    } else {
+      // Fallback to old contact modal
+      if (!currentPost) return; // Guard clause
+      try {
+        await incrementContactCount(currentPost._id || currentPost.id || "");
+        setShowContactModal(true);
+      } catch (error) {
+        toast.error("Có lỗi xảy ra, vui lòng thử lại");
+      }
+    }
+  };
+
+  const ContactModal = () => {
+    // ✅ FIX: Thêm kiểm tra `currentPost` ở đầu component
+    if (!currentPost) {
+      return null; // Không render gì cả nếu không có post
+    }
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <h3 className="text-lg font-semibold mb-4">Thông tin liên hệ</h3>
+
+          <div className="space-y-3 mb-6">
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                Tên gia sư:
+              </label>
+              <p className="text-gray-900">
+                {currentPost.tutorId.full_name || "Gia sư"}
+              </p>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">Email:</label>
+              {isAuthenticated && currentPost.tutorId.email ? (
+                <p className="text-gray-900">{currentPost.tutorId.email}</p>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <div className="flex space-x-1">
+                    {Array.from({ length: 15 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-2 h-3 bg-gray-300 rounded"
+                      ></div>
+                    ))}
+                  </div>
+                  <svg
+                    className="w-4 h-4 text-gray-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              )}
+              {!isAuthenticated && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Đăng nhập để xem email liên hệ
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                Môn dạy:
+              </label>
+              <p className="text-gray-900">
+                {currentPost.subjects
+                  .map((s) => (typeof s === "string" ? s : s.name))
+                  .join(", ")}
+              </p>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                Học phí:
+              </label>
+              <p className="text-gray-900">
+                {formatPrice(currentPost.pricePerSession)}/
+                {currentPost.sessionDuration} phút
+              </p>
+            </div>
+          </div>
+
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setShowContactModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Đóng
+            </button>
+
+            {isAuthenticated && currentPost.tutorId.email && (
+              <a
+                href={`mailto:${currentPost.tutorId.email}?subject=Liên hệ về bài đăng: ${currentPost.title}`}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center"
+              >
+                Gửi Email
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -71,145 +251,7 @@ const TutorPostDetail: React.FC = () => {
     );
   }
 
-  const formatPrice = (amount: number): string => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const getDayName = (dayOfWeek: number): string => {
-    const days = [
-      "Chủ nhật",
-      "Thứ hai",
-      "Thứ ba",
-      "Thứ tư",
-      "Thứ năm",
-      "Thứ sáu",
-      "Thứ bảy",
-    ];
-    return days[dayOfWeek];
-  };
-
-  const getLocationText = () => {
-    if (currentPost.teachingMode === "ONLINE") return "Trực tuyến";
-    if (currentPost.teachingMode === "OFFLINE" && currentPost.address) {
-      return "Tại nhà";
-    }
-    if (currentPost.teachingMode === "BOTH") return "Cả hai hình thức";
-    return "Linh hoạt";
-  };
-
-  const handleContactClick = async () => {
-    if (!isAuthenticated) {
-      toast.error("Vui lòng đăng nhập để liên hệ với gia sư");
-      navigate("/auth/login");
-      return;
-    }
-
-    if (user?.role === "TUTOR" && user?.id === currentPost.tutorId._id) {
-      toast.error("Bạn không thể liên hệ với chính mình");
-      return;
-    }
-
-    try {
-      await incrementContactCount(currentPost._id || currentPost.id || "");
-      setShowContactModal(true);
-    } catch (error) {
-      toast.error("Có lỗi xảy ra, vui lòng thử lại");
-    }
-  };
-
-  const ContactModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 className="text-lg font-semibold mb-4">Thông tin liên hệ</h3>
-
-        <div className="space-y-3 mb-6">
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Tên gia sư:
-            </label>
-            <p className="text-gray-900">
-              {currentPost.tutorId.full_name || "Gia sư"}
-            </p>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">Email:</label>
-            {isAuthenticated && currentPost.tutorId.email ? (
-              <p className="text-gray-900">{currentPost.tutorId.email}</p>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <div className="flex space-x-1">
-                  {Array.from({ length: 15 }).map((_, i) => (
-                    <div key={i} className="w-2 h-3 bg-gray-300 rounded"></div>
-                  ))}
-                </div>
-                <svg
-                  className="w-4 h-4 text-gray-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            )}
-            {!isAuthenticated && (
-              <p className="text-xs text-gray-500 mt-1">
-                Đăng nhập để xem email liên hệ
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Môn dạy:
-            </label>
-            <p className="text-gray-900">
-              {currentPost.subjects
-                .map((s) => (typeof s === "string" ? s : s.name))
-                .join(", ")}
-            </p>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Học phí:
-            </label>
-            <p className="text-gray-900">
-              {formatPrice(currentPost.pricePerSession)}/
-              {currentPost.sessionDuration} phút
-            </p>
-          </div>
-        </div>
-
-        <div className="flex space-x-3">
-          <button
-            onClick={() => setShowContactModal(false)}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-          >
-            Đóng
-          </button>
-
-          {isAuthenticated && currentPost.tutorId.email && (
-            <a
-              href={`mailto:${currentPost.tutorId.email}?subject=Liên hệ về bài đăng: ${currentPost.title}`}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center"
-            >
-              Gửi Email
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
+  // Từ đây trở xuống, `currentPost` chắc chắn không phải là null
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -715,23 +757,71 @@ const TutorPostDetail: React.FC = () => {
                   Chỉnh sửa bài đăng
                 </button>
               ) : (
-                <button
-                  onClick={handleContactClick}
-                  className="w-full px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg"
-                >
-                  Liên hệ gia sư
-                </button>
+                <div className="space-y-3">
+                  {/* New Contact Request Button */}
+                  {canSendRequest ? (
+                    <button
+                      onClick={handleContactClick}
+                      className="w-full px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                    >
+                      <PaperAirplaneIcon className="w-5 h-5" />
+                      <span>Gửi yêu cầu học tập</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleContactClick}
+                      className="w-full px-6 py-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                    >
+                      <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                      <span>Xem thông tin liên hệ</span>
+                    </button>
+                  )}
+
+                  {/* Quick Contact Actions */}
+                  {isAuthenticated && currentPost.tutorId.email && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <a
+                        href={`mailto:${currentPost.tutorId.email}?subject=Liên hệ về bài đăng: ${currentPost.title}`}
+                        className="flex items-center justify-center space-x-1 px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
+                      >
+                        <EnvelopeIcon className="w-4 h-4" />
+                        <span>Email</span>
+                      </a>
+
+                      {currentPost.tutorId.phone_number && (
+                        <a
+                          href={`tel:${currentPost.tutorId.phone_number}`}
+                          className="flex items-center justify-center space-x-1 px-3 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-colors text-sm"
+                        >
+                          <PhoneIcon className="w-4 h-4" />
+                          <span>Gọi</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
 
               <div className="text-sm text-gray-500 text-center mt-4 space-y-2">
                 {isOwnPost ? (
                   <p>Đây là bài đăng của bạn</p>
+                ) : canSendRequest ? (
+                  <div>
+                    <p className="font-medium text-blue-600">
+                      Gửi yêu cầu học tập để kết nối với gia sư
+                    </p>
+                    <p className="text-xs">
+                      Gia sư sẽ nhận được thông báo và phản hồi cho bạn
+                    </p>
+                  </div>
                 ) : (
                   <>
                     <p>
                       {isAuthenticated
-                        ? "Click để xem thông tin liên hệ"
-                        : "Đăng nhập để xem thông tin liên hệ"}
+                        ? user?.role === "TUTOR"
+                          ? "Chỉ học viên mới có thể gửi yêu cầu"
+                          : "Click để xem thông tin liên hệ"
+                        : "Đăng nhập để gửi yêu cầu học tập"}
                     </p>
                     {!isAuthenticated && (
                       <div className="flex items-center justify-center space-x-1">
@@ -769,7 +859,7 @@ const TutorPostDetail: React.FC = () => {
                   <div className="flex flex-wrap gap-2">
                     {currentPost.subjects.map((subject, index) => (
                       <span
-                        key={index}
+                        key={subject._id || index}
                         className="px-3 py-2 bg-blue-100 text-blue-800 text-sm rounded-lg font-medium"
                       >
                         {typeof subject === "string" ? subject : subject.name}

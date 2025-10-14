@@ -66,6 +66,7 @@ export interface TutorInfo {
   gender?: string;
   avatar_url?: string;
   date_of_birth?: string;
+  phone_number?: string;
   structured_address?: {
     province_code?: string;
     district_code?: string;
@@ -100,6 +101,7 @@ export interface TutorPost {
   createdAt: string;
   updatedAt: string;
   compatibility?: number;
+
 }
 
 export interface CreateTutorPostRequest {

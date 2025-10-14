@@ -81,6 +81,14 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       icon: "academic",
       path: "/student/my-posts",
     },
+    // ✅ Thêm Contact Requests menu
+    {
+      id: "contact-requests",
+      label: "Yêu cầu học tập",
+      icon: "chat",
+      path: "/student/contact-requests",
+      badge: 0, // Có thể cập nhật từ store
+    },
     {
       id: "schedule",
       label: "Lịch học",

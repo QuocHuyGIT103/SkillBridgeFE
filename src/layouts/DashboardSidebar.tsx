@@ -90,9 +90,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           path: "/tutor/schedule/lessons",
         },
         {
-          id: "schedule-requests",
-          label: "Yêu cầu đặt lịch",
-          path: "/tutor/schedule/requests",
+          id: "contact-requests",
+          label: "Yêu cầu học tập",
+          path: "/tutor/contact-requests",
           badge: 3,
         },
         {

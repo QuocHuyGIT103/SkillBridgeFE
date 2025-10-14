@@ -101,3 +101,4 @@ export type {
   Message as StudentMessage,
 } from "./student.types";
 export * from './post.types';
+export * from  './contactRequest.types'
