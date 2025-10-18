@@ -54,6 +54,10 @@ import PostDetailPage from "./pages/student/PostDetailPage";
 import StudentSmartSearchPage from "./pages/student/StudentSmartSearchPage";
 import ContactRequestDetail from "./components/contactRequest/ContactRequestDetail";
 import TutorContactRequestsPage from "./pages/tutor/TutorContactRequestsPage";
+import StudentClassesPage from "./pages/student/StudentClassesPage";
+import StudentClassDetailPage from "./pages/student/StudentClassDetailPage";
+import TutorClassesPage from "./pages/tutor/TutorClassesPage";
+import TutorClassDetailPage from "./pages/tutor/TutorClassDetailPage";
 
 // Protected Route wrapper for role-based access
 const ProtectedRoute = ({
@@ -145,14 +149,9 @@ function App() {
               <Route path="profile/personal" element={<StudentPersonalProfilePage />} />
               <Route path="profile/preferences" element={<StudentPreferencesPage />} />
 
-              <Route
-                path="classes"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Classes - Coming Soon
-                  </div>
-                }
-              />
+              {/* Student Classes Routes */}
+              <Route path="classes" element={<StudentClassesPage />} />
+              <Route path="classes/:classId" element={<StudentClassDetailPage />} />
               <Route path="assignments" element={<StudentAssignmentsPage />} />
               <Route
                 path="ratings"
@@ -206,6 +205,8 @@ function App() {
               {/* ✅ Thêm Contact Requests routes cho Tutor */}
               <Route path="contact-requests" element={<TutorContactRequestsPage />} />
               <Route path="contact-requests/:requestId" element={<ContactRequestDetail />} />
+              <Route path="classes" element={<TutorClassesPage />} />
+              <Route path="classes/:classId" element={<TutorClassDetailPage/>} />
 
               <Route
                 path="academics"

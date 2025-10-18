@@ -132,6 +132,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           path: "/tutor/academics/students",
         },
         {
+          id: "academics-classes",
+          label: "Quản lý lớp học",
+          path: "/tutor/classes",
+        },
+        {
           id: "academics-curriculum",
           label: "Lập kế hoạch giảng dạy",
           path: "/tutor/academics/curriculum",

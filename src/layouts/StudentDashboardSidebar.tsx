@@ -104,7 +104,7 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
     },
     {
       id: "classes",
-      label: "Lớp học",
+      label: "Lớp học của tôi",
       icon: "academic",
       path: "/student/classes",
     },
