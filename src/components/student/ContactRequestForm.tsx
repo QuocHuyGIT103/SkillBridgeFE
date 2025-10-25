@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { 
+import {
   PaperAirplaneIcon,
   ClockIcon,
   CurrencyDollarIcon,
@@ -13,14 +13,13 @@ import { useContactRequestStore } from '../../store/contactRequest.store';
 import { useSubjectStore } from '../../store/subject.store';
 import { useAuthStore } from '../../store/auth.store';
 import type { CreateContactRequestInput } from '../../types/contactRequest.types';
-import { 
-  LEARNING_MODES, 
-  SESSION_DURATIONS, 
-  CONTACT_METHODS 
+import {
+  LEARNING_MODES,
+  SESSION_DURATIONS,
+  CONTACT_METHODS
 } from '../../types/contactRequest.types';
 
 import type { TutorPost } from '../../services/tutorPost.service';
-
 
 interface ContactRequestFormProps {
   tutorPost: TutorPost;
@@ -70,7 +69,7 @@ const ContactRequestForm: React.FC<ContactRequestFormProps> = ({
   }, [activeSubjects.length, getActiveSubjects]);
 
   // Filter subjects that tutor teaches
-  const availableSubjects = activeSubjects.filter(subject => 
+  const availableSubjects = activeSubjects.filter(subject =>
     (Array.isArray(tutorPost.subjects)
       ? tutorPost.subjects.map(s => typeof s === 'string' ? s : s._id).includes(subject._id)
       : false)
@@ -122,7 +121,7 @@ const ContactRequestForm: React.FC<ContactRequestFormProps> = ({
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Subject Selection */}
+        {/* Subject Selection - GIỮ LẠI */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Môn học muốn học *
@@ -144,7 +143,7 @@ const ContactRequestForm: React.FC<ContactRequestFormProps> = ({
           )}
         </div>
 
-        {/* Message */}
+        {/* Message - GIỮ LẠI */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Tin nhắn gửi đến gia sư *
@@ -173,8 +172,8 @@ const ContactRequestForm: React.FC<ContactRequestFormProps> = ({
           </div>
         </div>
 
-        {/* Learning Mode */}
-        <div>
+        {/* Learning Mode - BỊ ẨN ĐI */}
+        <div className="hidden"> {/* <-- THÊM 'hidden' VÀO ĐÂY */}
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Hình thức học *
           </label>
@@ -199,7 +198,8 @@ const ContactRequestForm: React.FC<ContactRequestFormProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Khối Giá & Thời lượng - BỊ ẨN ĐI */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 hidden"> {/* <-- THÊM 'hidden' VÀO ĐÂY */}
           {/* Expected Price */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -251,8 +251,8 @@ const ContactRequestForm: React.FC<ContactRequestFormProps> = ({
           </div>
         </div>
 
-        {/* Preferred Schedule */}
-        <div>
+        {/* Preferred Schedule - BỊ ẨN ĐI */}
+        <div className="hidden"> {/* <-- THÊM 'hidden' VÀO ĐÂY */}
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Lịch học mong muốn
           </label>
@@ -272,8 +272,8 @@ const ContactRequestForm: React.FC<ContactRequestFormProps> = ({
           )}
         </div>
 
-        {/* Contact Information */}
-        <div className="space-y-4">
+        {/* Contact Information - BỊ ẨN ĐI */}
+        <div className="space-y-4 hidden"> {/* <-- THÊM 'hidden' VÀO ĐÂY */}
           <h4 className="text-lg font-medium text-gray-900">Thông tin liên hệ</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -346,7 +346,7 @@ const ContactRequestForm: React.FC<ContactRequestFormProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons - GIỮ LẠI */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
           {onCancel && (
             <button

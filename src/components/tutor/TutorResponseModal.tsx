@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { 
@@ -31,27 +31,77 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors }
   } = useForm<FormData>({
     defaultValues: {
       action: 'ACCEPT',
       message: '',
       counterOffer: {
-        pricePerSession: request.tutorPost?.pricePerSession,
-        sessionDuration: request.sessionDuration,
+        pricePerSession: undefined,
+        sessionDuration: undefined,
         schedule: '',
         conditions: ''
       }
     }
   });
 
+  // Build defaults from tutorPost (preferred) or from request
+  useEffect(() => {
+    if (!request) return;
+
+    // normalize tutorPost (backend trả populate vào tutorPostId)
+    const tutorPost = (request as any).tutorPost ?? (request as any).tutorPostId;
+
+    const defaults: FormData = {
+      action: 'ACCEPT',
+      message: '',
+      rejectionReason: undefined,
+      counterOffer: {
+        pricePerSession: tutorPost?.pricePerSession ?? request.expectedPrice ?? undefined,
+        sessionDuration: tutorPost?.sessionDuration ?? request.sessionDuration ?? undefined,
+        schedule: tutorPost?.schedule ?? request.preferredSchedule ?? '',
+        conditions: tutorPost?.conditions ?? ''
+      }
+    };
+
+    if (request.tutorResponse) {
+      if (('action' in request.tutorResponse && (request.tutorResponse as any).action === 'REJECT') || request.tutorResponse.rejectedAt) {
+        setResponseType('REJECT');
+        defaults.message = request.tutorResponse.message || '';
+        const rr = request.tutorResponse.rejectionReason as string | undefined;
+        if (rr && rr in REJECTION_REASONS) {
+          defaults.rejectionReason = rr as any;
+        } else {
+          defaults.rejectionReason = undefined;
+        }
+        defaults.counterOffer = request.tutorResponse.counterOffer || defaults.counterOffer;
+      } else {
+        setResponseType('ACCEPT');
+        defaults.message = request.tutorResponse.message || '';
+        defaults.counterOffer = request.tutorResponse.counterOffer || defaults.counterOffer;
+      }
+    } else {
+      setResponseType('ACCEPT');
+    }
+
+    reset(defaults);
+  }, [request, reset]);
+
   const watchAction = watch('action');
 
   const onSubmit = async (data: FormData) => {
     try {
+      // Ensure action reflects UI selection (responseType)
       await respondToRequest(request.id, {
         ...data,
-        action: responseType
+        action: responseType,
+        // ensure numeric fields are numbers
+        counterOffer: data.counterOffer ? {
+          ...data.counterOffer,
+          pricePerSession: data.counterOffer.pricePerSession ? Number(data.counterOffer.pricePerSession) : undefined,
+          sessionDuration: data.counterOffer.sessionDuration ? Number(data.counterOffer.sessionDuration) : undefined
+        } : undefined
       });
       onSuccess();
     } catch (error) {
@@ -93,42 +143,14 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
         </div>
 
         <div className="p-6">
-          {/* Request Summary */}
+          {/* Student message only (kept per request) */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h4 className="font-medium text-gray-900 mb-3">Thông tin yêu cầu</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">Học viên:</span>
-                <span className="ml-2 font-medium">{request.student?.full_name}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Môn học:</span>
-                <span className="ml-2 font-medium">{request.subjectInfo?.name}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Hình thức:</span>
-                <span className="ml-2 font-medium">{request.learningMode}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Thời lượng:</span>
-                <span className="ml-2 font-medium">{request.sessionDuration} phút</span>
-              </div>
-              {request.expectedPrice && (
-                <div>
-                  <span className="text-gray-600">Giá mong muốn:</span>
-                  <span className="ml-2 font-medium">{formatCurrency(request.expectedPrice)}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-3">
-              <span className="text-gray-600">Tin nhắn:</span>
-              <p className="mt-1 text-sm text-gray-800 bg-white rounded p-3">
-                "{request.message}"
-              </p>
+            <h4 className="font-medium text-gray-900 mb-2">Tin nhắn từ học viên</h4>
+            <div className="text-sm text-gray-800 bg-white rounded p-3 whitespace-pre-wrap">
+              {request.message ?? '—'}
             </div>
           </div>
-
+ 
           {/* Response Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Response Type */}
@@ -220,8 +242,11 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
             {responseType === 'ACCEPT' && (
               <div className="space-y-4">
                 <h4 className="text-lg font-medium text-gray-900">
-                  Đề xuất của bạn (tùy chọn)
+                  Đề xuất của bạn (mặc định từ bài đăng của bạn, có thể chỉnh sửa)
                 </h4>
+                <p className="text-xs text-gray-500 mb-2">
+                  Giá trị mặc định được lấy từ bài đăng của bạn (không thể chọn bài khác). Bạn vẫn có thể chỉnh sửa các trường trước khi gửi phản hồi.
+                </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Price */}

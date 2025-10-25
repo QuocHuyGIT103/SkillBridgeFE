@@ -1,22 +1,22 @@
 export interface ContactRequest {
   id: string;
-  studentId: string;
+  studentId: string | { full_name?: string; email?: string; phone_number?: string; avatar_url?: string; id?: string };
   tutorId: string;
-  tutorPostId: string;
-  subject: string;
+  tutorPostId: string | Record<string, any>; // backend có thể trả object populate ở đây
+  tutorPost?: Record<string, any>; // optional fallback nếu backend dùng khác tên
+  subject: string | { _id?: string; name?: string };
   message: string;
   preferredSchedule?: string;
   expectedPrice?: number;
-  sessionDuration: number;
-  learningMode: 'ONLINE' | 'OFFLINE' | 'FLEXIBLE';
+  sessionDuration?: number;
+  learningMode?: string;
+  status?: string;
   
   studentContact: {
     phone?: string;
     email?: string;
     preferredContactMethod: 'phone' | 'email' | 'both';
   };
-  
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED';
   
   tutorResponse?: {
     message?: string;
@@ -50,14 +50,6 @@ export interface ContactRequest {
     avatar_url?: string;
     phone_number?: string;
     email?: string;
-  };
-  
-  tutorPost?: {
-    id: string;
-    title: string;
-    description?: string;
-    pricePerSession: number;
-    sessionDuration: number;
   };
   
   subjectInfo?: {
