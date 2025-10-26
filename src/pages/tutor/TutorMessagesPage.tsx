@@ -9,7 +9,7 @@ import ChatWindow from '../../components/chat/ChatWindow';
 
 const TutorMessagesPage: React.FC = () => {
   const { user } = useAuthStore();
-  const currentUserId = (user?._id || '') as string;
+  const currentUserId = (user?._id || user?.id || '') as string;
 
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
   const [showConversationList, setShowConversationList] = useState(true);
