@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -16,6 +16,8 @@ import {
 import { useContactRequestStore } from '../../store/contactRequest.store';
 import { useAuthStore } from '../../store/auth.store';
 import { REQUEST_STATUS_LABELS, REJECTION_REASONS } from '../../types/contactRequest.types';
+import { ChatButton } from '../chat';
+import CreateClassModal from '../tutor/CreateClassModal';
 
 const ContactRequestDetail: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -23,11 +25,17 @@ const ContactRequestDetail: React.FC = () => {
   const { user } = useAuthStore();
   const { currentRequest, isLoading, getRequestDetail } = useContactRequestStore();
 
+  const [showCreateClassModal, setShowCreateClassModal] = useState(false);
+
   useEffect(() => {
     if (requestId) {
       getRequestDetail(requestId);
     }
   }, [requestId]);
+
+  const handleCreateClass = () => {
+    setShowCreateClassModal(true);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -116,7 +124,7 @@ const ContactRequestDetail: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
-              {getStatusIcon(currentRequest.status)}
+              {getStatusIcon(currentRequest.status || '')}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   Chi tiết yêu cầu học tập
@@ -126,7 +134,7 @@ const ContactRequestDetail: React.FC = () => {
                 </p>
               </div>
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(currentRequest.status)}`}>
+            <span className={`px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(currentRequest.status || '')}`}>
               {REQUEST_STATUS_LABELS[currentRequest.status as keyof typeof REQUEST_STATUS_LABELS]}
             </span>
           </div>
@@ -353,6 +361,15 @@ const ContactRequestDetail: React.FC = () => {
                   Gia sư sẽ liên hệ với bạn để trao đổi chi tiết và tạo lớp học.
                 </p>
                 <div className="space-y-2">
+                  <ChatButton
+                    contactRequestId={currentRequest.id}
+                    currentUserId={( user?.id || '')}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    Mở hộp chat
+                  </ChatButton>
+                  
                   <a
                     href={`mailto:${currentRequest.tutor?.email}`}
                     className="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
@@ -372,8 +389,46 @@ const ContactRequestDetail: React.FC = () => {
                 </div>
               </div>
             )}
+             {currentRequest.status === 'ACCEPTED' && !isStudent && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="font-medium text-green-900 mb-2">
+                  Bạn đã chấp nhận yêu cầu!
+                </h4>
+                <p className="text-sm text-green-800 mb-4">
+                  Bạn có thể nhắn tin với học viên hoặc tạo lớp học ngay.
+                </p>
+                <div className="space-y-2">
+                  <ChatButton
+                    contactRequestId={currentRequest.id}
+                    currentUserId={(user?.id || '')}
+                    className="w-full"
+                  >
+                    Nhắn tin
+                  </ChatButton>
+                  <button
+                    onClick={handleCreateClass}
+                    className="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    Tạo lớp học
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
+
+        {showCreateClassModal && currentRequest && (
+          <CreateClassModal
+            request={currentRequest}
+            onClose={() => setShowCreateClassModal(false)}
+            onSuccess={() => {
+              setShowCreateClassModal(false);
+              if (requestId) {
+                getRequestDetail(requestId);
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );

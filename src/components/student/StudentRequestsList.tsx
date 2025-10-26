@@ -12,6 +12,7 @@ import {
 import { useContactRequestStore } from '../../store/contactRequest.store';
 import { REQUEST_STATUS_LABELS } from '../../types/contactRequest.types';
 import type { ContactRequest } from '../../types/contactRequest.types';
+import { ChatButton } from '../chat';
 
 const StudentRequestsList: React.FC = () => {
   const {
@@ -363,6 +364,18 @@ const RequestCard: React.FC<RequestCardProps> = ({
           <button className="p-2 text-gray-500 hover:text-blue-600 transition-colors">
             <EyeIcon className="w-5 h-5" />
           </button>
+          
+          {request.status === 'ACCEPTED' && (
+            <ChatButton
+              contactRequestId={request.id}
+              currentUserId={request.studentId}
+              variant="outline"
+              size="sm"
+              className="text-xs"
+            >
+              Nhắn tin
+            </ChatButton>
+          )}
           
           {canCancel && (
             <button

@@ -16,7 +16,7 @@ import TutorProfilePage from "./pages/tutor/TutorProfilePage";
 import TutorPersonalProfilePage from "./pages/tutor/TutorPersonalProfilePage";
 import TutorEducationPage from "./pages/tutor/TutorEducationPage";
 import TutorSchedulePage from "./pages/tutor/TutorSchedulePage";
-import TutorChatPage from "./pages/tutor/TutorChatPage";
+
 import CreateTutorPostPage from "./pages/tutor/CreateTutorPostPage";
 import EditTutorPostPage from "./pages/tutor/EditTutorPostPage";
 import TutorPostListPage from "./pages/tutor/TutorPostListPage";
@@ -58,6 +58,7 @@ import StudentClassesPage from "./pages/student/StudentClassesPage";
 import StudentClassDetailPage from "./pages/student/StudentClassDetailPage";
 import TutorClassesPage from "./pages/tutor/TutorClassesPage";
 import TutorClassDetailPage from "./pages/tutor/TutorClassDetailPage";
+import TutorMessagesPage from "./pages/tutor/TutorMessagesPage";
 
 // Protected Route wrapper for role-based access
 const ProtectedRoute = ({
@@ -230,8 +231,8 @@ function App() {
                 path="posts/edit/:postId"
                 element={<EditTutorPostPage />}
               />
-              <Route path="chat" element={<TutorChatPage />} />
-              <Route path="chat/*" element={<TutorChatPage />} />
+              <Route path="messages" element={<TutorMessagesPage />} />
+              <Route path="messages/*" element={<TutorMessagesPage />} />
               <Route
                 path="finance"
                 element={

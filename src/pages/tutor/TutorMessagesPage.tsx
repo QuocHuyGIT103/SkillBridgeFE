@@ -7,16 +7,19 @@ import { socketService } from '../../services/socket.service';
 import ConversationList from '../../components/chat/ConversationList';
 import ChatWindow from '../../components/chat/ChatWindow';
 
-const StudentMessagesPage: React.FC = () => {
+const TutorMessagesPage: React.FC = () => {
   const { user } = useAuthStore();
   const currentUserId = (user?._id || '') as string;
 
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
   const [showConversationList, setShowConversationList] = useState(true);
 
-  const { fetchConversations, setSelectedConversation: setStoreSelectedConversation } = useMessageStore();
+  const {
+    fetchConversations,
+    setSelectedConversation: setStoreSelectedConversation,
+  } = useMessageStore();
 
-  // Connect socket and preload conversations
+  // Connect socket and join global chat room for this user
   useEffect(() => {
     if (!currentUserId) return;
     socketService.connect(localStorage.getItem('access_token') || undefined);
@@ -89,4 +92,4 @@ const StudentMessagesPage: React.FC = () => {
   );
 };
 
-export default StudentMessagesPage;
+export default TutorMessagesPage;
