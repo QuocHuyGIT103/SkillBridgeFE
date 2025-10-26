@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { JSX } from 'react';
-import { motion } from 'framer-motion';
-import { 
+import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
@@ -12,7 +11,6 @@ import {
   EnvelopeIcon,
   CalendarIcon
 } from '@heroicons/react/24/outline';
-
 import { useContactRequestStore } from '../../store/contactRequest.store';
 import { REQUEST_STATUS_LABELS } from '../../types/contactRequest.types';
 import type { ContactRequest } from '../../types/contactRequest.types';
@@ -60,7 +58,7 @@ const TutorRequestsList: React.FC = () => {
     setShowCreateClassModal(true);
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status?: string) => {
     switch (status) {
       case 'PENDING':
         return <ClockIcon className="w-5 h-5 text-yellow-500" />;
@@ -73,7 +71,7 @@ const TutorRequestsList: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
     switch (status) {
       case 'PENDING':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -128,7 +126,7 @@ const TutorRequestsList: React.FC = () => {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => handleStatusFilter('')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               selectedStatus === '' 
                 ? 'bg-blue-600 text-white' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -140,7 +138,7 @@ const TutorRequestsList: React.FC = () => {
             <button
               key={status}
               onClick={() => handleStatusFilter(status)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 selectedStatus === status 
                   ? 'bg-blue-600 text-white' 
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -273,29 +271,43 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
 }) => {
   // normalize populated tutor post
   const tutorPost = (request as any).tutorPost ?? (request as any).tutorPostId;
-  const canRespond = request.status === 'PENDING';
-  const canCreateClass = request.status === 'ACCEPTED';
+  const statusKey = request.status ?? 'PENDING';
+  const statusLabel = (REQUEST_STATUS_LABELS as any)[statusKey] ?? statusKey;
+  const statusClass = getStatusColor(statusKey);
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow">
-      <div className="flex justify-between items-start">
-        <div>
-          <div className="text-sm text-gray-600">Bài đăng</div>
-          <div className="font-medium">{tutorPost?.title ?? '—'}</div>
-          {tutorPost?.pricePerSession != null && (
-            <div className="text-sm text-gray-500">{formatCurrency(tutorPost.pricePerSession)}</div>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 hidden md:block">{getStatusIcon(statusKey)}</div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold text-gray-900">{tutorPost?.title ?? '—'}</span>
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${statusClass}`}>
+                {statusLabel}
+              </span>
+            </div>
+            {tutorPost?.pricePerSession != null && (
+              <div className="mt-1 text-sm text-gray-600">{formatCurrency(tutorPost.pricePerSession)}</div>
+            )}
+            <div className="mt-2 text-sm text-gray-500">
+              <span className="font-medium">Học viên:</span> {(request.studentId as any)?.full_name ?? '—'}
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 md:mt-0 flex items-center gap-2">
+          {request.status === 'ACCEPTED' && (
+            <button onClick={() => onCreateClass(request)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              Tạo lớp
+            </button>
+          )}
+
+          {request.status === 'PENDING' && (
+            <button onClick={() => onResponse(request)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+              Phản hồi
+            </button>
           )}
         </div>
-        <div>
-          <div className="text-sm text-gray-600">Học viên</div>
-          <div className="font-medium">{(request.studentId as any)?.full_name ?? '—'}</div>
-        </div>
-      </div>
-
-      {/* actions */}
-      <div className="mt-4 flex gap-2">
-        <button disabled={!canRespond} onClick={() => onResponse(request)} className="px-3 py-1 bg-green-500 text-white rounded">Phản hồi</button>
-        <button disabled={!canCreateClass} onClick={() => onCreateClass(request)} className="px-3 py-1 bg-blue-500 text-white rounded">Tạo lớp</button>
       </div>
     </div>
   );

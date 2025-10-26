@@ -162,27 +162,29 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   );
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
+    <div className="flex flex-col h-full bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-100">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-semibold ring-2 ring-white">
             {avatarInitial}
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">{otherName}</h3>
-            <p className="text-sm text-gray-500">
-              Môn: {subjectName}
-            </p>
+            <div className="mt-0.5">
+              <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                Môn: {subjectName}
+              </span>
+            </div>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
+          <button className="px-3 py-1.5 text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-100 transition">
             <MoreVertical size={20} />
           </button>
           <button 
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+            className="px-3 py-1.5 text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-100 transition"
           >
             <X size={20} />
           </button>
@@ -192,7 +194,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Messages */}
       <div
         ref={messagesContainerRef}
-        className={`flex-1 overflow-y-auto p-4 space-y-4 chat-scroll ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`flex-1 overflow-y-auto p-4 space-y-4 chat-scroll rounded-xl bg-gradient-to-b from-white/80 to-blue-50/40 mx-3 my-3 shadow-inner ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={endDrag}
@@ -204,7 +206,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             <button
               onClick={handleLoadMore}
               disabled={messagesLoading}
-              className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
+              className="inline-block px-4 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full hover:bg-blue-100 disabled:opacity-50"
             >
               {messagesLoading ? 'Đang tải...' : 'Tải tin nhắn cũ hơn'}
             </button>
@@ -229,11 +231,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
 
       {/* Message input */}
-      <div className="p-4 border-t border-gray-200">
-        <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+      <div className="sticky bottom-0 z-10 px-4 py-3 border-t border-gray-200 bg-white/80 backdrop-blur-md">
+        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <button
             type="button"
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+            className="p-2.5 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition"
           >
             <Paperclip size={20} />
           </button>
@@ -244,7 +246,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               value={messageText}
               onChange={handleInputChange}
               placeholder="Nhập tin nhắn..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm placeholder-gray-400 bg-white"
               disabled={conversation.status === 'closed'}
             />
           </div>
@@ -252,11 +254,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <button
             type="submit"
             disabled={!messageText.trim() || conversation.status === 'closed'}
-            className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-full hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm flex items-center gap-2"
           >
             <Send size={20} />
+            <span className="hidden sm:inline">Gửi</span>
           </button>
         </form>
+        
+        {conversation.status !== 'closed' && (
+          <p className="text-xs text-gray-500 mt-2 text-center">Nhấn Enter để gửi</p>
+        )}
         
         {conversation.status === 'closed' && (
           <p className="text-sm text-gray-500 mt-2 text-center">

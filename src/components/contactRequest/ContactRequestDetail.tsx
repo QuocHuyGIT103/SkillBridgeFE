@@ -18,6 +18,7 @@ import { useAuthStore } from '../../store/auth.store';
 import { REQUEST_STATUS_LABELS, REJECTION_REASONS } from '../../types/contactRequest.types';
 import { ChatButton } from '../chat';
 import CreateClassModal from '../tutor/CreateClassModal';
+import { MessageCircle } from 'lucide-react';
 
 const ContactRequestDetail: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
@@ -353,41 +354,74 @@ const ContactRequestDetail: React.FC = () => {
 
             {/* Actions */}
             {currentRequest.status === 'ACCEPTED' && isStudent && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="font-medium text-green-900 mb-2">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-6 shadow-sm"
+              >
+                <h4 className="font-semibold text-blue-900 text-lg mb-3 flex items-center">
+                  <CheckCircleIcon className="w-5 h-5 mr-2 text-blue-500" />
                   Yêu cầu đã được chấp nhận!
                 </h4>
-                <p className="text-sm text-green-800 mb-4">
-                  Gia sư sẽ liên hệ với bạn để trao đổi chi tiết và tạo lớp học.
+                <p className="text-sm text-blue-800 mb-6">
+                  Bạn có thể liên hệ với gia sư qua các phương thức bên dưới để trao đổi chi tiết về lớp học.
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <ChatButton
                     contactRequestId={currentRequest.id}
-                    currentUserId={( user?.id || '')}
-                    className="w-full"
-                    variant="outline"
+                    currentUserId={user?.id || ''}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center shadow-sm"
                   >
-                    Mở hộp chat
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    Nhắn tin với gia sư
                   </ChatButton>
                   
-                  <a
-                    href={`mailto:${currentRequest.tutor?.email}`}
-                    className="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-                  >
-                    <EnvelopeIcon className="w-4 h-4 mr-2" />
-                    Gửi email cho gia sư
-                  </a>
-                  {currentRequest.tutor?.phone_number && (
+                  <div className="grid grid-cols-2 gap-3 mt-2">
                     <a
-                      href={`tel:${currentRequest.tutor.phone_number}`}
-                      className="w-full inline-flex items-center justify-center px-4 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-colors text-sm"
+                      href={`mailto:${currentRequest.tutor?.email}`}
+                      className="flex items-center justify-center px-4 py-3 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors border border-blue-200 font-medium group"
                     >
-                      <PhoneIcon className="w-4 h-4 mr-2" />
-                      Gọi cho gia sư
+                      <EnvelopeIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                      Gửi email
                     </a>
-                  )}
+                    {currentRequest.tutor?.phone_number && (
+                      <a
+                        href={`tel:${currentRequest.tutor.phone_number}`}
+                        className="flex items-center justify-center px-4 py-3 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors border border-blue-200 font-medium group"
+                      >
+                        <PhoneIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                        Gọi điện
+                      </a>
+                    )}
+                  </div>
                 </div>
-              </div>
+
+                <div className="mt-6 pt-4 border-t border-blue-100">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      {currentRequest.tutor?.avatar_url ? (
+                        <img
+                          src={currentRequest.tutor.avatar_url}
+                          alt={currentRequest.tutor.full_name}
+                          className="w-10 h-10 rounded-full object-cover ring-2 ring-white"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center ring-2 ring-white">
+                          <UserIcon className="w-6 h-6 text-blue-600" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">
+                        {currentRequest.tutor?.full_name}
+                      </p>
+                      <p className="text-xs text-blue-600 mt-0.5">
+                        Gia sư môn {currentRequest.subjectInfo?.name}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             )}
              {currentRequest.status === 'ACCEPTED' && !isStudent && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { MessageCircle } from 'lucide-react';
-import ChatModal from './ChatModal';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/auth.store';
 
 interface ChatButtonProps {
   contactRequestId: string;
@@ -19,7 +20,8 @@ const ChatButton: React.FC<ChatButtonProps> = ({
   size = 'md',
   children
 }) => {
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   const getButtonClasses = () => {
     const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
@@ -28,13 +30,13 @@ const ChatButton: React.FC<ChatButtonProps> = ({
       primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
       secondary: 'bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500',
       outline: 'border border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500'
-    };
+    } as const;
 
     const sizeClasses = {
       sm: 'px-3 py-1.5 text-sm',
       md: 'px-4 py-2 text-sm',
       lg: 'px-6 py-3 text-base'
-    };
+    } as const;
 
     return `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
   };
@@ -47,23 +49,17 @@ const ChatButton: React.FC<ChatButtonProps> = ({
     }
   };
 
-  return (
-    <>
-      <button
-        onClick={() => setIsChatOpen(true)}
-        className={getButtonClasses()}
-      >
-        <MessageCircle size={getIconSize()} className="mr-2" />
-        {children}
-      </button>
+  const handleClick = () => {
+    const role = user?.role?.toLowerCase() === 'tutor' ? 'tutor' : 'student';
+    const basePath = `/${role}/messages`;
+    navigate(`${basePath}?contactRequestId=${contactRequestId}`);
+  };
 
-      <ChatModal
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        currentUserId={currentUserId}
-        initialContactRequestId={contactRequestId}
-      />
-    </>
+  return (
+    <button onClick={handleClick} className={getButtonClasses()}>
+      <MessageCircle size={getIconSize()} className="mr-2" />
+      {children}
+    </button>
   );
 };
 

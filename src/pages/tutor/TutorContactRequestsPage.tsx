@@ -4,13 +4,16 @@ import TutorRequestsList from '../../components/tutor/TutorRequestsList';
 const TutorContactRequestsPage: React.FC = () => {
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Yêu cầu học tập
-        </h1>
-        <p className="text-gray-600">
-          Quản lý các yêu cầu học tập từ học viên
-        </p>
+      <div className="rounded-xl border border-gray-200 bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Yêu cầu học tập</h1>
+            <p className="mt-1 text-gray-600">Theo dõi và xử lý yêu cầu từ học viên</p>
+          </div>
+          <div className="hidden md:flex items-center gap-2 text-sm text-gray-500">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white border border-gray-200">Danh sách yêu cầu</span>
+          </div>
+        </div>
       </div>
       
       <TutorRequestsList />

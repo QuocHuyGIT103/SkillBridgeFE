@@ -6,6 +6,7 @@ import type { ConversationData } from '../../services/message.service';
 import { socketService } from '../../services/socket.service';
 import ConversationList from '../../components/chat/ConversationList';
 import ChatWindow from '../../components/chat/ChatWindow';
+import { useSearchParams } from 'react-router-dom';
 
 const TutorMessagesPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -14,9 +15,13 @@ const TutorMessagesPage: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
   const [showConversationList, setShowConversationList] = useState(true);
 
+  const [searchParams] = useSearchParams();
+  const contactRequestId = searchParams.get('contactRequestId');
+
   const {
     fetchConversations,
     setSelectedConversation: setStoreSelectedConversation,
+    createConversation,
   } = useMessageStore();
 
   // Connect socket and join global chat room for this user
@@ -31,6 +36,25 @@ const TutorMessagesPage: React.FC = () => {
       socketService.disconnect();
     };
   }, [currentUserId]);
+
+  // Auto-create/select conversation when coming from contact request
+  useEffect(() => {
+    const init = async () => {
+      if (!contactRequestId) return;
+      try {
+        const conversation = await createConversation(contactRequestId);
+        await fetchConversations();
+        if (conversation) {
+          setSelectedConversation(conversation);
+          setStoreSelectedConversation(conversation);
+          setShowConversationList(false);
+        }
+      } catch (err) {
+        // ignore errors handled in store
+      }
+    };
+    init();
+  }, [contactRequestId]);
 
   const handleSelectConversation = (conversation: ConversationData) => {
     setSelectedConversation(conversation);
