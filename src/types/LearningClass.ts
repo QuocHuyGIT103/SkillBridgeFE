@@ -22,6 +22,12 @@ export interface LearningClass {
       longitude: number;
     };
   };
+  onlineInfo?: {
+    platform: string;
+    meetingLink: string;
+    meetingId: string;
+    password: string;
+  };
   pricePerSession: number;
   sessionDuration: number;
   totalSessions: number;

@@ -82,9 +82,45 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) => {
 
     // Render file message
     if (message.messageType === 'file' && message.fileMetadata?.fileUrl) {
+      const handleFileClick = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        try {
+          // Fetch file as blob
+          const response = await fetch(message.fileMetadata!.fileUrl);
+          const blob = await response.blob();
+          
+          // Create download link
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          
+          // Use original filename to preserve Vietnamese characters and extension
+          const fileName = message.fileMetadata!.fileName || 'download';
+          link.download = fileName;
+          
+          // Trigger download
+          document.body.appendChild(link);
+          link.click();
+          
+          // Cleanup
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error('Download error:', error);
+          // Fallback: direct link
+          window.open(message.fileMetadata!.fileUrl, '_blank');
+        }
+      };
+
       return (
         <div className="space-y-2">
-          <div className={`flex items-center gap-3 p-3 rounded-lg ${isOwn ? 'bg-blue-600' : 'bg-white'} shadow-sm border ${isOwn ? 'border-blue-400' : 'border-gray-200'}`}>
+          <div 
+            className={`flex items-center gap-3 p-3 rounded-lg ${isOwn ? 'bg-blue-600' : 'bg-white'} shadow-sm border ${isOwn ? 'border-blue-400' : 'border-gray-200'} cursor-pointer hover:opacity-90 transition-opacity`}
+            onClick={handleFileClick}
+            title="Click để tải xuống"
+          >
             <div className={`flex-shrink-0 text-2xl ${isOwn ? 'opacity-90' : ''}`}>
               {getFileIcon(message.fileMetadata.fileType)}
             </div>
@@ -98,16 +134,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isOwn }) => {
                 </p>
               )}
             </div>
-            <a
-              href={message.fileMetadata.fileUrl}
-              download={message.fileMetadata.fileName}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex-shrink-0 p-2 rounded-full ${isOwn ? 'hover:bg-blue-500' : 'hover:bg-gray-100'} transition-colors`}
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className={`flex-shrink-0 p-2 rounded-full ${isOwn ? 'bg-blue-500' : 'bg-gray-100'}`}>
               <Download className={`w-4 h-4 ${isOwn ? 'text-white' : 'text-gray-600'}`} />
-            </a>
+            </div>
           </div>
           {message.content && message.content !== message.fileMetadata.fileName && (
             <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>

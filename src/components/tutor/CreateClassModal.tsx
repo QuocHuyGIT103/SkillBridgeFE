@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { 
   XMarkIcon,
@@ -11,7 +11,6 @@ import {
 
 import { useContactRequestStore } from '../../store/contactRequest.store';
 import type { ContactRequest, CreateLearningClassInput } from '../../types/contactRequest.types';
-import { ONLINE_PLATFORMS } from '../../types/contactRequest.types';
 
 interface CreateClassModalProps {
   request: ContactRequest;
@@ -42,18 +41,37 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     request.learningMode === 'FLEXIBLE' ? 'ONLINE' : request.learningMode as 'ONLINE' | 'OFFLINE'
   );
 
+  // Get tutor post info
+  const tutorPost = (request as any).tutorPost ?? (request as any).tutorPostId;
+  
+  // Generate class title from tutor post
+  const generateClassTitle = () => {
+    if (tutorPost?.title) {
+      return tutorPost.title;
+    }
+    return `Lớp ${request.subjectInfo?.name} - ${request.student?.full_name}`;
+  };
+
+  // Auto-generate Zoom meeting details
+  const generateZoomInfo = () => {
+    const meetingId = Math.floor(100000000 + Math.random() * 900000000).toString();
+    const password = Math.random().toString(36).substring(2, 10);
+    const meetingLink = `https://zoom.us/j/${meetingId}`;
+    
+    return { meetingLink, meetingId, password };
+  };
+
   const {
     register,
     handleSubmit,
-    control,
     watch,
     setValue,
     formState: { errors }
   } = useForm<FormData>({
     defaultValues: {
       contactRequestId: request.id,
-      title: `Lớp ${request.subjectInfo?.name} - ${request.student?.full_name}`,
-      description: '',
+      title: generateClassTitle(),
+      description: tutorPost?.description || '',
       totalSessions: 10,
       schedule: {
         dayOfWeek: [],
@@ -66,9 +84,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
       } : undefined,
       onlineInfo: learningMode === 'ONLINE' ? {
         platform: 'ZOOM',
-        meetingLink: '',
-        meetingId: '',
-        password: ''
+        ...generateZoomInfo()
       } : undefined
     }
   });
@@ -83,6 +99,19 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     
     setSelectedDays(newDays);
     setValue('schedule.dayOfWeek', newDays);
+  };
+
+  // Update Zoom info when switching to ONLINE mode
+  const handleModeChange = (mode: 'ONLINE' | 'OFFLINE') => {
+    setLearningMode(mode);
+    
+    if (mode === 'ONLINE') {
+      const zoomInfo = generateZoomInfo();
+      setValue('onlineInfo.platform', 'ZOOM');
+      setValue('onlineInfo.meetingLink', zoomInfo.meetingLink);
+      setValue('onlineInfo.meetingId', zoomInfo.meetingId);
+      setValue('onlineInfo.password', zoomInfo.password);
+    }
   };
 
   const onSubmit = async (data: FormData) => {
@@ -160,30 +189,13 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
         </div>
 
         <div className="p-6">
-          {/* Request Summary */}
-          <div className="bg-blue-50 rounded-lg p-4 mb-6">
-            <h4 className="font-medium text-blue-900 mb-3">Thông tin yêu cầu</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-blue-700">Học viên:</span>
-                <span className="ml-2 font-medium text-blue-900">{request.student?.full_name}</span>
-              </div>
-              <div>
-                <span className="text-blue-700">Môn học:</span>
-                <span className="ml-2 font-medium text-blue-900">{request.subjectInfo?.name}</span>
-              </div>
-              <div>
-                <span className="text-blue-700">Giá/buổi:</span>
-                <span className="ml-2 font-medium text-blue-900">
-                  {formatCurrency(request.tutorPost?.pricePerSession || 0)}
-                </span>
-              </div>
-              <div>
-                <span className="text-blue-700">Thời lượng:</span>
-                <span className="ml-2 font-medium text-blue-900">{request.sessionDuration} phút</span>
-              </div>
+          {/* Student Message */}
+          {request.message && (
+            <div className="bg-blue-50 rounded-lg p-4 mb-6">
+              <h4 className="font-medium text-blue-900 mb-2">Tin nhắn từ học viên</h4>
+              <p className="text-sm text-blue-800 italic">"{request.message}"</p>
             </div>
-          </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -268,7 +280,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
-                  onClick={() => setLearningMode('ONLINE')}
+                  onClick={() => handleModeChange('ONLINE')}
                   className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${
                     learningMode === 'ONLINE'
                       ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -281,7 +293,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                 
                 <button
                   type="button"
-                  onClick={() => setLearningMode('OFFLINE')}
+                  onClick={() => handleModeChange('OFFLINE')}
                   className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${
                     learningMode === 'OFFLINE'
                       ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -429,62 +441,66 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
               </div>
             ) : (
               <div className="space-y-4">
-                <h4 className="text-lg font-medium text-gray-900">
-                  Thông tin học online
+                <h4 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
+                  <VideoCameraIcon className="w-5 h-5 text-blue-600" />
+                  <span>Thông tin học online</span>
+                  <span className="text-sm font-normal text-gray-500">(Tự động tạo)</span>
                 </h4>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nền tảng
-                    </label>
-                    <select
-                      {...register('onlineInfo.platform')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      {ONLINE_PLATFORMS.map((platform) => (
-                        <option key={platform.value} value={platform.value}>
-                          {platform.label}
-                        </option>
-                      ))}
-                    </select>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm text-green-800 mb-3">
+                    ✓ Link Zoom đã được tạo tự động cho bạn
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nền tảng
+                      </label>
+                      <input
+                        value="Zoom"
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Meeting ID
+                      </label>
+                      <input
+                        {...register('onlineInfo.meetingId')}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Link meeting
+                      </label>
+                      <input
+                        {...register('onlineInfo.meetingLink')}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-mono text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mật khẩu meeting
+                      </label>
+                      <input
+                        {...register('onlineInfo.password')}
+                        readOnly
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-mono"
+                      />
+                    </div>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Meeting ID
-                    </label>
-                    <input
-                      {...register('onlineInfo.meetingId')}
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="123-456-7890"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Link meeting
-                  </label>
-                  <input
-                    {...register('onlineInfo.meetingLink')}
-                    type="url"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://zoom.us/j/123456789"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mật khẩu meeting
-                  </label>
-                  <input
-                    {...register('onlineInfo.password')}
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="password123"
-                  />
+                  
+                  <p className="text-xs text-gray-500 mt-3">
+                    💡 Bạn có thể chia sẻ thông tin này với học viên sau khi tạo lớp
+                  </p>
                 </div>
               </div>
             )}
