@@ -1,11 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, X, Paperclip, MoreVertical } from 'lucide-react';
 import useMessageStore from '../../store/message.store';
-import type { ConversationData, MessageData } from '../../services/message.service';
+import type { ConversationData } from '../../services/message.service';
+import { messageService } from '../../services/message.service';
 import { socketService } from '../../services/socket.service';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
-import './chat-window.css';
+import toast from 'react-hot-toast';
+
+// Inline styles cho scrollbar
+const scrollbarStyles = `
+  .custom-chat-scroll {
+    scrollbar-width: auto;
+    scrollbar-color: #94a3b8 #f1f5f9;
+  }
+  
+  .custom-chat-scroll::-webkit-scrollbar {
+    width: 12px;
+  }
+  
+  .custom-chat-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+  }
+  
+  .custom-chat-scroll::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 10px;
+    border: 2px solid #f1f5f9;
+  }
+  
+  .custom-chat-scroll::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+  
+  .custom-chat-scroll::-webkit-scrollbar-thumb:active {
+    background: #475569;
+  }
+`;
 
 interface ChatWindowProps {
   conversation: ConversationData;
@@ -22,26 +54,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartYRef = useRef<number>(0);
-  const scrollStartRef = useRef<number>(0);
-  
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!messagesContainerRef.current) return;
-    setIsDragging(true);
-    dragStartYRef.current = e.clientY;
-    scrollStartRef.current = messagesContainerRef.current.scrollTop;
-  };
-  
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging || !messagesContainerRef.current) return;
-    const delta = e.clientY - dragStartYRef.current;
-    messagesContainerRef.current.scrollTop = scrollStartRef.current - delta;
-  };
-  
-  const endDrag = () => setIsDragging(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const {
     messages,
     messagesLoading,
@@ -149,6 +163,55 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     });
   };
 
+  // Upload and send attachment (image or file)
+  const uploadAndSendAttachment = async (file: File) => {
+    if (conversation.status === 'closed') return;
+
+    const isImage = file.type?.startsWith('image/');
+    const subdir = isImage ? 'images' : 'files';
+    
+    console.debug('Upload start', { name: file.name, size: file.size, type: file.type, subdir });
+    const tid = toast.loading('Đang tải tệp lên... 0%');
+    
+    try {
+      // Upload to backend (Cloudinary)
+      const result = await messageService.uploadAttachment(
+        conversation._id,
+        file,
+        subdir,
+        (progress: number) => {
+          console.log('Upload progress', progress);
+          toast.loading(`Đang tải tệp lên... ${progress}%`, { id: tid });
+        }
+      );
+
+      // Send message with file metadata
+      await sendMessage(conversation._id, {
+        content: isImage ? 'Ảnh' : file.name,
+        messageType: isImage ? 'image' : 'file',
+        fileMetadata: {
+          fileName: result.fileName,
+          fileSize: result.fileSize,
+          fileType: result.fileType,
+          fileUrl: result.url,
+        },
+      });
+
+      toast.success('Gửi tệp thành công', { id: tid });
+      scrollToBottom();
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      toast.error(err?.message || 'Lỗi tải tệp lên', { id: tid });
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    e.target.value = '';
+    uploadAndSendAttachment(f);
+  };
+
   // Load more messages
   const handleLoadMore = () => {
     if (messagesPagination?.hasNext) {
@@ -162,7 +225,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   );
 
   return (
-    <div className="flex flex-col h-full bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-100">
+    <>
+      {/* Inject scrollbar styles */}
+      <style>{scrollbarStyles}</style>
+      
+      <div className="flex flex-col h-full bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-100">
       {/* Header */}
       <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
         <div className="flex items-center space-x-3">
@@ -194,11 +261,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Messages */}
       <div
         ref={messagesContainerRef}
-        className={`flex-1 overflow-y-auto p-4 space-y-4 chat-scroll rounded-xl bg-gradient-to-b from-white/80 to-blue-50/40 mx-3 my-3 shadow-inner ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={endDrag}
-        onMouseLeave={endDrag}
+        className="flex-1 p-4 space-y-4 bg-gradient-to-b from-white/80 to-blue-50/40 custom-chat-scroll"
+        style={{ 
+          scrollBehavior: 'smooth',
+          minHeight: 0,
+          overflowY: 'scroll',
+          overflowX: 'hidden',
+          maxHeight: 'calc(100vh - 280px)' // Force max height to trigger scrollbar
+        }}
       >
         {/* Load more button */}
         {messagesPagination?.hasNext && (
@@ -236,9 +306,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <button
             type="button"
             className="p-2.5 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition"
+            onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip size={20} />
           </button>
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleFileChange}
+            accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,*/*"
+          />
           
           <div className="flex-1 relative">
             <input
@@ -272,6 +351,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         )}
       </div>
     </div>
+    </>
   );
 };
 

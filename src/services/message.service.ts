@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+// Support either VITE_API_URL or VITE_API_BASE_URL; fallback to localhost
+const API_BASE_URL = (import.meta.env.VITE_API_URL 
+  || (import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/api/v1` : undefined)
+  || 'http://localhost:3000/api/v1');
 
 export interface MessageData {
   _id: string;
@@ -241,6 +244,71 @@ class MessageService {
     };
   }
 
+  /**
+   * Upload file/image attachment to backend (Cloudinary)
+   */
+  async uploadAttachment(
+    conversationId: string,
+    file: File,
+    subdir: 'images' | 'files' = 'images',
+    onProgress?: (progress: number) => void
+  ): Promise<{ url: string; fileName: string; fileType: string; fileSize: number }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('access_token');
+    
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          const percentComplete = Math.round((e.loaded / e.total) * 100);
+          onProgress(percentComplete);
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            if (response.success && response.data) {
+              resolve(response.data);
+            } else {
+              reject(new Error(response.message || 'Upload failed'));
+            }
+          } catch (err) {
+            reject(new Error('Invalid response from server'));
+          }
+        } else {
+          try {
+            const errorResponse = JSON.parse(xhr.responseText);
+            reject(new Error(errorResponse.message || `Upload failed with status ${xhr.status}`));
+          } catch {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Network error during upload'));
+      });
+
+      xhr.addEventListener('abort', () => {
+        reject(new Error('Upload cancelled'));
+      });
+
+      xhr.open('POST', `${API_BASE_URL}/messages/conversations/${conversationId}/attachments?subdir=${subdir}`);
+      
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+
+      xhr.send(formData);
+    });
+  }
+
   // Create conversation
   async createConversation(data: CreateConversationRequest): Promise<ConversationData> {
     try {
@@ -258,9 +326,15 @@ class MessageService {
   // Send message
   async sendMessage(conversationId: string, data: SendMessageRequest): Promise<MessageData> {
     try {
+      // Convert messageType to uppercase for backend
+      const backendData = {
+        ...data,
+        messageType: data.messageType?.toUpperCase() as 'TEXT' | 'IMAGE' | 'FILE' | undefined
+      };
+      
       const response = await axios.post(
         `${API_BASE_URL}/messages/conversations/${conversationId}/messages`,
-        data,
+        backendData,
         { headers: this.getAuthHeaders() }
       );
       return normalizeMessage(response.data.data);
