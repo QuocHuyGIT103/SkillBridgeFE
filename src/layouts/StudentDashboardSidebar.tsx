@@ -70,6 +70,12 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       path: "/student/smart-search",
     },
     {
+      id: "ai-survey",
+      label: "Khảo sát AI",
+      icon: "sparkles",
+      path: "/student/ai-survey",
+    },
+    {
       id: "create-post",
       label: "Tạo Bài Đăng",
       icon: "document",
