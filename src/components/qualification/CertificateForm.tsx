@@ -87,7 +87,7 @@ const CertificateForm: React.FC<CertificateFormProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay backdrop - click to close */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/50 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -246,5 +246,3 @@ const CertificateForm: React.FC<CertificateFormProps> = ({
 };
 
 export default CertificateForm;
-
-
