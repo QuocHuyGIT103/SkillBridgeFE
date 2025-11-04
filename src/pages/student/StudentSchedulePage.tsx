@@ -88,7 +88,9 @@ const StudentSchedulePage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Lịch học</h1>
-            <p className="text-gray-600">Quản lý và theo dõi lịch học của bạn</p>
+            <p className="text-gray-600">
+              Quản lý và theo dõi lịch học của bạn
+            </p>
           </div>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <motion.button
@@ -121,7 +123,7 @@ const StudentSchedulePage: React.FC = () => {
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
               <FunnelIcon className="w-5 h-5 text-gray-400" />
               <span>Bộ lọc</span>
             </button>
@@ -160,17 +162,17 @@ const StudentSchedulePage: React.FC = () => {
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <button className="p-2 rounded-lg hover:bg-blue-50 transition-colors">
+            <button className="p-2 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
               <ChevronLeftIcon className="w-5 h-5 text-blue-600" />
             </button>
             <h2 className="text-xl font-semibold text-gray-900">
               Tháng 9, 2024
             </h2>
-            <button className="p-2 rounded-lg hover:bg-blue-50 transition-colors">
+            <button className="p-2 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
               <ChevronRightIcon className="w-5 h-5 text-blue-600" />
             </button>
           </div>
-          <button className="text-blue-600 hover:text-blue-700 font-medium bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors">
+          <button className="text-blue-600 hover:text-blue-700 font-medium bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer">
             Hôm nay
           </button>
         </div>
@@ -178,18 +180,21 @@ const StudentSchedulePage: React.FC = () => {
         {/* Simple Calendar View */}
         <div className="grid grid-cols-7 gap-2 mb-4">
           {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map((day) => (
-            <div key={day} className="text-center text-sm font-medium text-blue-600 py-3 bg-blue-50 rounded-lg">
+            <div
+              key={day}
+              className="text-center text-sm font-medium text-blue-600 py-3 bg-blue-50 rounded-lg"
+            >
               {day}
             </div>
           ))}
         </div>
-        
+
         <div className="grid grid-cols-7 gap-2">
           {Array.from({ length: 35 }, (_, i) => {
             const day = i - 6; // Start from Monday
             const isToday = day === 16;
             const hasLesson = [16, 17, 20].includes(day);
-            
+
             return (
               <div
                 key={i}
@@ -240,7 +245,9 @@ const StudentSchedulePage: React.FC = () => {
                     className="w-12 h-12 rounded-full object-cover"
                   />
                   <div>
-                    <h3 className="font-semibold text-gray-900">{lesson.title}</h3>
+                    <h3 className="font-semibold text-gray-900">
+                      {lesson.title}
+                    </h3>
                     <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
                       <span className="flex items-center">
                         <UserIcon className="w-4 h-4 mr-1" />

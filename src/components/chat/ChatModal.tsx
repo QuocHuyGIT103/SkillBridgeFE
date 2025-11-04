@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { X, MessageCircle } from 'lucide-react';
-import useMessageStore from '../../store/message.store';
-import type { ConversationData } from '../../services/message.service';
-import ConversationList from './ConversationList';
-import ChatWindow from './ChatWindow';
-import { socketService } from '../../services/socket.service';
+import React, { useState, useEffect } from "react";
+import { X, MessageCircle } from "lucide-react";
+import useMessageStore from "../../store/message.store";
+import type { ConversationData } from "../../services/message.service";
+import ConversationList from "./ConversationList";
+import ChatWindow from "./ChatWindow";
+import { socketService } from "../../services/socket.service";
 
 interface ChatModalProps {
   isOpen: boolean;
@@ -17,22 +17,23 @@ const ChatModal: React.FC<ChatModalProps> = ({
   isOpen,
   onClose,
   currentUserId,
-  initialContactRequestId
+  initialContactRequestId,
 }) => {
-  const [selectedConversation, setSelectedConversation] = useState<ConversationData | null>(null);
+  const [selectedConversation, setSelectedConversation] =
+    useState<ConversationData | null>(null);
   const [showConversationList, setShowConversationList] = useState(true);
 
   const {
     getConversationByContactRequest,
     createConversation,
     fetchConversations,
-    setSelectedConversation: setStoreSelectedConversation
+    setSelectedConversation: setStoreSelectedConversation,
   } = useMessageStore();
 
   // Ensure socket connected when modal opens
   useEffect(() => {
     if (isOpen) {
-      socketService.connect(localStorage.getItem('access_token') || undefined);
+      socketService.connect(localStorage.getItem("access_token") || undefined);
       socketService.joinChat(currentUserId);
     } else {
       socketService.disconnect();
@@ -61,7 +62,7 @@ const ChatModal: React.FC<ChatModalProps> = ({
         setShowConversationList(false);
       }
     } catch (error) {
-      console.error('Error handling initial contact request:', error);
+      console.error("Error handling initial contact request:", error);
     }
   };
 
@@ -90,7 +91,7 @@ const ChatModal: React.FC<ChatModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
-        <div 
+        <div
           className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
           onClick={handleCloseModal}
         />
@@ -103,12 +104,12 @@ const ChatModal: React.FC<ChatModalProps> = ({
               <div className="flex items-center space-x-2">
                 <MessageCircle className="text-blue-500" size={24} />
                 <h2 className="text-lg font-semibold text-gray-900">
-                  {selectedConversation ? 'Trò chuyện' : 'Tin nhắn'}
+                  {selectedConversation ? "Trò chuyện" : "Tin nhắn"}
                 </h2>
               </div>
               <button
                 onClick={handleCloseModal}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                className="p-2 text-gray-400 cursor-pointer hover:text-gray-600 rounded-full hover:bg-gray-100"
               >
                 <X size={20} />
               </button>
@@ -130,12 +131,12 @@ const ChatModal: React.FC<ChatModalProps> = ({
                   <div className="sm:hidden p-2 border-b border-gray-200">
                     <button
                       onClick={handleBackToList}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      className="text-blue-600 cursor-pointer hover:text-blue-800 text-sm font-medium"
                     >
                       ← Quay lại danh sách
                     </button>
                   </div>
-                  
+
                   <div className="flex-1">
                     <ChatWindow
                       conversation={selectedConversation}

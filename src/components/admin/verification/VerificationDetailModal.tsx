@@ -184,7 +184,7 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 cursor-pointer hover:text-gray-600"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
@@ -419,7 +419,7 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
         <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 cursor-pointer text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
             disabled={isProcessing}
           >
             Hủy
@@ -430,7 +430,7 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
               isProcessing ||
               decisions.filter((d) => d.status !== "PENDING").length === 0
             }
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            className="px-4 py-2 cursor-pointer text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
           >
             {isProcessing ? (
               <>

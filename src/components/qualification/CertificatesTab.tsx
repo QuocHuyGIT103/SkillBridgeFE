@@ -96,7 +96,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({
         <button
           onClick={onAddCertificate}
           disabled={isCreatingCertificate}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+          className={`flex items-center cursor-pointer space-x-2 px-4 py-2 rounded-lg transition-colors ${
             isCreatingCertificate
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
               : "bg-primary text-white hover:bg-primary/90"
@@ -200,7 +200,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({
                     disabled={!canEdit || isUpdatingCertificate}
                     className={`flex items-center space-x-1 text-sm ${
                       canEdit && !isUpdatingCertificate
-                        ? "text-primary hover:text-primary/80"
+                        ? "text-primary cursor-pointer hover:text-primary/80"
                         : "text-gray-400 cursor-not-allowed"
                     }`}
                     title={
@@ -224,7 +224,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({
                     className={`flex items-center space-x-1 text-sm ${
                       isDeletingCertificate
                         ? "text-gray-400 cursor-not-allowed"
-                        : "text-red-600 hover:text-red-700"
+                        : "text-red-600 hover:text-red-700 cursor-pointer"
                     }`}
                   >
                     {isDeletingCertificate ? (
@@ -250,7 +250,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({
           </p>
           <button
             onClick={onAddCertificate}
-            className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+            className="bg-primary cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors"
           >
             Thêm chứng chỉ
           </button>

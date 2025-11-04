@@ -490,7 +490,7 @@ const TutorPersonalProfilePage: React.FC = () => {
                 <button
                   onClick={() => setShowSubmitModal(true)}
                   disabled={isSubmittingVerification}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <PaperAirplaneIcon className="w-4 h-4" />
                   <span>Gửi xác thực</span>
@@ -535,7 +535,7 @@ const TutorPersonalProfilePage: React.FC = () => {
                   <button
                     onClick={handleSave}
                     disabled={isUpdatingPersonal || isUpdatingIntroduction}
-                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {isUpdatingPersonal || isUpdatingIntroduction ? (
                       <>
@@ -551,7 +551,7 @@ const TutorPersonalProfilePage: React.FC = () => {
                   </button>
                   <button
                     onClick={handleEditToggle}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
                   >
                     <XMarkIcon className="w-4 h-4" />
                     <span>Hủy</span>

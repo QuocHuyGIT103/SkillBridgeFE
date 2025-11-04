@@ -191,7 +191,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({
                   <button
                     onClick={() => onEditAchievement(achievement)}
                     disabled={!canEdit}
-                    className={`flex items-center space-x-1 text-sm ${
+                    className={`flex items-center space-x-1 text-sm cursor-pointer ${
                       canEdit
                         ? "text-primary hover:text-primary/80"
                         : "text-gray-400 cursor-not-allowed"
@@ -207,7 +207,7 @@ const AchievementsTab: React.FC<AchievementsTabProps> = ({
                   </button>
                   <button
                     onClick={() => onDeleteAchievement(achievement.id)}
-                    className="flex items-center space-x-1 text-red-600 hover:text-red-700 text-sm"
+                    className="flex items-center cursor-pointer space-x-1 text-red-600 hover:text-red-700 text-sm"
                   >
                     <TrashIcon className="w-4 h-4" />
                     <span>Xóa</span>

@@ -225,7 +225,7 @@ const VerificationRequestCard: React.FC<VerificationRequestCardProps> = ({
           <div className="flex space-x-2 ml-4">
             <button
               onClick={() => onViewDetails(request)}
-              className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center space-x-1"
+              className="px-3 py-1 cursor-pointer text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center space-x-1"
             >
               <EyeIcon className="w-4 h-4" />
               <span>Xem chi tiết & Xử lý</span>

@@ -239,7 +239,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
             <button
               onClick={onAddCertificate}
               disabled={isCreatingCertificate}
-              className={`text-sm font-medium ${
+              className={`text-sm font-medium cursor-pointer ${
                 isCreatingCertificate
                   ? "text-gray-400 cursor-not-allowed"
                   : "text-primary hover:text-primary/80"

@@ -207,14 +207,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           {/* Right Section */}
           <div className="flex items-center space-x-3">
             {/* Search button for mobile */}
-            <button className="lg:hidden p-2 rounded-lg hover:bg-secondary/10 transition-colors">
+            <button className="lg:hidden p-2 rounded-lg hover:bg-secondary/10 transition-colors cursor-pointer">
               <MagnifyingGlassIcon className="w-6 h-6 text-gray-700" />
             </button>
 
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
-              className="p-2 rounded-lg hover:bg-secondary/10 transition-colors"
+              className="p-2 rounded-lg hover:bg-secondary/10 transition-colors cursor-pointer"
               title={
                 isDark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"
               }

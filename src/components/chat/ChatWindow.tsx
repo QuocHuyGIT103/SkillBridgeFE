@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, X, Paperclip, MoreVertical } from 'lucide-react';
-import useMessageStore from '../../store/message.store';
-import type { ConversationData } from '../../services/message.service';
-import { messageService } from '../../services/message.service';
-import { socketService } from '../../services/socket.service';
-import MessageBubble from './MessageBubble';
-import TypingIndicator from './TypingIndicator';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect, useRef } from "react";
+import { Send, X, Paperclip, MoreVertical } from "lucide-react";
+import useMessageStore from "../../store/message.store";
+import type { ConversationData } from "../../services/message.service";
+import { messageService } from "../../services/message.service";
+import { socketService } from "../../services/socket.service";
+import MessageBubble from "./MessageBubble";
+import TypingIndicator from "./TypingIndicator";
+import toast from "react-hot-toast";
 
 // Inline styles cho scrollbar
 const scrollbarStyles = `
@@ -45,12 +45,12 @@ interface ChatWindowProps {
   onClose: () => void;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ 
-  conversation, 
-  currentUserId, 
-  onClose 
+const ChatWindow: React.FC<ChatWindowProps> = ({
+  conversation,
+  currentUserId,
+  onClose,
 }) => {
-  const [messageText, setMessageText] = useState('');
+  const [messageText, setMessageText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -69,22 +69,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     startTyping,
     stopTyping,
     handleNewMessage,
-    handleUserTyping
+    handleUserTyping,
   } = useMessageStore();
 
   // Get other user info
-  const isStudentUser = String(conversation.studentId._id) === String(currentUserId);
-  const otherUser = isStudentUser 
-    ? conversation.tutorId 
+  const isStudentUser =
+    String(conversation.studentId._id) === String(currentUserId);
+  const otherUser = isStudentUser
+    ? conversation.tutorId
     : conversation.studentId;
 
-  const otherName = otherUser.full_name || 'Người dùng';
-  const subjectName = conversation.subject?.name || 'Không xác định';
-  const avatarInitial = (otherName || '?').charAt(0).toUpperCase();
+  const otherName = otherUser.full_name || "Người dùng";
+  const subjectName = conversation.subject?.name || "Không xác định";
+  const avatarInitial = (otherName || "?").charAt(0).toUpperCase();
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -115,7 +116,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   useEffect(() => {
     if (!messages.length) return;
     const latest = messages[messages.length - 1];
-    if (latest.conversationId === conversation._id && String(latest.receiverId) === String(currentUserId)) {
+    if (
+      latest.conversationId === conversation._id &&
+      String(latest.receiverId) === String(currentUserId)
+    ) {
       markMessagesAsRead(conversation._id);
     }
   }, [messages, conversation._id, currentUserId]);
@@ -145,12 +149,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   // Send message
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!messageText.trim()) return;
 
     const messageContent = messageText.trim();
-    setMessageText('');
-    
+    setMessageText("");
+
     // Stop typing
     if (isTyping) {
       setIsTyping(false);
@@ -159,20 +163,25 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
     await sendMessage(conversation._id, {
       content: messageContent,
-      messageType: 'text'
+      messageType: "text",
     });
   };
 
   // Upload and send attachment (image or file)
   const uploadAndSendAttachment = async (file: File) => {
-    if (conversation.status === 'closed') return;
+    if (conversation.status === "closed") return;
 
-    const isImage = file.type?.startsWith('image/');
-    const subdir = isImage ? 'images' : 'files';
-    
-    console.debug('Upload start', { name: file.name, size: file.size, type: file.type, subdir });
-    const tid = toast.loading('Đang tải tệp lên... 0%');
-    
+    const isImage = file.type?.startsWith("image/");
+    const subdir = isImage ? "images" : "files";
+
+    console.debug("Upload start", {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      subdir,
+    });
+    const tid = toast.loading("Đang tải tệp lên... 0%");
+
     try {
       // Upload to backend (Cloudinary)
       const result = await messageService.uploadAttachment(
@@ -180,15 +189,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         file,
         subdir,
         (progress: number) => {
-          console.log('Upload progress', progress);
+          console.log("Upload progress", progress);
           toast.loading(`Đang tải tệp lên... ${progress}%`, { id: tid });
         }
       );
 
       // Send message with file metadata
       await sendMessage(conversation._id, {
-        content: isImage ? 'Ảnh' : file.name,
-        messageType: isImage ? 'image' : 'file',
+        content: isImage ? "Ảnh" : file.name,
+        messageType: isImage ? "image" : "file",
         fileMetadata: {
           fileName: result.fileName,
           fileSize: result.fileSize,
@@ -197,18 +206,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         },
       });
 
-      toast.success('Gửi tệp thành công', { id: tid });
+      toast.success("Gửi tệp thành công", { id: tid });
       scrollToBottom();
     } catch (err: any) {
-      console.error('Upload error:', err);
-      toast.error(err?.message || 'Lỗi tải tệp lên', { id: tid });
+      console.error("Upload error:", err);
+      toast.error(err?.message || "Lỗi tải tệp lên", { id: tid });
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    e.target.value = '';
+    e.target.value = "";
     uploadAndSendAttachment(f);
   };
 
@@ -221,136 +230,141 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   // Check if other user is typing
   const isOtherUserTyping = Object.keys(typingUsers).some(
-    userId => userId !== currentUserId && typingUsers[userId]
+    (userId) => userId !== currentUserId && typingUsers[userId]
   );
 
   return (
     <>
       {/* Inject scrollbar styles */}
       <style>{scrollbarStyles}</style>
-      
+
       <div className="flex flex-col h-full bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-100">
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-semibold ring-2 ring-white">
-            {avatarInitial}
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">{otherName}</h3>
-            <div className="mt-0.5">
-              <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                Môn: {subjectName}
-              </span>
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-semibold ring-2 ring-white">
+              {avatarInitial}
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">{otherName}</h3>
+              <div className="mt-0.5">
+                <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  Môn: {subjectName}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button className="px-3 py-1.5 text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-100 transition">
-            <MoreVertical size={20} />
-          </button>
-          <button 
-            onClick={onClose}
-            className="px-3 py-1.5 text-gray-600 hover:text-gray-900 rounded-full hover:bg-gray-100 transition"
-          >
-            <X size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div
-        ref={messagesContainerRef}
-        className="flex-1 p-4 space-y-4 bg-gradient-to-b from-white/80 to-blue-50/40 custom-chat-scroll"
-        style={{ 
-          scrollBehavior: 'smooth',
-          minHeight: 0,
-          overflowY: 'scroll',
-          overflowX: 'hidden',
-          maxHeight: 'calc(100vh - 280px)' // Force max height to trigger scrollbar
-        }}
-      >
-        {/* Load more button */}
-        {messagesPagination?.hasNext && (
-          <div className="text-center">
+          <div className="flex items-center space-x-2">
+            <button className="px-3 py-1.5 text-gray-600 cursor-pointer hover:text-gray-900 rounded-full hover:bg-gray-100 transition">
+              <MoreVertical size={20} />
+            </button>
             <button
-              onClick={handleLoadMore}
-              disabled={messagesLoading}
-              className="inline-block px-4 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full hover:bg-blue-100 disabled:opacity-50"
+              onClick={onClose}
+              className="px-3 py-1.5 text-gray-600 cursor-pointer hover:text-gray-900 rounded-full hover:bg-gray-100 transition"
             >
-              {messagesLoading ? 'Đang tải...' : 'Tải tin nhắn cũ hơn'}
+              <X size={20} />
             </button>
           </div>
-        )}
+        </div>
 
-        {/* Messages list */}
-        {messages.map((message) => (
-          <MessageBubble
-            key={message._id}
-            message={message}
-            isOwn={String(message.senderId) === String(currentUserId)}
-          />
-        ))}
+        {/* Messages */}
+        <div
+          ref={messagesContainerRef}
+          className="flex-1 p-4 space-y-4 bg-gradient-to-b from-white/80 to-blue-50/40 custom-chat-scroll"
+          style={{
+            scrollBehavior: "smooth",
+            minHeight: 0,
+            overflowY: "scroll",
+            overflowX: "hidden",
+            maxHeight: "calc(100vh - 280px)", // Force max height to trigger scrollbar
+          }}
+        >
+          {/* Load more button */}
+          {messagesPagination?.hasNext && (
+            <div className="text-center">
+              <button
+                onClick={handleLoadMore}
+                disabled={messagesLoading}
+                className="inline-block px-4 py-1.5 cursor-pointer text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full hover:bg-blue-100 disabled:opacity-50"
+              >
+                {messagesLoading ? "Đang tải..." : "Tải tin nhắn cũ hơn"}
+              </button>
+            </div>
+          )}
 
-        {/* Typing indicator */}
-        {isOtherUserTyping && (
-          <TypingIndicator userName={otherUser.full_name} />
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Message input */}
-      <div className="sticky bottom-0 z-10 px-4 py-3 border-t border-gray-200 bg-white/80 backdrop-blur-md">
-        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-          <button
-            type="button"
-            className="p-2.5 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100 transition"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip size={20} />
-          </button>
-          {/* Hidden file input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            onChange={handleFileChange}
-            accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,*/*"
-          />
-          
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={messageText}
-              onChange={handleInputChange}
-              placeholder="Nhập tin nhắn..."
-              className="w-full px-4 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm placeholder-gray-400 bg-white"
-              disabled={conversation.status === 'closed'}
+          {/* Messages list */}
+          {messages.map((message) => (
+            <MessageBubble
+              key={message._id}
+              message={message}
+              isOwn={String(message.senderId) === String(currentUserId)}
             />
-          </div>
-          
-          <button
-            type="submit"
-            disabled={!messageText.trim() || conversation.status === 'closed'}
-            className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-full hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm flex items-center gap-2"
+          ))}
+
+          {/* Typing indicator */}
+          {isOtherUserTyping && (
+            <TypingIndicator userName={otherUser.full_name} />
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Message input */}
+        <div className="sticky bottom-0 z-10 px-4 py-3 border-t border-gray-200 bg-white/80 backdrop-blur-md">
+          <form
+            onSubmit={handleSendMessage}
+            className="flex items-center gap-2"
           >
-            <Send size={20} />
-            <span className="hidden sm:inline">Gửi</span>
-          </button>
-        </form>
-        
-        {conversation.status !== 'closed' && (
-          <p className="text-xs text-gray-500 mt-2 text-center">Nhấn Enter để gửi</p>
-        )}
-        
-        {conversation.status === 'closed' && (
-          <p className="text-sm text-gray-500 mt-2 text-center">
-            Cuộc trò chuyện này đã được đóng
-          </p>
-        )}
+            <button
+              type="button"
+              className="p-2.5 text-gray-500 cursor-pointer hover:text-gray-700 rounded-full hover:bg-gray-100 transition"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Paperclip size={20} />
+            </button>
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleFileChange}
+              accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,*/*"
+            />
+
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={messageText}
+                onChange={handleInputChange}
+                placeholder="Nhập tin nhắn..."
+                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm placeholder-gray-400 bg-white"
+                disabled={conversation.status === "closed"}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={!messageText.trim() || conversation.status === "closed"}
+              className="px-3 sm:px-4 cursor-pointer py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-full hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm flex items-center gap-2"
+            >
+              <Send size={20} />
+              <span className="hidden sm:inline">Gửi</span>
+            </button>
+          </form>
+
+          {conversation.status !== "closed" && (
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Nhấn Enter để gửi
+            </p>
+          )}
+
+          {conversation.status === "closed" && (
+            <p className="text-sm text-gray-500 mt-2 text-center">
+              Cuộc trò chuyện này đã được đóng
+            </p>
+          )}
+        </div>
       </div>
-    </div>
     </>
   );
 };

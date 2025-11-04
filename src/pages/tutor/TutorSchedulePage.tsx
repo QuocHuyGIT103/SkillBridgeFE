@@ -22,10 +22,10 @@ const TutorSchedulePage: React.FC = () => {
             Schedule & Lesson Management
           </h1>
           <div className="flex space-x-3">
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
               View Calendar
             </button>
-            <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+            <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer">
               Schedule Lesson
             </button>
           </div>
@@ -145,7 +145,7 @@ const TutorSchedulePage: React.FC = () => {
                     <p className="text-sm font-medium text-gray-900">
                       {lesson.time}
                     </p>
-                    <button className="text-xs text-primary hover:underline">
+                    <button className="text-xs text-primary hover:underline cursor-pointer">
                       Join Call
                     </button>
                   </div>
@@ -210,10 +210,10 @@ const TutorSchedulePage: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex space-x-2">
-                  <button className="px-3 py-1 bg-primary text-white text-sm rounded-md hover:bg-primary/90 transition-colors">
+                  <button className="px-3 py-1 bg-primary text-white text-sm rounded-md hover:bg-primary/90 transition-colors cursor-pointer">
                     Accept
                   </button>
-                  <button className="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors">
+                  <button className="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors cursor-pointer">
                     Decline
                   </button>
                 </div>

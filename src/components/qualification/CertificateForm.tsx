@@ -234,7 +234,7 @@ const CertificateForm: React.FC<CertificateFormProps> = ({
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              className="px-6 py-2 cursor-pointer bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
             >
               {initialData ? "Cập nhật" : "Thêm chứng chỉ"}
             </button>

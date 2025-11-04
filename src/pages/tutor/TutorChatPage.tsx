@@ -182,7 +182,7 @@ const TutorChatPage: React.FC = () => {
               placeholder="Type your message..."
               className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-primary focus:border-transparent"
             />
-            <button className="p-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors">
+            <button className="p-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors cursor-pointer">
               <PaperAirplaneIcon className="w-5 h-5" />
             </button>
           </div>

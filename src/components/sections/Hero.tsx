@@ -26,12 +26,12 @@ const Hero: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
             <NavLink
               to="/register"
-              className="inline-flex items-center px-8 py-4 bg-teal-600 hover:bg-teal-700 text-white text-base font-medium rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-105"
+              className="inline-flex items-center px-8 py-4 bg-teal-600 hover:bg-teal-700 text-white text-base font-medium rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer"
             >
               Bắt đầu ngay
               <ArrowRight className="ml-2 h-5 w-5" />
             </NavLink>
-            <button className="inline-flex items-center px-8 py-4 bg-transparent border-2 border-gray-200 hover:border-gray-300 text-gray-700 text-base font-medium rounded-xl transition-all duration-200 hover:bg-gray-50">
+            <button className="inline-flex items-center px-8 py-4 bg-transparent border-2 border-gray-200 hover:border-gray-300 text-gray-700 text-base font-medium rounded-xl transition-all duration-200 hover:bg-gray-50 cursor-pointer">
               <Play className="mr-2 h-5 w-5" />
               Xem demo
             </button>
