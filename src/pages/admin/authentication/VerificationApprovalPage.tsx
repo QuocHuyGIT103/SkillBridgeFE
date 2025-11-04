@@ -79,7 +79,10 @@ const VerificationApprovalPage: React.FC = () => {
     adminNote?: string
   ) => {
     if (!currentRequest || !currentRequest.id) {
-      console.error("No current request or request ID is missing");
+      console.error(
+        "No current request or request ID is missing",
+        currentRequest
+      );
       return;
     }
 

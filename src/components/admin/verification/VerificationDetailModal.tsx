@@ -169,17 +169,16 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
               Chi tiết yêu cầu xác thực
             </h3>
             <p className="text-sm text-gray-600">
-              Gia sư: {request.request?.tutorId?.fullName} (
-              {request.request?.tutorId?.email})
+              Gia sư: {request.tutorId?.fullName} ({request.tutorId?.email})
             </p>
           </div>
           <button
@@ -191,7 +190,7 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto flex-1">
           {/* Request Info */}
           <div className="mb-6">
             <h4 className="font-medium text-gray-900 mb-3">
@@ -200,27 +199,26 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">ID yêu cầu:</span>{" "}
-                  {request.request?.id}
+                  <span className="font-medium">ID yêu cầu:</span> {request.id}
                 </div>
                 <div>
                   <span className="font-medium">Trạng thái:</span>{" "}
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                      request.request?.status
+                      request.status
                     )}`}
                   >
-                    {request.request?.status}
+                    {request.status}
                   </span>
                 </div>
                 <div>
                   <span className="font-medium">Nộp lúc:</span>{" "}
-                  {formatDate(request.request?.submittedAt)}
+                  {formatDate(request.submittedAt)}
                 </div>
-                {request.request?.reviewedAt && (
+                {request.reviewedAt && (
                   <div>
                     <span className="font-medium">Xử lý lúc:</span>{" "}
-                    {formatDate(request.request?.reviewedAt)}
+                    {formatDate(request.reviewedAt)}
                   </div>
                 )}
               </div>
@@ -416,10 +414,10 @@ const VerificationDetailModal: React.FC<VerificationDetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 cursor-pointer text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 cursor-pointer text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isProcessing}
           >
             Hủy

@@ -196,8 +196,14 @@ export const useVerificationStore = create<VerificationState>()(
             throw new Error("Invalid response data: missing ID");
           }
 
+          // Merge request and details into the expected VerificationRequest structure
+          const mergedRequest: VerificationRequest = {
+            ...requestData.request,
+            details: requestData.details || [],
+          };
+
           set({
-            currentRequest: requestData,
+            currentRequest: mergedRequest,
           });
         } catch (error: any) {
           toast.error(

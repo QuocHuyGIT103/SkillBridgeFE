@@ -28,13 +28,13 @@ const TutorProfileVerificationDetail: React.FC<
     if (!userInfo?.structured_address)
       return userInfo?.address || "Chưa cập nhật";
 
-    const { province_info, district_info, ward_info, detail_address } =
+    const { province_code, district_code, ward_code, detail_address } =
       userInfo.structured_address;
     const parts = [
       detail_address,
-      ward_info?.name,
-      district_info?.name,
-      province_info?.name,
+      ward_code?.name || ward_code?.full_name,
+      district_code?.name || district_code?.full_name,
+      province_code?.name || province_code?.full_name,
     ].filter(Boolean);
     return parts.join(", ");
   };
@@ -68,6 +68,19 @@ const TutorProfileVerificationDetail: React.FC<
         <span>{title}</span>
       </h4>
 
+      {/* Avatar */}
+      {userInfo?.avatar_url && (
+        <div className="flex justify-center mb-4">
+          <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-blue-200 shadow-lg">
+            <img
+              src={userInfo.avatar_url}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Basic Info */}
         <div className="space-y-3">
@@ -76,7 +89,7 @@ const TutorProfileVerificationDetail: React.FC<
             <div>
               <p className="text-sm font-medium text-gray-700">Họ và tên</p>
               <p className="text-sm text-gray-900">
-                {userInfo?.fullName || "Chưa cập nhật"}
+                {userInfo?.full_name || userInfo?.fullName || "Chưa cập nhật"}
               </p>
             </div>
           </div>
@@ -96,7 +109,9 @@ const TutorProfileVerificationDetail: React.FC<
             <div>
               <p className="text-sm font-medium text-gray-700">Số điện thoại</p>
               <p className="text-sm text-gray-900">
-                {userInfo?.phoneNumber || "Chưa cập nhật"}
+                {userInfo?.phone_number ||
+                  userInfo?.phoneNumber ||
+                  "Chưa cập nhật"}
               </p>
             </div>
           </div>
@@ -106,7 +121,9 @@ const TutorProfileVerificationDetail: React.FC<
             <div>
               <p className="text-sm font-medium text-gray-700">Ngày sinh</p>
               <p className="text-sm text-gray-900">
-                {userInfo?.dateOfBirth
+                {userInfo?.date_of_birth
+                  ? formatDate(userInfo.date_of_birth)
+                  : userInfo?.dateOfBirth
                   ? formatDate(userInfo.dateOfBirth)
                   : "Chưa cập nhật"}
               </p>
@@ -336,4 +353,3 @@ const TutorProfileVerificationDetail: React.FC<
 };
 
 export default TutorProfileVerificationDetail;
-

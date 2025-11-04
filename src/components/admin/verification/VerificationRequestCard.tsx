@@ -7,7 +7,6 @@ import {
   DocumentTextIcon,
   AcademicCapIcon,
   TrophyIcon,
-  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import type {
   VerificationRequest,
@@ -93,21 +92,11 @@ const VerificationRequestCard: React.FC<VerificationRequestCardProps> = ({
     });
   };
 
-  // Check if request contains TUTOR_PROFILE
-  const hasTutorProfile = request.details?.some(
-    (detail) => detail.targetType === "TUTOR_PROFILE"
-  );
-  const isTutorProfilePriority = hasTutorProfile;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`p-6 hover:bg-gray-50 border-b border-gray-200 last:border-b-0 ${
-        isTutorProfilePriority
-          ? "bg-purple-50 border-l-4 border-l-purple-500"
-          : ""
-      }`}
+      className="p-6 hover:bg-gray-50 border-b border-gray-200 last:border-b-0"
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -123,21 +112,10 @@ const VerificationRequestCard: React.FC<VerificationRequestCardProps> = ({
                 <h3 className="text-lg font-semibold text-gray-900">
                   {request.tutorId?.fullName || "Gia sư"}
                 </h3>
-                {isTutorProfilePriority && (
-                  <span className="inline-flex items-center space-x-1 px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
-                    <ExclamationTriangleIcon className="w-3 h-3" />
-                    <span>Ưu tiên</span>
-                  </span>
-                )}
               </div>
               <p className="text-sm text-gray-600">
                 {request.tutorId?.email || "Email không có"}
               </p>
-              {isTutorProfilePriority && (
-                <p className="text-xs text-purple-600 font-medium mt-1">
-                  Yêu cầu xác thực thông tin gia sư
-                </p>
-              )}
             </div>
             <span
               className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
