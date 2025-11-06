@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import axiosClient from "../api/axiosClient";
 import VerificationService from "../services/verification.service";
+import tutorProfileService from "../services/tutorProfile.service";
+import type { TutorProfileStatusResponse } from "../services/tutorProfile.service";
 import type { StructuredAddress } from "../types/address.types";
 import type {
   VerificationStatus,
@@ -62,6 +64,10 @@ interface TutorProfileState {
   canEdit: boolean;
   editWarning: string | null;
 
+  // NEW: Profile operation status
+  profileStatusData: TutorProfileStatusResponse | null;
+  isCheckingStatus: boolean;
+
   // Loading states
   isLoading: boolean;
   isUpdatingPersonal: boolean;
@@ -86,6 +92,10 @@ interface TutorProfileState {
   deleteCCCDImage: (imageUrl: string) => Promise<boolean>;
   checkEditStatus: () => Promise<EditStatusResponse | undefined>;
   submitForVerification: () => Promise<VerificationSubmitResponse>;
+
+  // NEW: Check operation status
+  checkOperationStatus: () => Promise<TutorProfileStatusResponse | null>;
+
   clearError: () => void;
   resetProfile: () => void;
 }
@@ -96,6 +106,8 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
   verificationStatus: null,
   canEdit: true,
   editWarning: null,
+  profileStatusData: null,
+  isCheckingStatus: false,
   isLoading: false,
   isUpdatingPersonal: false,
   isUpdatingIntroduction: false,
@@ -251,10 +263,7 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
     set({ isUpdatingIntroduction: true, error: null, validationErrors: null });
 
     try {
-      const response = await axiosClient.put(
-        "/tutor/profile/introduction",
-        data
-      );
+      const response = await axiosClient.put("/tutor/profile/personal", data);
 
       if (response.success && response.data) {
         // Update the profile data in the store
@@ -415,31 +424,19 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
   // Check edit status
   checkEditStatus: async () => {
     set({ isCheckingEditStatus: true, error: null });
-
     try {
       const response = await VerificationService.checkEditStatus();
-
-      // Debug: Log response structure
-      console.log("checkEditStatus response:", response);
-      console.log("response.data:", response.data);
-      console.log("response.success:", response.success);
-
       if (response.data) {
-        // Check if response.data has the expected structure
         let editStatus: EditStatusResponse;
-
         if (response.data.data) {
-          // API returns { success, message, data: { canEdit, status, warning } }
           editStatus = response.data.data;
         } else if ((response.data as any).canEdit !== undefined) {
-          // API returns { success, message, data: { canEdit, status, warning } } directly
           editStatus = response.data as unknown as EditStatusResponse;
         } else {
           throw new Error(
             "Invalid response structure from checkEditStatus API"
           );
         }
-
         set({
           verificationStatus: editStatus.status,
           canEdit: editStatus.canEdit,
@@ -453,16 +450,14 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
         );
       }
     } catch (error: any) {
-      // Handle specific error types
       let errorMessage = "Không thể kiểm tra trạng thái chỉnh sửa";
       let shouldShowError = true;
-
       if (error.data?.errorType) {
         const errorData: VerificationErrorResponse = error.data;
         switch (errorData.errorType) {
           case "PENDING_REQUEST":
             errorMessage = "Đã có yêu cầu xác thực đang chờ xử lý";
-            shouldShowError = false; // Don't show toast for PENDING
+            shouldShowError = false;
             break;
           case "NOT_FOUND":
             errorMessage = "Không tìm thấy thông tin gia sư";
@@ -475,24 +470,19 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
             break;
         }
       } else {
-        // Check if it's a PENDING status response
         if (error.response?.data?.message?.includes("đang chờ xác thực")) {
-          shouldShowError = false; // Don't show toast for PENDING
+          shouldShowError = false;
         }
         errorMessage =
           error.response?.data?.message || error.message || errorMessage;
       }
-
       set({
-        error: shouldShowError ? errorMessage : null, // Only set error if should show
+        error: shouldShowError ? errorMessage : null,
         isCheckingEditStatus: false,
       });
-
       if (shouldShowError) {
         throw error;
       }
-
-      // Return undefined for PENDING status (no error, but no data either)
       return undefined;
     }
   },
@@ -500,23 +490,14 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
   // Submit for verification
   submitForVerification: async () => {
     set({ isSubmittingVerification: true, error: null });
-
     try {
       const response =
         await VerificationService.submitTutorProfileVerification();
-
-      // Debug: Log response structure
-      console.log("submitForVerification response:", response);
-
       if (response.success && response.data) {
-        // Check if response.data has the expected structure
         let submitResponse: VerificationSubmitResponse;
-
         if (response.data.data) {
-          // API returns { success, message, data: { requestId, status, submittedAt } }
           submitResponse = response.data.data;
         } else if ((response.data as any).requestId) {
-          // API returns { success, message, data: { requestId, status, submittedAt } } directly
           submitResponse =
             response.data as unknown as VerificationSubmitResponse;
         } else {
@@ -524,8 +505,6 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
             "Invalid response structure from submitForVerification API"
           );
         }
-
-        // Update verification status to PENDING
         set({
           verificationStatus: "PENDING" as VerificationStatus,
           canEdit: false,
@@ -537,9 +516,7 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
         throw new Error(response.message || "Không thể gửi yêu cầu xác thực");
       }
     } catch (error: any) {
-      // Handle specific error types
       let errorMessage = "Không thể gửi yêu cầu xác thực";
-
       if (error.data?.errorType) {
         const errorData: VerificationErrorResponse = error.data;
         switch (errorData.errorType) {
@@ -560,7 +537,6 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
         errorMessage =
           error.response?.data?.message || error.message || errorMessage;
       }
-
       set({
         error: errorMessage,
         isSubmittingVerification: false,
@@ -574,6 +550,34 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
     set({ error: null, validationErrors: null });
   },
 
+  // NEW: Check operation status
+  checkOperationStatus: async () => {
+    set({ isCheckingStatus: true, error: null });
+    try {
+      const statusData = await tutorProfileService.checkCanOperate();
+      if (statusData) {
+        set({
+          profileStatusData: statusData,
+          isCheckingStatus: false,
+        });
+        return statusData;
+      } else {
+        set({ isCheckingStatus: false });
+        return null;
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể kiểm tra trạng thái hồ sơ";
+      set({
+        error: errorMessage,
+        isCheckingStatus: false,
+      });
+      return null;
+    }
+  },
+
   // Reset profile
   resetProfile: () => {
     set({
@@ -581,6 +585,8 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
       verificationStatus: null,
       canEdit: true,
       editWarning: null,
+      profileStatusData: null,
+      isCheckingStatus: false,
       isLoading: false,
       isUpdatingPersonal: false,
       isUpdatingIntroduction: false,

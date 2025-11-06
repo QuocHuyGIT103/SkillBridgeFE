@@ -3,7 +3,6 @@ import {
   AcademicCapIcon,
   DocumentTextIcon,
   TrophyIcon,
-  PaperAirplaneIcon,
 } from "@heroicons/react/24/outline";
 import { useQualificationStore } from "../../store/qualification.store";
 import { useVerificationStore } from "../../store/verification.store";
@@ -21,8 +20,6 @@ import AchievementForm from "../../components/qualification/AchievementForm";
 import VerificationRequestModal from "../../components/qualification/VerificationRequestModal";
 import WarningModal from "../../components/common/WarningModal";
 import ReVerificationNotification from "../../components/common/ReVerificationNotification";
-import InfoTooltip from "../../components/common/InfoTooltip";
-import QualificationStatusCard from "../../components/qualification/QualificationStatusCard";
 import OverviewTab from "../../components/qualification/OverviewTab";
 import EducationTab from "../../components/qualification/EducationTab";
 import CertificatesTab from "../../components/qualification/CertificatesTab";
@@ -39,7 +36,6 @@ const TutorEducationPage: React.FC = () => {
   // Stores
   const {
     qualifications,
-    qualificationInfo,
     isCreatingEducation,
     isUpdatingEducation,
     isCreatingCertificate,
@@ -54,11 +50,6 @@ const TutorEducationPage: React.FC = () => {
     updateAchievement,
     deleteCertificate,
     deleteAchievement,
-    canSubmitVerification,
-    getRejectedItems,
-    hasItemsNeedingReVerification,
-    getReVerificationCount,
-    getReVerificationSuggestionMessage,
   } = useQualificationStore();
 
   const { createVerificationRequest, isCreatingRequest, tutorRequests } =
@@ -73,8 +64,6 @@ const TutorEducationPage: React.FC = () => {
   const [showAchievementForm, setShowAchievementForm] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [showReVerificationSuggestion, setShowReVerificationSuggestion] =
-    useState(false);
   const [notification, setNotification] = useState<{
     type: "success" | "info";
     title: string;
@@ -100,34 +89,9 @@ const TutorEducationPage: React.FC = () => {
     fetchQualifications();
   }, [fetchQualifications]);
 
-  // Debug: Log qualifications state changes
-  useEffect(() => {
-    console.log("Qualifications state changed:", qualifications);
-  }, [qualifications]);
-
-  // Check if there are rejected items that need re-verification
-  const rejectedItems = getRejectedItems();
-  const hasReVerificationItems = hasItemsNeedingReVerification();
-  const reVerificationCount = getReVerificationCount();
-  const suggestionMessage = getReVerificationSuggestionMessage();
-
-  // Show suggestion when there are rejected items
-  useEffect(() => {
-    if (
-      rejectedItems.education ||
-      rejectedItems.certificates.length > 0 ||
-      rejectedItems.achievements.length > 0
-    ) {
-      setShowReVerificationSuggestion(true);
-    } else {
-      setShowReVerificationSuggestion(false);
-    }
-  }, [rejectedItems]);
-
   // Handlers
   const handleCreateEducation = async (data: CreateEducationRequest) => {
     try {
-      console.log("Creating education with data:", data);
       const wasRejected = editingItem?.status === "REJECTED";
 
       if (editingItem) {
@@ -135,7 +99,6 @@ const TutorEducationPage: React.FC = () => {
       } else {
         await createEducation(data);
       }
-      console.log("Education created/updated successfully");
       setShowEducationForm(false);
       setEditingItem(null);
 
@@ -330,57 +293,12 @@ const TutorEducationPage: React.FC = () => {
               Trình độ & Chứng chỉ
             </h1>
             <p className="text-gray-600 mt-1">
-              Quản lý thông tin học vấn, chứng chỉ và thành tích của bạn
+              Thông tin học vấn, chứng chỉ và thành tích bổ sung (không bắt
+              buộc)
             </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            {/* Re-verification suggestion */}
-            {showReVerificationSuggestion && (
-              <div className="text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
-                <p className="font-medium">💡 Gợi ý</p>
-                <p>{suggestionMessage}</p>
-              </div>
-            )}
-
-            {/* Verification buttons */}
-            {hasReVerificationItems && (
-              <InfoTooltip content="Bạn có thông tin bị từ chối hoặc đã được sửa đổi. Gửi lại yêu cầu xác thực để admin xem xét lại.">
-                <button
-                  onClick={() => setShowVerificationModal(true)}
-                  disabled={isCreatingRequest}
-                  className="flex items-center space-x-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  <PaperAirplaneIcon className="w-5 h-5" />
-                  <span>
-                    {reVerificationCount > 1
-                      ? `Gửi lại ${reVerificationCount} yêu cầu xác thực`
-                      : "Gửi lại yêu cầu xác thực"}
-                  </span>
-                </button>
-              </InfoTooltip>
-            )}
-
-            {canSubmitVerification() && !hasReVerificationItems && (
-              <button
-                onClick={() => setShowVerificationModal(true)}
-                disabled={isCreatingRequest}
-                className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                <PaperAirplaneIcon className="w-5 h-5" />
-                <span>Gửi yêu cầu xác thực</span>
-              </button>
-            )}
           </div>
         </div>
       </div>
-
-      {/* Qualification Status */}
-      {qualificationInfo && (
-        <QualificationStatusCard
-          qualificationInfo={qualificationInfo}
-          qualifications={qualifications}
-        />
-      )}
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">

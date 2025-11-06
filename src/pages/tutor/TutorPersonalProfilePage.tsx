@@ -19,6 +19,7 @@ import {
 } from "../../components/verification";
 
 // Components
+import TutorProfileStatusCard from "../../components/tutor/TutorProfileStatusCard";
 import PersonalInfoSection from "../../components/profile/PersonalInfoSection";
 import IntroductionSection from "../../components/profile/IntroductionSection";
 import CCCDSection from "../../components/profile/CCCDSection";
@@ -45,6 +46,7 @@ const TutorPersonalProfilePage: React.FC = () => {
   // Zustand store
   const {
     profileData,
+    profileStatusData,
     isLoading,
     isUpdatingPersonal,
     isUpdatingIntroduction,
@@ -64,6 +66,7 @@ const TutorPersonalProfilePage: React.FC = () => {
     clearError,
     checkEditStatus,
     submitForVerification,
+    checkOperationStatus,
   } = useTutorProfileStore();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -100,6 +103,7 @@ const TutorPersonalProfilePage: React.FC = () => {
   const portraitInputRef = useRef<HTMLInputElement>(null);
   const cccdInputRef = useRef<HTMLInputElement>(null);
   const hasCheckedEditStatus = useRef<boolean>(false);
+  const [hasRunEditStatusEffect, setHasRunEditStatusEffect] = useState(false);
 
   // Auto focus on validation error
   useAutoFocusOnError(validationErrors);
@@ -109,6 +113,7 @@ const TutorPersonalProfilePage: React.FC = () => {
     const initializeProfile = async () => {
       try {
         await fetchProfile();
+        await checkOperationStatus();
       } catch (error) {
         console.error("Error initializing profile:", error);
         toast.error("Không thể tải thông tin hồ sơ");
@@ -118,32 +123,21 @@ const TutorPersonalProfilePage: React.FC = () => {
     initializeProfile();
   }, []); // Remove fetchProfile dependency to prevent re-initialization
 
-  // Check edit status after profile is loaded (only once)
+  // Check edit status only ONCE after profileData loaded
   useEffect(() => {
-    const checkStatus = async () => {
-      console.log(
-        "useEffect triggered - profileData?.profile?.id:",
-        profileData?.profile?.id
-      );
-      console.log(
-        "hasCheckedEditStatus.current:",
-        hasCheckedEditStatus.current
-      );
-
-      if (profileData?.profile?.id && !hasCheckedEditStatus.current) {
+    if (profileData?.profile?.id && !hasRunEditStatusEffect) {
+      (async () => {
         try {
-          console.log("Calling checkEditStatus...");
           hasCheckedEditStatus.current = true;
           await checkEditStatus();
+          setHasRunEditStatusEffect(true);
         } catch (error) {
           console.error("Error checking edit status:", error);
-          hasCheckedEditStatus.current = false; // Reset on error to allow retry
+          hasCheckedEditStatus.current = false;
         }
-      }
-    };
-
-    checkStatus();
-  }, [profileData?.profile?.id]); // Remove verificationStatus from dependencies
+      })();
+    }
+  }, [profileData?.profile?.id, hasRunEditStatusEffect, checkEditStatus]);
 
   // Update editedInfo when profileData changes
   useEffect(() => {
@@ -561,6 +555,22 @@ const TutorPersonalProfilePage: React.FC = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Tutor Profile Status Card (no actions on profile page) */}
+        {profileStatusData && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mb-6"
+          >
+            <TutorProfileStatusCard
+              statusData={profileStatusData}
+              profileData={profileData?.profile as any}
+              showActions={false}
+            />
+          </motion.div>
+        )}
 
         {/* Personal Info Section */}
         <PersonalInfoSection

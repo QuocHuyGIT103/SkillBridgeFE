@@ -91,7 +91,6 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
     return "Linh hoạt";
   };
 
-
   const handleContactClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     debugger;
     e.preventDefault();
@@ -148,7 +147,9 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700">Email:</label>
+              <label className="text-sm font-medium text-gray-700">
+                Email:
+              </label>
               {isAuthenticated && currentPost.tutorId.email ? (
                 <p className="text-gray-900">{currentPost.tutorId.email}</p>
               ) : (

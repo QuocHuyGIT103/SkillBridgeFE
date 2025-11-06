@@ -38,25 +38,11 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
       setLoading((prev) => ({ ...prev, provinces: true }));
       try {
         const response = await AddressService.getProvinces();
-        console.log("Provinces response:", response);
-        console.log("Response type:", typeof response);
-        console.log("Response keys:", Object.keys(response));
-        console.log("Is array:", Array.isArray(response));
 
         // Check if response is directly an array or has success/data structure
         if (Array.isArray(response)) {
-          console.log(
-            "Setting provinces (direct array):",
-            response.length,
-            "items"
-          );
           setProvinces(response);
         } else if (response.success && response.data) {
-          console.log(
-            "Setting provinces (success/data):",
-            response.data.length,
-            "items"
-          );
           setProvinces(response.data);
         } else {
           console.log("Unexpected response format:", response);
@@ -80,9 +66,8 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
           const response = await AddressService.getDistrictsByProvince(
             selectedProvince
           );
-          console.log("Districts response:", response);
+
           if (response.success && response.data) {
-            console.log("Setting districts:", response.data.length, "items");
             setDistricts(response.data);
           }
         } catch (error) {
@@ -107,9 +92,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
           const response = await AddressService.getWardsByDistrict(
             selectedDistrict
           );
-          console.log("Wards response:", response);
           if (response.success && response.data) {
-            console.log("Setting wards:", response.data.length, "items");
             setWards(response.data);
           }
         } catch (error) {
