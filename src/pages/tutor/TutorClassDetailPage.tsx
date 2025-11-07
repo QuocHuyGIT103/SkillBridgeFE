@@ -261,7 +261,7 @@ const TutorClassDetailPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Online Info - ZOOM */}
+                  {/* Online Info - Google Meet */}
                   {currentClass.learningMode === 'ONLINE' && currentClass.onlineInfo && (
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-4 inline-flex items-center gap-2">
@@ -270,73 +270,28 @@ const TutorClassDetailPage: React.FC = () => {
                       </h3>
                       <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-4">
-                          <img src="https://img.icons8.com/color/48/000000/zoom.png" alt="Zoom" className="w-8 h-8" />
-                          <span className="font-semibold text-blue-900">{currentClass.onlineInfo.platform}</span>
+                          <img src="https://img.icons8.com/color/48/000000/google-meet.png" alt="Google Meet" className="w-8 h-8" />
+                          <span className="font-semibold text-blue-900">Google Meet</span>
                         </div>
                         
-                        <dl className="space-y-3">
-                          <div>
-                            <dt className="text-xs font-medium text-blue-700 mb-1">Meeting ID</dt>
-                            <dd className="flex items-center justify-between bg-white rounded px-3 py-2">
-                              <span className="font-mono text-sm text-gray-900">{currentClass.onlineInfo.meetingId}</span>
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(currentClass.onlineInfo!.meetingId);
-                                  toast.success('Đã copy Meeting ID!');
-                                }}
-                                className="text-blue-600 hover:text-blue-800 text-xs font-medium"
-                              >
-                                Copy
-                              </button>
-                            </dd>
-                          </div>
-
-                          <div>
-                            <dt className="text-xs font-medium text-blue-700 mb-1">Link Meeting</dt>
-                            <dd className="flex items-center justify-between bg-white rounded px-3 py-2">
-                              <a 
-                                href={currentClass.onlineInfo.meetingLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-mono text-xs text-blue-600 hover:underline truncate max-w-[200px]"
-                              >
-                                {currentClass.onlineInfo.meetingLink}
-                              </a>
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(currentClass.onlineInfo!.meetingLink);
-                                  toast.success('Đã copy Link!');
-                                }}
-                                className="text-blue-600 hover:text-blue-800 text-xs font-medium ml-2"
-                              >
-                                Copy
-                              </button>
-                            </dd>
-                          </div>
-
-                          <div>
-                            <dt className="text-xs font-medium text-blue-700 mb-1">Mật khẩu</dt>
-                            <dd className="flex items-center justify-between bg-white rounded px-3 py-2">
-                              <span className="font-mono text-sm text-gray-900">{currentClass.onlineInfo.password}</span>
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(currentClass.onlineInfo!.password);
-                                  toast.success('Đã copy mật khẩu!');
-                                }}
-                                className="text-blue-600 hover:text-blue-800 text-xs font-medium"
-                              >
-                                Copy
-                              </button>
-                            </dd>
-                          </div>
-                        </dl>
+                        <div className="mb-4 bg-green-50 border border-green-200 rounded p-3">
+                          <p className="text-sm text-green-800 font-medium mb-2">
+                            👨‍🏫 Hướng dẫn cho gia sư:
+                          </p>
+                          <ol className="text-sm text-green-800 list-decimal ml-4 space-y-1">
+                            <li>Click "Bắt đầu lớp học" để tạo phòng học mới</li>
+                            <li>Google Meet sẽ mở - bạn là người chủ trì</li>
+                            <li>Chấp nhận học viên khi họ yêu cầu tham gia</li>
+                            <li>Link có thể dùng cho tất cả các buổi học</li>
+                          </ol>
+                        </div>
 
                         <div className="mt-4 pt-3 border-t border-blue-200">
                           <a
                             href={currentClass.onlineInfo.meetingLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                           >
                             <VideoCameraIcon className="h-5 w-5" />
                             Bắt đầu lớp học
