@@ -34,6 +34,10 @@ import StudentPersonalProfilePage from "./pages/student/profile/StudentPersonalP
 import StudentPreferencesPage from "./pages/student/profile/StudentPreferencesPage";
 import StudentContactRequestsPage from "./pages/student/StudentContactRequestsPage";
 
+// ✅ AI Survey Pages
+import AISurveyPage from "./pages/student/AISurveyPage";
+import AISurveyResultsPage from "./pages/student/AISurveyResultsPage";
+
 import AdminDashboardLayout from "./layouts/AdminDashboardLayout";
 import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
 import UserManagementList from "./pages/admin/users/UserManagementList";
@@ -52,6 +56,7 @@ import PostFormPage from "./pages/student/PostFormPage";
 import AdminPostReviewPage from "./pages/admin/posts/AdminPostReviewPage";
 import PostDetailPage from "./pages/student/PostDetailPage";
 import StudentSmartSearchPage from "./pages/student/StudentSmartSearchPage";
+import AISmartRecommendationsPage from "./pages/student/AISmartRecommendationsPage";
 import ContactRequestDetail from "./components/contactRequest/ContactRequestDetail";
 import TutorContactRequestsPage from "./pages/tutor/TutorContactRequestsPage";
 import StudentClassesPage from "./pages/student/StudentClassesPage";
@@ -135,6 +140,12 @@ function App() {
             >
               <Route path="dashboard" element={<StudentDashboardOverview />} />
               <Route path="smart-search" element={<StudentSmartSearchPage />} />
+              <Route path="ai-recommendations/:postId" element={<AISmartRecommendationsPage />} />
+              
+              {/* ✅ AI Survey Routes */}
+              <Route path="ai-survey" element={<AISurveyPage />} />
+              <Route path="ai-survey/results" element={<AISurveyResultsPage />} />
+              
               <Route path="schedule" element={<StudentSchedulePage />} />
               <Route path="messages" element={<StudentMessagesPage />} />
               <Route path="posts/create" element={<PostFormPage />} />

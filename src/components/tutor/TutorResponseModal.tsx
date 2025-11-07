@@ -4,7 +4,9 @@ import { motion } from 'framer-motion';
 import { 
   XMarkIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  CalendarIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline';
 
 import { useContactRequestStore } from '../../store/contactRequest.store';
@@ -19,6 +21,16 @@ interface TutorResponseModalProps {
 
 interface FormData extends TutorResponseInput {}
 
+const WEEKDAYS = [
+  { value: 1, label: 'Thứ 2' },
+  { value: 2, label: 'Thứ 3' },
+  { value: 3, label: 'Thứ 4' },
+  { value: 4, label: 'Thứ 5' },
+  { value: 5, label: 'Thứ 6' },
+  { value: 6, label: 'Thứ 7' },
+  { value: 0, label: 'Chủ nhật' }
+];
+
 const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
   request,
   onClose,
@@ -27,11 +39,38 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
   const { respondToRequest, isResponding } = useContactRequestStore();
   const [responseType, setResponseType] = useState<'ACCEPT' | 'REJECT'>('ACCEPT');
 
+  // Get tutor post info
+  const tutorPost = (request as any).tutorPost ?? (request as any).tutorPostId;
+
+  // Extract schedule days from tutorPost
+  const extractScheduleDays = (): number[] => {
+    if (tutorPost?.teachingSchedule && Array.isArray(tutorPost.teachingSchedule)) {
+      return tutorPost.teachingSchedule.map((schedule: any) => schedule.dayOfWeek).sort();
+    }
+    return [];
+  };
+  
+  // Extract schedule time from tutorPost
+  const extractScheduleTime = (): { startTime: string; endTime: string } => {
+    if (tutorPost?.teachingSchedule && tutorPost.teachingSchedule.length > 0) {
+      const firstSchedule = tutorPost.teachingSchedule[0];
+      return {
+        startTime: firstSchedule.startTime || '19:00',
+        endTime: firstSchedule.endTime || '20:30'
+      };
+    }
+    return { startTime: '19:00', endTime: '20:30' };
+  };
+
+  const [selectedDays, setSelectedDays] = useState<number[]>(extractScheduleDays());
+  const [scheduleTime, setScheduleTime] = useState(extractScheduleTime());
+
   const {
     register,
     handleSubmit,
     watch,
     reset,
+    setValue,
     formState: { errors }
   } = useForm<FormData>({
     defaultValues: {
@@ -46,12 +85,31 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
     }
   });
 
+  const handleDayToggle = (day: number) => {
+    const newDays = selectedDays.includes(day)
+      ? selectedDays.filter(d => d !== day)
+      : [...selectedDays, day].sort();
+    setSelectedDays(newDays);
+  };
+
+  // Format schedule to text when days or time changes
+  useEffect(() => {
+    if (responseType === 'ACCEPT') {
+      const formatScheduleToText = (): string => {
+        if (selectedDays.length === 0) return '';
+        
+        const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+        const dayList = selectedDays.map(d => dayNames[d]).join(', ');
+        return `${dayList} từ ${scheduleTime.startTime}-${scheduleTime.endTime}`;
+      };
+
+      setValue('counterOffer.schedule', formatScheduleToText());
+    }
+  }, [selectedDays, scheduleTime, responseType, setValue]);
+
   // Build defaults from tutorPost (preferred) or from request
   useEffect(() => {
     if (!request) return;
-
-    // normalize tutorPost (backend trả populate vào tutorPostId)
-    const tutorPost = (request as any).tutorPost ?? (request as any).tutorPostId;
 
     const defaults: FormData = {
       action: 'ACCEPT',
@@ -60,7 +118,7 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
       counterOffer: {
         pricePerSession: tutorPost?.pricePerSession ?? request.expectedPrice ?? undefined,
         sessionDuration: tutorPost?.sessionDuration ?? request.sessionDuration ?? undefined,
-        schedule: tutorPost?.schedule ?? request.preferredSchedule ?? '',
+        schedule: '', // Will be auto-filled by above useEffect
         conditions: tutorPost?.conditions ?? ''
       }
     };
@@ -88,8 +146,6 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
     reset(defaults);
   }, [request, reset]);
 
-  const watchAction = watch('action');
-
   const onSubmit = async (data: FormData) => {
     try {
       // Ensure action reflects UI selection (responseType)
@@ -107,13 +163,6 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
     } catch (error) {
       // Error handled in store
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
   };
 
   return (
@@ -293,15 +342,81 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
                 </div>
 
                 {/* Schedule */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Lịch học đề xuất
-                  </label>
-                  <textarea
+                <div className="space-y-4">
+                  <h4 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
+                    <CalendarIcon className="w-5 h-5" />
+                    <span>Lịch học đề xuất</span>
+                  </h4>
+
+                  {/* Days of Week */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ngày trong tuần *
+                    </label>
+                    <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+                      {WEEKDAYS.map((day) => (
+                        <button
+                          key={day.value}
+                          type="button"
+                          onClick={() => handleDayToggle(day.value)}
+                          className={`p-2 text-sm border rounded-lg transition-colors ${
+                            selectedDays.includes(day.value)
+                              ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                              : 'border-gray-200 hover:border-blue-300'
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      ))}
+                    </div>
+                    {selectedDays.length === 0 && (
+                      <p className="mt-1 text-sm text-red-600">Vui lòng chọn ít nhất 1 ngày</p>
+                    )}
+                  </div>
+
+                  {/* Time */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center space-x-2">
+                        <ClockIcon className="w-4 h-4" />
+                        <span>Giờ bắt đầu *</span>
+                      </label>
+                      <input
+                        type="time"
+                        value={scheduleTime.startTime}
+                        onChange={(e) => setScheduleTime({ ...scheduleTime, startTime: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center space-x-2">
+                        <ClockIcon className="w-4 h-4" />
+                        <span>Giờ kết thúc *</span>
+                      </label>
+                      <input
+                        type="time"
+                        value={scheduleTime.endTime}
+                        onChange={(e) => setScheduleTime({ ...scheduleTime, endTime: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Preview */}
+                  {selectedDays.length > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-800">
+                        <span className="font-medium">Lịch học: </span>
+                        {watch('counterOffer.schedule') || 'Chưa có lịch học'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Hidden input for form submission */}
+                  <input
+                    type="hidden"
                     {...register('counterOffer.schedule')}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    placeholder="Ví dụ: Thứ 2, 4, 6 từ 19:00-20:30"
                   />
                 </div>
 

@@ -11,6 +11,7 @@ import {
   ChatBubbleBottomCenterTextIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { AISmartSearchButton } from '../../components/ai';
 
 const StatusBadge: React.FC<{ status: 'pending' | 'approved' | 'rejected' }> = ({ status }) => {
     const statusMap = {
@@ -140,6 +141,28 @@ const PostDetailPage: React.FC = () => {
                         value={is_online && !location ? 'Chỉ học trực tuyến (Online)' : is_online ? `Linh hoạt Online & Trực tiếp tại: ${location}` : `Học trực tiếp tại: ${location}`} 
                     />
                 </section>
+
+                {/* AI Smart Search Button - Only show for approved posts */}
+                {status === 'approved' && (
+                  <section>
+                    <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200">
+                      <div className="text-center mb-4">
+                        <h3 className="text-lg font-bold text-purple-900 mb-2">
+                          🤖 Tìm Gia Sư Phù Hợp Bằng AI
+                        </h3>
+                        <p className="text-sm text-purple-700">
+                          Sử dụng trí tuệ nhân tạo Gemini AI để tìm gia sư phù hợp nhất với yêu cầu của bạn
+                        </p>
+                      </div>
+                      <AISmartSearchButton 
+                        postId={id!}
+                        variant="primary"
+                        size="lg"
+                        fullWidth
+                      />
+                    </div>
+                  </section>
+                )}
 
             </div>
         </div>

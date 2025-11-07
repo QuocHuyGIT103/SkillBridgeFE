@@ -36,13 +36,61 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   onSuccess
 }) => {
   const { createLearningClass, isCreatingClass } = useContactRequestStore();
-  const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [learningMode, setLearningMode] = useState<'ONLINE' | 'OFFLINE'>(
-    request.learningMode === 'FLEXIBLE' ? 'ONLINE' : request.learningMode as 'ONLINE' | 'OFFLINE'
-  );
-
+  
   // Get tutor post info
   const tutorPost = (request as any).tutorPost ?? (request as any).tutorPostId;
+  
+  // Determine learning mode from tutor post or request
+  const determineLearningMode = (): 'ONLINE' | 'OFFLINE' => {
+    // Nếu request có learningMode cụ thể (ONLINE/OFFLINE), dùng nó
+    if (request.learningMode === 'ONLINE' || request.learningMode === 'OFFLINE') {
+      return request.learningMode;
+    }
+    
+    // Nếu request là FLEXIBLE, ưu tiên teachingMode từ tutorPost
+    if (tutorPost?.teachingMode === 'ONLINE') return 'ONLINE';
+    if (tutorPost?.teachingMode === 'OFFLINE') return 'OFFLINE';
+    
+    // Nếu tutorPost là BOTH, ưu tiên ONLINE
+    if (tutorPost?.teachingMode === 'BOTH') return 'ONLINE';
+    
+    // Default là ONLINE
+    return 'ONLINE';
+  };
+
+  const [learningMode, setLearningMode] = useState<'ONLINE' | 'OFFLINE'>(determineLearningMode());
+  
+  // Extract schedule days from tutorPost
+  const extractScheduleDays = (): number[] => {
+    if (tutorPost?.teachingSchedule && Array.isArray(tutorPost.teachingSchedule)) {
+      return tutorPost.teachingSchedule.map((schedule: any) => schedule.dayOfWeek).sort();
+    }
+    return [];
+  };
+  
+  // Extract schedule time from tutorPost
+  const extractScheduleTime = (): { startTime: string; endTime: string } => {
+    if (tutorPost?.teachingSchedule && tutorPost.teachingSchedule.length > 0) {
+      const firstSchedule = tutorPost.teachingSchedule[0];
+      return {
+        startTime: firstSchedule.startTime || '19:00',
+        endTime: firstSchedule.endTime || '20:30'
+      };
+    }
+    return { startTime: '19:00', endTime: '20:30' };
+  };
+
+  // Extract address from tutorPost
+  const extractAddress = (): string => {
+    if (tutorPost?.address) {
+      const addr = tutorPost.address;
+      return addr.specificAddress || '';
+    }
+    return '';
+  };
+
+  const [selectedDays, setSelectedDays] = useState<number[]>(extractScheduleDays());
+  const scheduleTime = extractScheduleTime();
   
   // Generate class title from tutor post
   const generateClassTitle = () => {
@@ -53,10 +101,17 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   };
 
   // Auto-generate Zoom meeting details
+  // Note: This generates a FAKE meeting ID for demo purposes
+  // In production, you should use Zoom API to create real meetings
   const generateZoomInfo = () => {
-    const meetingId = Math.floor(100000000 + Math.random() * 900000000).toString();
-    const password = Math.random().toString(36).substring(2, 10);
-    const meetingLink = `https://zoom.us/j/${meetingId}`;
+    // Generate 11-digit meeting ID (Zoom format)
+    const part1 = Math.floor(100 + Math.random() * 900); // 3 digits
+    const part2 = Math.floor(1000 + Math.random() * 9000); // 4 digits
+    const part3 = Math.floor(1000 + Math.random() * 9000); // 4 digits
+    const meetingId = `${part1}${part2}${part3}`; // 11 digits total
+    
+    const password = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const meetingLink = `https://zoom.us/j/${meetingId}?pwd=${password}`;
     
     return { meetingLink, meetingId, password };
   };
@@ -74,13 +129,13 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
       description: tutorPost?.description || '',
       totalSessions: 10,
       schedule: {
-        dayOfWeek: [],
-        startTime: '19:00',
-        endTime: '20:30'
+        dayOfWeek: extractScheduleDays(),
+        startTime: scheduleTime.startTime,
+        endTime: scheduleTime.endTime
       },
       startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Next week
       location: learningMode === 'OFFLINE' ? {
-        address: ''
+        address: extractAddress()
       } : undefined,
       onlineInfo: learningMode === 'ONLINE' ? {
         platform: 'ZOOM',
@@ -106,11 +161,20 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     setLearningMode(mode);
     
     if (mode === 'ONLINE') {
+      // Tạo Zoom info tự động
       const zoomInfo = generateZoomInfo();
       setValue('onlineInfo.platform', 'ZOOM');
       setValue('onlineInfo.meetingLink', zoomInfo.meetingLink);
       setValue('onlineInfo.meetingId', zoomInfo.meetingId);
       setValue('onlineInfo.password', zoomInfo.password);
+      // Xóa location
+      setValue('location', undefined);
+    } else {
+      // Lấy địa chỉ từ tutorPost
+      const address = extractAddress();
+      setValue('location.address', address);
+      // Xóa onlineInfo
+      setValue('onlineInfo', undefined);
     }
   };
 
@@ -326,7 +390,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                       onClick={() => handleDayToggle(day.value)}
                       className={`p-2 text-sm border rounded-lg transition-colors ${
                         selectedDays.includes(day.value)
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
                           : 'border-gray-200 hover:border-blue-300'
                       }`}
                     >
@@ -444,7 +508,6 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                 <h4 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
                   <VideoCameraIcon className="w-5 h-5 text-blue-600" />
                   <span>Thông tin học online</span>
-                  <span className="text-sm font-normal text-gray-500">(Tự động tạo)</span>
                 </h4>
                 
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -497,10 +560,6 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                       />
                     </div>
                   </div>
-                  
-                  <p className="text-xs text-gray-500 mt-3">
-                    💡 Bạn có thể chia sẻ thông tin này với học viên sau khi tạo lớp
-                  </p>
                 </div>
               </div>
             )}

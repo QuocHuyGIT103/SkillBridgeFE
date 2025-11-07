@@ -44,6 +44,7 @@ export const useSubjectStore = create<SubjectState>((set) => ({
 
       if (response.success && response.data.subjects) {
         set({
+          subjects: response.data.subjects,
           activeSubjects: response.data.subjects,
           isLoading: false,
         });

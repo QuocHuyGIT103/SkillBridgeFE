@@ -14,6 +14,7 @@ import {
     CalendarDaysIcon,
     InformationCircleIcon
 } from "@heroicons/react/24/outline";
+import { AISmartSearchButton } from '../../components/ai';
 
 const StatusBadge: React.FC<{ status: IPost['status'] }> = ({ status }) => {
   const statusMap = {
@@ -153,7 +154,19 @@ const MyPostsPage: React.FC = () => {
                   {/* Sử dụng flex-grow và mt-auto để đẩy các nút xuống dưới cùng */}
                   <div className="flex-grow"></div> 
                   
-                  {/* [SỬA] Bỏ đi div footer riêng */}
+                  {/* AI Smart Search Button - Only for approved posts */}
+                  {post.status === 'approved' && (
+                    <div className="mb-3">
+                      <AISmartSearchButton 
+                        postId={post.id}
+                        variant="secondary"
+                        size="sm"
+                        fullWidth
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Action Buttons */}
                   <div className="flex justify-end items-center gap-3 mt-4">
                       <Link 
                         to={`/student/posts/${post.id}`} 
