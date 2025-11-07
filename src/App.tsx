@@ -59,6 +59,7 @@ import StudentClassDetailPage from "./pages/student/StudentClassDetailPage";
 import TutorClassesPage from "./pages/tutor/TutorClassesPage";
 import TutorClassDetailPage from "./pages/tutor/TutorClassDetailPage";
 import TutorMessagesPage from "./pages/tutor/TutorMessagesPage";
+import RequireTutorOperate from "./features/tutor/RequireTutorOperate";
 
 // Protected Route wrapper for role-based access
 const ProtectedRoute = ({
@@ -225,11 +226,29 @@ function App() {
                   </div>
                 }
               />
-              <Route path="posts" element={<TutorPostListPage />} />
-              <Route path="posts/create" element={<CreateTutorPostPage />} />
+              <Route
+                path="posts"
+                element={
+                  <RequireTutorOperate>
+                    <TutorPostListPage />
+                  </RequireTutorOperate>
+                }
+              />
+              <Route
+                path="posts/create"
+                element={
+                  <RequireTutorOperate>
+                    <CreateTutorPostPage />
+                  </RequireTutorOperate>
+                }
+              />
               <Route
                 path="posts/edit/:postId"
-                element={<EditTutorPostPage />}
+                element={
+                  <RequireTutorOperate>
+                    <EditTutorPostPage />
+                  </RequireTutorOperate>
+                }
               />
               <Route path="messages" element={<TutorMessagesPage />} />
               <Route path="messages/*" element={<TutorMessagesPage />} />
