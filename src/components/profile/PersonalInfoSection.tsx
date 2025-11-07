@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   UserCircleIcon,
@@ -51,31 +51,13 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   portraitInputRef,
   onEditToggle,
 }) => {
-  // Store hooks
-  const { checkEditStatus, verificationStatus, canEdit, editWarning } =
-    useTutorProfileStore();
+  // Store hooks - only read state, don't call checkEditStatus here (parent handles it)
+  const { verificationStatus, canEdit, editWarning } = useTutorProfileStore();
 
   // Local state
   const [showWarningModal, setShowWarningModal] = useState(false);
-  const [isCheckingEditStatus, setIsCheckingEditStatus] = useState(false);
 
-  // Check edit status when component mounts or verification status changes
-  useEffect(() => {
-    const checkStatus = async () => {
-      if (profileData?.profile?.id) {
-        setIsCheckingEditStatus(true);
-        try {
-          await checkEditStatus();
-        } catch (error) {
-          console.error("Error checking edit status:", error);
-        } finally {
-          setIsCheckingEditStatus(false);
-        }
-      }
-    };
-
-    checkStatus();
-  }, [profileData?.profile?.id, checkEditStatus]);
+  // Removed useEffect that calls checkEditStatus - parent component handles this
 
   const getImageUrl = (file: File | null) => {
     return file ? URL.createObjectURL(file) : null;
@@ -96,7 +78,7 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     return profileData?.profile?.rejection_reason || null;
   };
 
-  const isEditDisabled = !canEdit || isCheckingEditStatus;
+  const isEditDisabled = !canEdit;
 
   return (
     <motion.div

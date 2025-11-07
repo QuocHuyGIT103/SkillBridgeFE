@@ -100,6 +100,12 @@ interface TutorProfileState {
   resetProfile: () => void;
 }
 
+// Cache/debounce mechanism outside store to prevent duplicate calls
+let checkEditStatusPromise: Promise<EditStatusResponse | undefined> | null =
+  null;
+let checkOperationStatusPromise: Promise<TutorProfileStatusResponse | null> | null =
+  null;
+
 export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
   // Initial state
   profileData: null,
@@ -423,68 +429,85 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
 
   // Check edit status
   checkEditStatus: async () => {
-    set({ isCheckingEditStatus: true, error: null });
-    try {
-      const response = await VerificationService.checkEditStatus();
-      if (response.data) {
-        let editStatus: EditStatusResponse;
-        if (response.data.data) {
-          editStatus = response.data.data;
-        } else if ((response.data as any).canEdit !== undefined) {
-          editStatus = response.data as unknown as EditStatusResponse;
-        } else {
-          throw new Error(
-            "Invalid response structure from checkEditStatus API"
-          );
-        }
-        set({
-          verificationStatus: editStatus.status,
-          canEdit: editStatus.canEdit,
-          editWarning: editStatus.warning || null,
-          isCheckingEditStatus: false,
-        });
-        return editStatus;
-      } else {
-        throw new Error(
-          response.message || "Không thể kiểm tra trạng thái chỉnh sửa"
-        );
-      }
-    } catch (error: any) {
-      let errorMessage = "Không thể kiểm tra trạng thái chỉnh sửa";
-      let shouldShowError = true;
-      if (error.data?.errorType) {
-        const errorData: VerificationErrorResponse = error.data;
-        switch (errorData.errorType) {
-          case "PENDING_REQUEST":
-            errorMessage = "Đã có yêu cầu xác thực đang chờ xử lý";
-            shouldShowError = false;
-            break;
-          case "NOT_FOUND":
-            errorMessage = "Không tìm thấy thông tin gia sư";
-            break;
-          case "ACCESS_DENIED":
-            errorMessage = "Không có quyền truy cập";
-            break;
-          case "INTERNAL_ERROR":
-            errorMessage = "Lỗi hệ thống, vui lòng thử lại sau";
-            break;
-        }
-      } else {
-        if (error.response?.data?.message?.includes("đang chờ xác thực")) {
-          shouldShowError = false;
-        }
-        errorMessage =
-          error.response?.data?.message || error.message || errorMessage;
-      }
-      set({
-        error: shouldShowError ? errorMessage : null,
-        isCheckingEditStatus: false,
-      });
-      if (shouldShowError) {
-        throw error;
-      }
+    // If already checking, return the existing promise to prevent duplicate calls
+    if (checkEditStatusPromise) {
+      return checkEditStatusPromise;
+    }
+
+    const currentState = get();
+    if (currentState.isCheckingEditStatus) {
       return undefined;
     }
+
+    checkEditStatusPromise = (async () => {
+      set({ isCheckingEditStatus: true, error: null });
+      try {
+        const response = await VerificationService.checkEditStatus();
+        if (response.data) {
+          let editStatus: EditStatusResponse;
+          if (response.data.data) {
+            editStatus = response.data.data;
+          } else if ((response.data as any).canEdit !== undefined) {
+            editStatus = response.data as unknown as EditStatusResponse;
+          } else {
+            throw new Error(
+              "Invalid response structure from checkEditStatus API"
+            );
+          }
+          set({
+            verificationStatus: editStatus.status,
+            canEdit: editStatus.canEdit,
+            editWarning: editStatus.warning || null,
+            isCheckingEditStatus: false,
+          });
+          return editStatus;
+        } else {
+          throw new Error(
+            response.message || "Không thể kiểm tra trạng thái chỉnh sửa"
+          );
+        }
+      } catch (error: any) {
+        let errorMessage = "Không thể kiểm tra trạng thái chỉnh sửa";
+        let shouldShowError = true;
+        if (error.data?.errorType) {
+          const errorData: VerificationErrorResponse = error.data;
+          switch (errorData.errorType) {
+            case "PENDING_REQUEST":
+              errorMessage = "Đã có yêu cầu xác thực đang chờ xử lý";
+              shouldShowError = false;
+              break;
+            case "NOT_FOUND":
+              errorMessage = "Không tìm thấy thông tin gia sư";
+              break;
+            case "ACCESS_DENIED":
+              errorMessage = "Không có quyền truy cập";
+              break;
+            case "INTERNAL_ERROR":
+              errorMessage = "Lỗi hệ thống, vui lòng thử lại sau";
+              break;
+          }
+        } else {
+          if (error.response?.data?.message?.includes("đang chờ xác thực")) {
+            shouldShowError = false;
+          }
+          errorMessage =
+            error.response?.data?.message || error.message || errorMessage;
+        }
+        set({
+          error: shouldShowError ? errorMessage : null,
+          isCheckingEditStatus: false,
+        });
+        if (shouldShowError) {
+          throw error;
+        }
+        return undefined;
+      } finally {
+        // Clear the promise after completion
+        checkEditStatusPromise = null;
+      }
+    })();
+
+    return checkEditStatusPromise;
   },
 
   // Submit for verification
@@ -552,30 +575,47 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
 
   // NEW: Check operation status
   checkOperationStatus: async () => {
-    set({ isCheckingStatus: true, error: null });
-    try {
-      const statusData = await tutorProfileService.checkCanOperate();
-      if (statusData) {
-        set({
-          profileStatusData: statusData,
-          isCheckingStatus: false,
-        });
-        return statusData;
-      } else {
-        set({ isCheckingStatus: false });
-        return null;
-      }
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Không thể kiểm tra trạng thái hồ sơ";
-      set({
-        error: errorMessage,
-        isCheckingStatus: false,
-      });
+    // If already checking, return the existing promise to prevent duplicate calls
+    if (checkOperationStatusPromise) {
+      return checkOperationStatusPromise;
+    }
+
+    const currentState = get();
+    if (currentState.isCheckingStatus) {
       return null;
     }
+
+    checkOperationStatusPromise = (async () => {
+      set({ isCheckingStatus: true, error: null });
+      try {
+        const statusData = await tutorProfileService.checkCanOperate();
+        if (statusData) {
+          set({
+            profileStatusData: statusData,
+            isCheckingStatus: false,
+          });
+          return statusData;
+        } else {
+          set({ isCheckingStatus: false });
+          return null;
+        }
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Không thể kiểm tra trạng thái hồ sơ";
+        set({
+          error: errorMessage,
+          isCheckingStatus: false,
+        });
+        return null;
+      } finally {
+        // Clear the promise after completion
+        checkOperationStatusPromise = null;
+      }
+    })();
+
+    return checkOperationStatusPromise;
   },
 
   // Reset profile

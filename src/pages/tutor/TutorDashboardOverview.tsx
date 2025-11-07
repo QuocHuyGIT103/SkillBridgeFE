@@ -40,7 +40,8 @@ const TutorDashboardOverview: React.FC = () => {
     didRunRef.current = true;
     checkOperationStatus();
     fetchProfile();
-  }, [checkOperationStatus, fetchProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - run only once on mount
 
   // Removed duplicate effect to avoid re-calling checkOperationStatus
 

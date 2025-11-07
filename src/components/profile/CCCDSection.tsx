@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import {
   IdentificationIcon,
@@ -29,30 +29,10 @@ const CCCDSection: React.FC<CCCDSectionProps> = ({
   onRemoveCCCDImage,
   cccdInputRef,
 }) => {
-  // Store hooks
-  const { checkEditStatus, verificationStatus, canEdit } =
-    useTutorProfileStore();
+  // Store hooks - only read state, don't call checkEditStatus here (parent handles it)
+  const { verificationStatus, canEdit } = useTutorProfileStore();
 
-  // Local state
-  const [isCheckingEditStatus, setIsCheckingEditStatus] = useState(false);
-
-  // Check edit status when component mounts or verification status changes
-  useEffect(() => {
-    const checkStatus = async () => {
-      if (profileData?.profile?.id) {
-        setIsCheckingEditStatus(true);
-        try {
-          await checkEditStatus();
-        } catch (error) {
-          console.error("Error checking edit status:", error);
-        } finally {
-          setIsCheckingEditStatus(false);
-        }
-      }
-    };
-
-    checkStatus();
-  }, [profileData?.profile?.id, checkEditStatus]);
+  // Removed local state and useEffect that calls checkEditStatus - parent component handles this
 
   const getVerificationStatus = (): VerificationStatus | null => {
     return profileData?.profile?.status || verificationStatus;
@@ -62,7 +42,7 @@ const CCCDSection: React.FC<CCCDSectionProps> = ({
     return profileData?.profile?.rejection_reason || null;
   };
 
-  const isEditDisabled = !canEdit || isCheckingEditStatus;
+  const isEditDisabled = !canEdit;
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

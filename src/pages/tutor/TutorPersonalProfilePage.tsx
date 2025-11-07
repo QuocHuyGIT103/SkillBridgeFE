@@ -102,18 +102,22 @@ const TutorPersonalProfilePage: React.FC = () => {
 
   const portraitInputRef = useRef<HTMLInputElement>(null);
   const cccdInputRef = useRef<HTMLInputElement>(null);
-  const hasCheckedEditStatus = useRef<boolean>(false);
-  const [hasRunEditStatusEffect, setHasRunEditStatusEffect] = useState(false);
+  const hasInitialized = useRef<boolean>(false);
 
   // Auto focus on validation error
   useAutoFocusOnError(validationErrors);
 
-  // Fetch profile data on component mount
+  // Fetch profile data and check edit status only ONCE on mount
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     const initializeProfile = async () => {
       try {
         await fetchProfile();
         await checkOperationStatus();
+        // Check edit status after profile loaded
+        await checkEditStatus();
       } catch (error) {
         console.error("Error initializing profile:", error);
         toast.error("Không thể tải thông tin hồ sơ");
@@ -121,23 +125,8 @@ const TutorPersonalProfilePage: React.FC = () => {
     };
 
     initializeProfile();
-  }, []); // Remove fetchProfile dependency to prevent re-initialization
-
-  // Check edit status only ONCE after profileData loaded
-  useEffect(() => {
-    if (profileData?.profile?.id && !hasRunEditStatusEffect) {
-      (async () => {
-        try {
-          hasCheckedEditStatus.current = true;
-          await checkEditStatus();
-          setHasRunEditStatusEffect(true);
-        } catch (error) {
-          console.error("Error checking edit status:", error);
-          hasCheckedEditStatus.current = false;
-        }
-      })();
-    }
-  }, [profileData?.profile?.id, hasRunEditStatusEffect, checkEditStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - run only once on mount
 
   // Update editedInfo when profileData changes
   useEffect(() => {
@@ -380,9 +369,8 @@ const TutorPersonalProfilePage: React.FC = () => {
       setTimeout(async () => {
         try {
           await fetchProfile();
-          // Reset the check flag to allow re-checking edit status after verification submit
-          // This is needed because verification status might have changed
-          hasCheckedEditStatus.current = false;
+          await checkOperationStatus();
+          // No need to reset hasInitialized - user can manually check edit status via button if needed
         } catch (error) {
           console.error(
             "Error refreshing profile after verification submit:",
