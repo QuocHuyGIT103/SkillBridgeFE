@@ -8,7 +8,6 @@ import {
   LockClosedIcon,
   LockOpenIcon,
   PencilIcon,
-  TrashIcon,
 } from "@heroicons/react/24/outline";
 
 interface User {

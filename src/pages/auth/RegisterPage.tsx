@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { BookOpen, User, Mail, Phone, Lock, Eye, EyeOff, Users } from "lucide-react";
+import { BookOpen, User, Mail, Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "../../store/auth.store";
 import {
   validateRegistrationForm,
@@ -229,14 +228,14 @@ const RegisterPage: React.FC = () => {
                   {[
                     { value: "STUDENT", label: "Học viên", icon: "👨‍🎓" },
                     { value: "TUTOR", label: "Gia sư", icon: "👨‍🏫" },
-                    { value: "PARENT", label: "Phụ huynh", icon: "👨‍👩‍👧‍👦" }
+                    { value: "PARENT", label: "Phụ huynh", icon: "👨‍👩‍👧‍👦" },
                   ].map((role) => (
                     <label
                       key={role.value}
                       className={`relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
                         formData.role === role.value
-                          ? 'border-teal-500 bg-teal-50'
-                          : 'border-gray-200 bg-white hover:border-gray-300'
+                          ? "border-teal-500 bg-teal-50"
+                          : "border-gray-200 bg-white hover:border-gray-300"
                       }`}
                     >
                       <input
@@ -253,23 +252,39 @@ const RegisterPage: React.FC = () => {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center">
-                            <h3 className={`text-sm font-medium ${
-                              formData.role === role.value ? 'text-teal-900' : 'text-gray-900'
-                            }`}>
+                            <h3
+                              className={`text-sm font-medium ${
+                                formData.role === role.value
+                                  ? "text-teal-900"
+                                  : "text-gray-900"
+                              }`}
+                            >
                               {role.label}
                             </h3>
                           </div>
-                          <p className={`text-xs mt-1 ${
-                            formData.role === role.value ? 'text-teal-700' : 'text-gray-500'
-                          }`}>
+                          <p
+                            className={`text-xs mt-1 ${
+                              formData.role === role.value
+                                ? "text-teal-700"
+                                : "text-gray-500"
+                            }`}
+                          >
                             {getRoleDescription(role.value)}
                           </p>
                         </div>
                       </div>
                       {formData.role === role.value && (
                         <div className="flex items-center justify-center w-5 h-5 bg-teal-500 rounded-full">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         </div>
                       )}

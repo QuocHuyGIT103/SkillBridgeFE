@@ -1,16 +1,8 @@
-import axios from "axios";
-import type {
-  AxiosError,
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse,
-} from "axios";
+import axios from 'axios';
+import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { ApiResponse } from '../types/index';
 
-interface ApiResponse<T = any> {
-  success: boolean;
-  message: string;
-  data: T;
-}
+// Remove the local ApiResponse interface definition that was here.
 
 class AxiosClient {
   private instance: AxiosInstance;
@@ -63,7 +55,7 @@ class AxiosClient {
           const errorData = error.response.data as any;
           return Promise.reject({
             success: false,
-            message: errorData.message || "Đã xảy ra lỗi",
+            message: errorData.message || errorData.error || "Đã xảy ra lỗi",
             data: errorData.data,
             status: error.response.status,
           });

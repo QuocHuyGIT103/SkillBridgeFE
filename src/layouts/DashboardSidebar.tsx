@@ -13,6 +13,7 @@ import {
   ArrowLeftOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import {
   UserIcon as UserSolidIcon,
@@ -21,8 +22,9 @@ import {
   CurrencyDollarIcon as CurrencySolidIcon,
   AcademicCapIcon as AcademicSolidIcon,
   HomeIcon as HomeSolidIcon,
+  DocumentTextIcon as DocumentSolidIcon,
 } from "@heroicons/react/24/solid";
-import type { NavigationItem } from "../types/tutor.types";
+import type { NavigationItem } from "../types/tutor.types.ts";
 
 interface DashboardSidebarProps {
   collapsed: boolean;
@@ -55,24 +57,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       path: "/tutor/profile",
       children: [
         {
-          id: "profile-edit",
-          label: "Chỉnh sửa hồ sơ",
-          path: "/tutor/profile/edit",
+          id: "profile-personal",
+          label: "Hồ sơ của tôi",
+          path: "/tutor/profile/personal",
         },
         {
-          id: "profile-settings",
-          label: "Cài đặt tài khoản",
-          path: "/tutor/profile/settings",
-        },
-        {
-          id: "profile-verification",
-          label: "Xác thực",
-          path: "/tutor/profile/verification",
-        },
-        {
-          id: "profile-portfolio",
-          label: "Hồ sơ năng lực",
-          path: "/tutor/profile/portfolio",
+          id: "profile-education",
+          label: "Học vấn & Chứng chỉ",
+          path: "/tutor/profile/education",
         },
       ],
     },
@@ -98,15 +90,38 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           path: "/tutor/schedule/lessons",
         },
         {
-          id: "schedule-requests",
-          label: "Yêu cầu đặt lịch",
-          path: "/tutor/schedule/requests",
+          id: "contact-requests",
+          label: "Yêu cầu học tập",
+          path: "/tutor/contact-requests",
           badge: 3,
         },
         {
           id: "schedule-history",
           label: "Lịch sử bài học",
           path: "/tutor/schedule/history",
+        },
+      ],
+    },
+    {
+      id: "posts",
+      label: "Quản lý bài đăng",
+      icon: "document",
+      path: "/tutor/posts",
+      children: [
+        {
+          id: "posts-list",
+          label: "Danh sách bài đăng",
+          path: "/tutor/posts",
+        },
+        {
+          id: "posts-student",
+          label: "Bài đăng học viên",
+          path: "/tutor/posts/student",
+        },
+        {
+          id: "posts-create",
+          label: "Tạo bài đăng mới",
+          path: "/tutor/posts/create",
         },
       ],
     },
@@ -120,6 +135,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           id: "academics-students",
           label: "Học sinh của tôi",
           path: "/tutor/academics/students",
+        },
+        {
+          id: "academics-classes",
+          label: "Quản lý lớp học",
+          path: "/tutor/classes",
         },
         {
           id: "academics-curriculum",
@@ -152,29 +172,29 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       id: "chat",
       label: "Tin nhắn & Chat",
       icon: "chat",
-      path: "/tutor/chat",
+      path: "/tutor/messages",
       badge: 5,
       children: [
         {
           id: "chat-conversations",
           label: "Tất cả cuộc hội thoại",
-          path: "/tutor/chat/conversations",
+          path: "/tutor/messages/conversations",
         },
         {
           id: "chat-students",
           label: "Tin nhắn học sinh",
-          path: "/tutor/chat/students",
+          path: "/tutor/messages/students",
           badge: 3,
         },
         {
           id: "chat-announcements",
           label: "Thông báo",
-          path: "/tutor/chat/announcements",
+          path: "/tutor/messages/announcements",
         },
         {
           id: "chat-support",
           label: "Hỗ trợ chat",
-          path: "/tutor/chat/support",
+          path: "/tutor/messages/support",
           badge: 1,
         },
       ],
@@ -258,6 +278,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           <AcademicSolidIcon className={className} />
         ) : (
           <AcademicCapIcon className={className} />
+        );
+      case "document":
+        return isActive ? (
+          <DocumentSolidIcon className={className} />
+        ) : (
+          <DocumentTextIcon className={className} />
         );
       default:
         return <HomeIcon className={className} />;

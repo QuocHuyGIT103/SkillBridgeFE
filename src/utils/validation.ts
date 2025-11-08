@@ -52,9 +52,9 @@ export const validateRegistrationForm = (formData: {
 
   // Phone number validation (optional)
   if (formData.phone_number && formData.phone_number.trim()) {
-    const cleanPhone = formData.phone_number.replace(/[\s\-\(\)]/g, '');
+    const cleanPhone = formData.phone_number.replace(/[\s\-\(\)]/g, "");
     const backendPattern = /^(\+84|0)[3|5|7|8|9][0-9]{8}$/;
-    
+
     if (!backendPattern.test(cleanPhone)) {
       errors.push({
         field: "Số điện thoại",
@@ -110,86 +110,31 @@ export const validateEmailForm = (email: string): ValidationError[] => {
   return errors;
 };
 
-// ✅ Thêm validation cho student form
-export const validateStudentForm = (formData: {
-  full_name: string;
-  date_of_birth?: string;
-  gender?: string;
-  phone_number?: string;
-  address?: string;
-  grade?: string;
-  school?: string;
-  learning_goals?: string;
-  preferred_schedule?: string;
-  special_requirements?: string;
-}): ValidationError[] => {
+/**
+ * Validate UUID v4 format
+ */
+export const validateUUID = (uuid: string): boolean => {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
+/**
+ * Validate ID parameter (UUID v4)
+ */
+export const validateId = (
+  id: string,
+  fieldName: string = "ID"
+): ValidationError[] => {
   const errors: ValidationError[] = [];
 
-  // Full name validation
-  if (!formData.full_name.trim()) {
-    errors.push({ field: "Họ và tên", message: "Không được để trống" });
-  } else if (formData.full_name.trim().length < 2 || formData.full_name.trim().length > 100) {
-    errors.push({ field: "Họ và tên", message: "Phải có từ 2-100 ký tự" });
-  }
-
-  // Date of birth validation
-  if (formData.date_of_birth && formData.date_of_birth.trim()) {
-    const birthDate = new Date(formData.date_of_birth);
-    const today = new Date();
-    
-    if (isNaN(birthDate.getTime())) {
-      errors.push({ field: "Ngày sinh", message: "Ngày sinh không hợp lệ" });
-    } else if (birthDate > today) {
-      errors.push({ field: "Ngày sinh", message: "Ngày sinh không được là tương lai" });
-    } else {
-      const age = today.getFullYear() - birthDate.getFullYear();
-      if (age < 3 || age > 30) {
-        errors.push({ field: "Ngày sinh", message: "Tuổi phải từ 3 đến 30" });
-      }
-    }
-  }
-
-  // Phone number validation (match backend pattern)
-  if (formData.phone_number && formData.phone_number.trim()) {
-    const cleanPhone = formData.phone_number.replace(/[\s\-\(\)]/g, '');
-    const backendPattern = /^(\+84|0)[3|5|7|8|9][0-9]{8}$/;
-    
-    if (!backendPattern.test(cleanPhone)) {
-      errors.push({ 
-        field: "Số điện thoại", 
-        message: "Phải bắt đầu bằng 03, 05, 07, 08, hoặc 09 và có đúng 10 số" 
-      });
-    }
-  }
-
-  // Address length validation
-  if (formData.address && formData.address.length > 500) {
-    errors.push({ field: "Địa chỉ", message: "Không được quá 500 ký tự" });
-  }
-
-  // Grade length validation
-  if (formData.grade && formData.grade.length > 50) {
-    errors.push({ field: "Lớp học", message: "Không được quá 50 ký tự" });
-  }
-
-  // School length validation
-  if (formData.school && formData.school.length > 200) {
-    errors.push({ field: "Trường học", message: "Không được quá 200 ký tự" });
-  }
-
-  // Learning goals length validation
-  if (formData.learning_goals && formData.learning_goals.length > 1000) {
-    errors.push({ field: "Mục tiêu học tập", message: "Không được quá 1000 ký tự" });
-  }
-
-  // Preferred schedule length validation
-  if (formData.preferred_schedule && formData.preferred_schedule.length > 500) {
-    errors.push({ field: "Lịch học ưa thích", message: "Không được quá 500 ký tự" });
-  }
-
-  // Special requirements length validation
-  if (formData.special_requirements && formData.special_requirements.length > 1000) {
-    errors.push({ field: "Yêu cầu đặc biệt", message: "Không được quá 1000 ký tự" });
+  if (!id.trim()) {
+    errors.push({ field: fieldName, message: "Không được để trống" });
+  } else if (!validateUUID(id)) {
+    errors.push({
+      field: fieldName,
+      message: "Định dạng ID không hợp lệ (phải là UUID v4)",
+    });
   }
 
   return errors;
