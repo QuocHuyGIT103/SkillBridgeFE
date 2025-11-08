@@ -33,6 +33,13 @@ export interface SessionHomework {
   grade?: HomeworkGrade;
 }
 
+export interface CancellationRequest {
+  requestedBy: 'TUTOR' | 'STUDENT';
+  reason: string;
+  requestedAt: Date | string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+}
+
 export interface WeeklySession {
   classId: string;
   className: string;
@@ -41,7 +48,7 @@ export interface WeeklySession {
   dayOfWeek: number; // 0-6 (Sunday-Saturday)
   timeSlot: string; // e.g., "14:00 - 15:30"
   duration: number;
-  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'MISSED';
+  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'MISSED' | 'PENDING_CANCELLATION';
   meetingLink?: string;
   location?: {
     type: string;
@@ -57,6 +64,7 @@ export interface WeeklySession {
     submission?: HomeworkSubmission;
     grade?: HomeworkGrade;
   };
+  cancellationRequest?: CancellationRequest;
   canAttend: boolean; // Có thể điểm danh (trong khung giờ)
   canJoin: boolean;   // Có thể vào Google Meet (cả 2 đã điểm danh)
   tutor: {

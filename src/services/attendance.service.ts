@@ -74,11 +74,31 @@ export const attendanceService = {
   },
 
   /**
-   * Huỷ buổi học (Tutor only)
+   * Gửi yêu cầu huỷ buổi học (Both tutor and student)
    */
-  cancelSession: async (classId: string, sessionNumber: number) => {
+  requestCancelSession: async (
+    classId: string,
+    sessionNumber: number,
+    reason: string
+  ) => {
     const response = await axiosClient.post(
-      `/classes/${classId}/sessions/${sessionNumber}/cancel`
+      `/classes/${classId}/sessions/${sessionNumber}/cancel/request`,
+      { reason }
+    );
+    return response;
+  },
+
+  /**
+   * Phản hồi yêu cầu huỷ buổi học (Approve/Reject)
+   */
+  respondToCancellationRequest: async (
+    classId: string,
+    sessionNumber: number,
+    action: 'APPROVE' | 'REJECT'
+  ) => {
+    const response = await axiosClient.post(
+      `/classes/${classId}/sessions/${sessionNumber}/cancel/respond`,
+      { action }
     );
     return response;
   },
