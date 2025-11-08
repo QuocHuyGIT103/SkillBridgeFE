@@ -157,6 +157,32 @@ export interface TutorProfile {
   created_at: string;
 }
 
+// TutorProfile for verification (from qualification.types.ts)
+export interface TutorProfileVerification {
+  id: string;
+  user_id: string;
+  headline?: string;
+  introduction?: string;
+  teaching_experience?: string;
+  student_levels?: string;
+  video_intro_link?: string;
+  cccd_images: string[];
+  status: string; // VerificationStatus
+  rejection_reason?: string;
+  verified_at?: string;
+  verified_by?: string;
+  verified_data?: {
+    headline?: string;
+    introduction?: string;
+    teaching_experience?: string;
+    student_levels?: string;
+    video_intro_link?: string;
+    cccd_images?: string[];
+  };
+  created_at: string;
+  updated_at: string;
+}
+
 export interface EducationItem {
   id: string;
   institution: string;

@@ -29,6 +29,7 @@ export interface ResetPasswordCredentials {
 }
 
 export interface UserResponse {
+  _id: string;
   id: string;
   full_name: string;
   email: string;

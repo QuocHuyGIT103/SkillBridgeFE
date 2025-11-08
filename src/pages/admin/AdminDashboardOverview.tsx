@@ -228,7 +228,7 @@ const AdminDashboardOverview: React.FC = () => {
           Thao tác nhanh
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 text-left bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors">
+          <button className="p-4 text-left bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors cursor-pointer">
             <div className="flex items-center space-x-3">
               <ClipboardDocumentCheckIcon className="w-6 h-6 text-red-600" />
               <div>
@@ -238,7 +238,7 @@ const AdminDashboardOverview: React.FC = () => {
             </div>
           </button>
 
-          <button className="p-4 text-left bg-yellow-50 hover:bg-yellow-100 rounded-lg border border-yellow-200 transition-colors">
+          <button className="p-4 text-left bg-yellow-50 hover:bg-yellow-100 rounded-lg border border-yellow-200 transition-colors cursor-pointer">
             <div className="flex items-center space-x-3">
               <ExclamationTriangleIcon className="w-6 h-6 text-yellow-600" />
               <div>
@@ -248,7 +248,7 @@ const AdminDashboardOverview: React.FC = () => {
             </div>
           </button>
 
-          <button className="p-4 text-left bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors">
+          <button className="p-4 text-left bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors cursor-pointer">
             <div className="flex items-center space-x-3">
               <BanknotesIcon className="w-6 h-6 text-blue-600" />
               <div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -20,13 +20,31 @@ import {
   CurrencyDollarIcon as CurrencySolidIcon,
   StarIcon as StarSolidIcon,
 } from "@heroicons/react/24/solid";
+import { useTutorProfileStore } from "../../store/tutorProfile.store";
+import TutorProfileStatusCard from "../../components/tutor/TutorProfileStatusCard";
 import type {
   DashboardStats,
   RecentActivity,
   UpcomingSession,
-} from "../../types/tutor.types";
+} from "../../types/tutor.types.ts";
 
 const TutorDashboardOverview: React.FC = () => {
+  // TutorProfile store
+  const { profileStatusData, profileData, checkOperationStatus, fetchProfile } =
+    useTutorProfileStore();
+
+  // Load profile and status data on mount (guard against double-invoke in StrictMode)
+  const didRunRef = useRef(false);
+  useEffect(() => {
+    if (didRunRef.current) return;
+    didRunRef.current = true;
+    checkOperationStatus();
+    fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - run only once on mount
+
+  // Removed duplicate effect to avoid re-calling checkOperationStatus
+
   // Mock data - replace with actual API calls
   const stats: DashboardStats = {
     total_students: 24,
@@ -218,6 +236,8 @@ const TutorDashboardOverview: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Profile Verification Alert removed; using Status Card only */}
+
       {/* Welcome Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -232,6 +252,21 @@ const TutorDashboardOverview: React.FC = () => {
           {stats.new_messages} tin nhắn mới.
         </p>
       </motion.div>
+
+      {/* TutorProfile Status */}
+      {profileStatusData && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <TutorProfileStatusCard
+            statusData={profileStatusData}
+            profileData={profileData?.profile}
+            showActions={true}
+          />
+        </motion.div>
+      )}
 
       {/* Stats Cards */}
       <motion.div

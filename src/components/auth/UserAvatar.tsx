@@ -43,7 +43,7 @@ const UserAvatar = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={toggleDropdown}
-        className="flex items-center focus:outline-none"
+        className="flex items-center cursor-pointer focus:outline-none"
       >
         <div className="w-10 h-10 overflow-hidden rounded-full border-2 border-teal-600 hover:border-teal-700 transition-all">
           <img
@@ -91,7 +91,7 @@ const UserAvatar = () => {
 
           <button
             onClick={handleLogout}
-            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+            className="block w-full cursor-pointer text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
           >
             Đăng xuất
           </button>

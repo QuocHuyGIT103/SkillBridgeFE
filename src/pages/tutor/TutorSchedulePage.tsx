@@ -1,15 +1,85 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   CalendarIcon,
-  ClockIcon,
   UserGroupIcon,
-  VideoCameraIcon,
   BookOpenIcon,
   ChartBarIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  VideoCameraIcon,
+  MapPinIcon,
+  FunnelIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline";
+import { useClassStore } from "../../store/class.store";
+import WeeklyCalendar from "../../components/schedule/WeeklyCalendar";
+import ClassScheduleDetailModal from "../../components/class/ClassScheduleDetailModal";
 
 const TutorSchedulePage: React.FC = () => {
+  const { tutorClasses, fetchTutorClasses } = useClassStore();
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchTutorClasses();
+  }, [fetchTutorClasses]);
+
+  const filteredClasses = tutorClasses.filter((cls) => {
+    if (statusFilter === "ALL") return true;
+    return cls.status === statusFilter;
+  });
+
+  const activeClasses = tutorClasses.filter((c) => c.status === "ACTIVE");
+  const totalStudents = new Set(tutorClasses.map((c) => c.studentId.id)).size;
+  const totalSessions = tutorClasses.reduce(
+    (sum, c) => sum + c.totalSessions,
+    0
+  );
+  const completedSessions = tutorClasses.reduce(
+    (sum, c) => sum + c.completedSessions,
+    0
+  );
+  const completionRate =
+    totalSessions > 0
+      ? Math.round((completedSessions / totalSessions) * 100)
+      : 0;
+
+  const getDayName = (dayOfWeek: number) => {
+    const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+    return days[dayOfWeek];
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "ACTIVE":
+        return "bg-green-100 text-green-800";
+      case "COMPLETED":
+        return "bg-blue-100 text-blue-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      case "PAUSED":
+        return "bg-yellow-100 text-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "ACTIVE":
+        return "Đang dạy";
+      case "COMPLETED":
+        return "Hoàn thành";
+      case "CANCELLED":
+        return "Đã hủy";
+      case "PAUSED":
+        return "Tạm dừng";
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -19,16 +89,13 @@ const TutorSchedulePage: React.FC = () => {
         className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
       >
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Schedule & Lesson Management
-          </h1>
-          <div className="flex space-x-3">
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              View Calendar
-            </button>
-            <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
-              Schedule Lesson
-            </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Quản lý lịch học
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Quản lý và theo dõi các lớp học của bạn
+            </p>
           </div>
         </div>
 
@@ -36,28 +103,28 @@ const TutorSchedulePage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
             {
-              label: "This Week",
-              value: "12 lessons",
+              label: "Lớp đang dạy",
+              value: activeClasses.length,
               icon: CalendarIcon,
               color: "blue",
             },
             {
-              label: "Pending Requests",
-              value: "3 requests",
-              icon: ClockIcon,
-              color: "yellow",
-            },
-            {
-              label: "Active Students",
-              value: "24 students",
+              label: "Tổng học viên",
+              value: totalStudents,
               icon: UserGroupIcon,
               color: "green",
             },
             {
-              label: "Completion Rate",
-              value: "98%",
+              label: "Tổng buổi học",
+              value: `${completedSessions}/${totalSessions}`,
+              icon: BookOpenIcon,
+              color: "indigo",
+            },
+            {
+              label: "Tỷ lệ hoàn thành",
+              value: `${completionRate}%`,
               icon: ChartBarIcon,
-              color: "primary",
+              color: "purple",
             },
           ].map((stat, index) => (
             <motion.div
@@ -68,16 +135,8 @@ const TutorSchedulePage: React.FC = () => {
               className="p-4 bg-gray-50 rounded-lg"
             >
               <div className="flex items-center space-x-3">
-                <div
-                  className={`p-2 rounded-lg bg-${
-                    stat.color === "primary" ? "primary" : stat.color
-                  }-100`}
-                >
-                  <stat.icon
-                    className={`w-5 h-5 text-${
-                      stat.color === "primary" ? "primary" : stat.color
-                    }-600`}
-                  />
+                <div className={`p-2 rounded-lg bg-${stat.color}-100`}>
+                  <stat.icon className={`w-5 h-5 text-${stat.color}-600`} />
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{stat.label}</p>
@@ -91,178 +150,158 @@ const TutorSchedulePage: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Schedule Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Lessons */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Upcoming Lessons
-          </h3>
-          <div className="space-y-4">
-            {[
-              {
-                student: "Sarah Johnson",
-                subject: "Mathematics",
-                time: "Today, 3:00 PM",
-                duration: "60 min",
-              },
-              {
-                student: "Mike Chen",
-                subject: "Physics",
-                time: "Tomorrow, 4:30 PM",
-                duration: "90 min",
-              },
-              {
-                student: "Emma Davis",
-                subject: "Calculus",
-                time: "Wed, 2:00 PM",
-                duration: "60 min",
-              },
-            ].map((lesson, index) => (
-              <div
-                key={index}
-                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <BookOpenIcon className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {lesson.student}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {lesson.subject} • {lesson.duration}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">
-                      {lesson.time}
-                    </p>
-                    <button className="text-xs text-primary hover:underline">
-                      Join Call
-                    </button>
-                  </div>
+      {/* Class List Section - MOVED TO TOP, AFTER STATS */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
+      >
+        {/* Filter Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-0">
+            Danh sách lớp học ({filteredClasses.length})
+          </h2>
+
+          <div className="flex items-center space-x-3">
+            <FunnelIcon className="w-5 h-5 text-gray-400" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white text-sm"
+            >
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="ACTIVE">Đang dạy</option>
+              <option value="COMPLETED">Hoàn thành</option>
+              <option value="PAUSED">Tạm dừng</option>
+              <option value="CANCELLED">Đã hủy</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredClasses.map((cls) => (
+            <motion.div
+              key={cls._id}
+              whileHover={{ scale: 1.02 }}
+              onClick={() => setSelectedClassId(cls._id)}
+              className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all"
+            >
+              {/* Class Header */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900 mb-1 line-clamp-2">
+                    {cls.subject.name}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Buổi {cls.completedSessions}/{cls.totalSessions}
+                  </p>
+                </div>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(
+                    cls.status
+                  )}`}
+                >
+                  {getStatusText(cls.status)}
+                </span>
+              </div>
+
+              {/* Student Info */}
+              <div className="flex items-center space-x-2 mb-3 pb-3 border-b border-indigo-200">
+                <img
+                  src={
+                    cls.studentId.avatar_url || "https://via.placeholder.com/40"
+                  }
+                  alt={cls.studentId.full_name}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate flex items-center">
+                    <UserCircleIcon className="w-4 h-4 mr-1" />
+                    {cls.studentId.full_name}
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        </motion.div>
 
-        {/* Recent Activities */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Booking Requests
-          </h3>
-          <div className="space-y-4">
-            {[
-              {
-                student: "Alex Wilson",
-                subject: "Algebra",
-                time: "Fri, 5:00 PM",
-                status: "pending",
-              },
-              {
-                student: "Lisa Brown",
-                subject: "Geometry",
-                time: "Sat, 10:00 AM",
-                status: "new",
-              },
-              {
-                student: "David Lee",
-                subject: "Physics",
-                time: "Mon, 3:30 PM",
-                status: "pending",
-              },
-            ].map((request, index) => (
-              <div
-                key={index}
-                className="p-4 border border-gray-200 rounded-lg"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {request.student}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {request.subject} • {request.time}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      request.status === "new"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {request.status === "new" ? "New" : "Pending"}
+              {/* Schedule Info */}
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center text-gray-600">
+                  <CalendarDaysIcon className="w-4 h-4 mr-2" />
+                  <span>
+                    {cls.schedule.dayOfWeek
+                      .map((d) => getDayName(d))
+                      .join(", ")}
                   </span>
                 </div>
-                <div className="flex space-x-2">
-                  <button className="px-3 py-1 bg-primary text-white text-sm rounded-md hover:bg-primary/90 transition-colors">
-                    Accept
-                  </button>
-                  <button className="px-3 py-1 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors">
-                    Decline
-                  </button>
+                <div className="flex items-center text-gray-600">
+                  <ClockIcon className="w-4 h-4 mr-2" />
+                  <span>
+                    {cls.schedule.startTime} - {cls.schedule.endTime}
+                  </span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  {cls.learningMode === "ONLINE" ? (
+                    <>
+                      <VideoCameraIcon className="w-4 h-4 mr-2" />
+                      <span>Trực tuyến</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPinIcon className="w-4 h-4 mr-2" />
+                      <span>Trực tiếp</span>
+                    </>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
 
-      {/* Feature Placeholders */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[
-          {
-            title: "Calendar View",
-            desc: "Visual calendar with drag-and-drop scheduling",
-            icon: CalendarIcon,
-          },
-          {
-            title: "Availability Settings",
-            desc: "Set your working hours and time preferences",
-            icon: ClockIcon,
-          },
-          {
-            title: "Lesson History",
-            desc: "Complete history of all your teaching sessions",
-            icon: BookOpenIcon,
-          },
-        ].map((feature, index) => (
-          <motion.div
-            key={feature.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 + index * 0.1 }}
-            className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 text-center"
-          >
-            <div className="w-12 h-12 bg-accent/20 rounded-lg mx-auto mb-4 flex items-center justify-center">
-              <feature.icon className="w-6 h-6 text-accent" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {feature.title}
-            </h3>
-            <p className="text-gray-600 text-sm mb-4">{feature.desc}</p>
-            <span className="inline-block px-3 py-1 bg-accent/10 text-accent text-xs font-medium rounded-full">
-              Coming Soon
-            </span>
-          </motion.div>
-        ))}
-      </div>
+              {/* Progress Bar */}
+              <div className="mt-3 pt-3 border-t border-indigo-200">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${
+                        (cls.completedSessions / cls.totalSessions) * 100
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {filteredClasses.length === 0 && (
+          <div className="text-center py-12">
+            <CalendarIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">
+              {statusFilter === "ALL"
+                ? "Bạn chưa có lớp học nào"
+                : "Không tìm thấy lớp học phù hợp"}
+            </p>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Weekly Calendar View */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <WeeklyCalendar userRole="TUTOR" />
+      </motion.div>
+
+      {/* Class Schedule Detail Modal */}
+      <AnimatePresence>
+        {selectedClassId && (
+          <ClassScheduleDetailModal
+            classId={selectedClassId}
+            userRole="TUTOR"
+            onClose={() => setSelectedClassId(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

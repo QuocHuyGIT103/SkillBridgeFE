@@ -12,12 +12,12 @@ import {
   CommandLineIcon,
   SunIcon,
   MoonIcon,
-  ComputerDesktopIcon,
 } from "@heroicons/react/24/outline";
 import { BellIcon as BellSolidIcon } from "@heroicons/react/24/solid";
 import { useAuthStore } from "../store/auth.store";
 import { useDarkMode } from "../hooks/useDarkMode";
-import type { NotificationItem } from "../types/tutor.types";
+import { useNotifications } from "../contexts/NotificationContext";
+import type { NotificationItem } from "../types/tutor.types.ts";
 
 interface DashboardHeaderProps {
   onToggleMobileSidebar: () => void;
@@ -26,50 +26,16 @@ interface DashboardHeaderProps {
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onToggleMobileSidebar,
-  sidebarCollapsed,
 }) => {
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const { isDark, toggleDarkMode } = useDarkMode();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-
-  // Mock notifications - replace with actual API data
-  const notifications: NotificationItem[] = [
-    {
-      id: "1",
-      title: "Yêu cầu bài học mới",
-      message:
-        "Sarah Johnson đã yêu cầu bài học Toán vào ngày mai lúc 3 giờ chiều",
-      type: "info",
-      read: false,
-      created_at: "2025-01-15T10:30:00Z",
-      action_url: "/tutor/schedule/requests",
-    },
-    {
-      id: "2",
-      title: "Đã nhận thanh toán",
-      message: "Bạn đã nhận được 45$ cho bài học Hóa học đã hoàn thành",
-      type: "success",
-      read: false,
-      created_at: "2025-01-15T09:15:00Z",
-      action_url: "/tutor/finance/earnings",
-    },
-    {
-      id: "3",
-      title: "Tin nhắn mới",
-      message: "Mike Chen đã gửi tin nhắn cho bạn về bài tập Vật lý",
-      type: "info",
-      read: true,
-      created_at: "2025-01-15T08:45:00Z",
-      action_url: "/tutor/chat/conversations",
-    },
-  ];
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   // Generate breadcrumbs from current path
   const generateBreadcrumbs = () => {
@@ -209,14 +175,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           {/* Right Section */}
           <div className="flex items-center space-x-3">
             {/* Search button for mobile */}
-            <button className="lg:hidden p-2 rounded-lg hover:bg-secondary/10 transition-colors">
+            <button className="lg:hidden p-2 rounded-lg hover:bg-secondary/10 transition-colors cursor-pointer">
               <MagnifyingGlassIcon className="w-6 h-6 text-gray-700" />
             </button>
 
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
-              className="p-2 rounded-lg hover:bg-secondary/10 transition-colors"
+              className="p-2 rounded-lg hover:bg-secondary/10 transition-colors cursor-pointer"
               title={
                 isDark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"
               }
@@ -273,13 +239,18 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                         notifications.map((notification) => (
                           <Link
                             key={notification.id}
-                            to={notification.action_url || "#"}
+                            to={notification.data?.actionUrl || "#"}
                             className={`block p-4 hover:bg-gray-50 transition-colors border-l-4 ${
                               notification.read
                                 ? "border-transparent"
                                 : "border-primary bg-primary/5"
                             }`}
-                            onClick={() => setShowNotifications(false)}
+                            onClick={() => {
+                              if (!notification.read) {
+                                markAsRead(notification.id);
+                              }
+                              setShowNotifications(false);
+                            }}
                           >
                             <div className="flex items-start space-x-3">
                               {getNotificationIcon(notification.type)}
