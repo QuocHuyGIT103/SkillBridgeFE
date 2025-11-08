@@ -20,6 +20,7 @@ import TutorSchedulePage from "./pages/tutor/TutorSchedulePage";
 import CreateTutorPostPage from "./pages/tutor/CreateTutorPostPage";
 import EditTutorPostPage from "./pages/tutor/EditTutorPostPage";
 import TutorPostListPage from "./pages/tutor/TutorPostListPage";
+import TutorStudentPostsPage from "./pages/tutor/TutorStudentPostsPage";
 import TutorSearchPage from "./pages/TutorSearchPage";
 import TutorPostDetailPage from "./pages/TutorPostDetailPage";
 import StudentDashboardLayout from "./layouts/StudentDashboardLayout";
@@ -140,12 +141,18 @@ function App() {
             >
               <Route path="dashboard" element={<StudentDashboardOverview />} />
               <Route path="smart-search" element={<StudentSmartSearchPage />} />
-              <Route path="ai-recommendations/:postId" element={<AISmartRecommendationsPage />} />
-              
+              <Route
+                path="ai-recommendations/:postId"
+                element={<AISmartRecommendationsPage />}
+              />
+
               {/* ✅ AI Survey Routes */}
               <Route path="ai-survey" element={<AISurveyPage />} />
-              <Route path="ai-survey/results" element={<AISurveyResultsPage />} />
-              
+              <Route
+                path="ai-survey/results"
+                element={<AISurveyResultsPage />}
+              />
+
               <Route path="schedule" element={<StudentSchedulePage />} />
               <Route path="messages" element={<StudentMessagesPage />} />
               <Route path="posts/create" element={<PostFormPage />} />
@@ -154,17 +161,32 @@ function App() {
               <Route path="posts/:id" element={<PostDetailPage />} />
 
               {/* ✅ Thêm Contact Requests routes cho Student */}
-              <Route path="contact-requests" element={<StudentContactRequestsPage />} />
-              <Route path="contact-requests/:requestId" element={<ContactRequestDetail />} />
+              <Route
+                path="contact-requests"
+                element={<StudentContactRequestsPage />}
+              />
+              <Route
+                path="contact-requests/:requestId"
+                element={<ContactRequestDetail />}
+              />
 
               {/* Student Profile Routes */}
               <Route path="profile" element={<StudentProfilePage />} />
-              <Route path="profile/personal" element={<StudentPersonalProfilePage />} />
-              <Route path="profile/preferences" element={<StudentPreferencesPage />} />
+              <Route
+                path="profile/personal"
+                element={<StudentPersonalProfilePage />}
+              />
+              <Route
+                path="profile/preferences"
+                element={<StudentPreferencesPage />}
+              />
 
               {/* Student Classes Routes */}
               <Route path="classes" element={<StudentClassesPage />} />
-              <Route path="classes/:classId" element={<StudentClassDetailPage />} />
+              <Route
+                path="classes/:classId"
+                element={<StudentClassDetailPage />}
+              />
               <Route path="assignments" element={<StudentAssignmentsPage />} />
               <Route
                 path="ratings"
@@ -216,10 +238,19 @@ function App() {
               <Route path="schedule/*" element={<TutorSchedulePage />} />
 
               {/* ✅ Thêm Contact Requests routes cho Tutor */}
-              <Route path="contact-requests" element={<TutorContactRequestsPage />} />
-              <Route path="contact-requests/:requestId" element={<ContactRequestDetail />} />
+              <Route
+                path="contact-requests"
+                element={<TutorContactRequestsPage />}
+              />
+              <Route
+                path="contact-requests/:requestId"
+                element={<ContactRequestDetail />}
+              />
               <Route path="classes" element={<TutorClassesPage />} />
-              <Route path="classes/:classId" element={<TutorClassDetailPage/>} />
+              <Route
+                path="classes/:classId"
+                element={<TutorClassDetailPage />}
+              />
 
               <Route
                 path="academics"
@@ -242,6 +273,14 @@ function App() {
                 element={
                   <RequireTutorOperate>
                     <TutorPostListPage />
+                  </RequireTutorOperate>
+                }
+              />
+              <Route
+                path="posts/student"
+                element={
+                  <RequireTutorOperate>
+                    <TutorStudentPostsPage />
                   </RequireTutorOperate>
                 }
               />

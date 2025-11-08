@@ -1,8 +1,13 @@
-import { create } from 'zustand';
-import type { IPost, IPostInput, IPostReviewInput, IPagination } from '../types/post.types';
-import { PostService } from '../services/post.service';
-import type { TutorPost } from '../services/tutorPost.service';
-import toast from 'react-hot-toast';
+import { create } from "zustand";
+import type {
+  IPost,
+  IPostInput,
+  IPostReviewInput,
+  IPagination,
+} from "../types/post.types";
+import { PostService } from "../services/post.service";
+import type { TutorPost } from "../services/tutorPost.service";
+import toast from "react-hot-toast";
 
 // ✅ ADD: Smart Search specific interfaces
 interface SmartSearchPagination {
@@ -39,24 +44,42 @@ interface PostState {
   pagination: IPagination | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // ✅ FIXED: Complete smart search state
   smartSearchResults: TutorPost[];
   smartSearchPagination: SmartSearchPagination | null;
   smartSearchLoading: boolean;
   smartSearchError: string | null; // ✅ ADD: Missing property
   smartSearchAiAnalysis: SmartSearchAiAnalysis | null; // ✅ ADD: Missing property
-  
+
   // Basic post methods
-  fetchPostsByStatus: (status: string, page?: number, limit?: number) => Promise<void>;
-  fetchAllPostsForAdmin: (status?: string, page?: number, limit?: number) => Promise<void>;
+  fetchPostsByStatus: (
+    status: string,
+    page?: number,
+    limit?: number
+  ) => Promise<void>;
+  fetchAllPostsForAdmin: (
+    status?: string,
+    page?: number,
+    limit?: number
+  ) => Promise<void>;
   fetchMyPosts: (page?: number, limit?: number) => Promise<void>;
   createPost: (data: IPostInput) => Promise<boolean>;
-  reviewPost: (postId: string, reviewData: IPostReviewInput) => Promise<boolean>;
+  reviewPost: (
+    postId: string,
+    reviewData: IPostReviewInput
+  ) => Promise<boolean>;
   getPostById: (postId: string) => Promise<void>;
   updatePost: (postId: string, data: IPostInput) => Promise<boolean>;
   deletePost: (postId: string) => Promise<boolean>;
-  
+
+  // Tutor: Approved student posts (student requests) listing state
+  tutorStudentPosts: IPost[];
+  tutorStudentPostsPagination: IPagination | null;
+  tutorStudentPostsLoading: boolean;
+  tutorStudentPostsError: string | null;
+  fetchTutorStudentPosts: (query?: any) => Promise<void>;
+
   // ✅ FIXED: Complete smart search methods
   smartSearchTutors: (postId: string, query?: any) => Promise<void>;
   loadMoreSmartSearchResults: (postId: string, query?: any) => Promise<void>; // ✅ ADD: Missing method
@@ -71,13 +94,19 @@ const usePostStore = create<PostState>((set, get) => ({
   pagination: null,
   isLoading: false,
   error: null,
-  
+
   // ✅ FIXED: Complete smart search initial state
   smartSearchResults: [],
   smartSearchPagination: null,
   smartSearchLoading: false,
   smartSearchError: null, // ✅ ADD: Missing initial state
   smartSearchAiAnalysis: null, // ✅ ADD: Missing initial state
+
+  // Tutor student posts initial state
+  tutorStudentPosts: [],
+  tutorStudentPostsPagination: null,
+  tutorStudentPostsLoading: false,
+  tutorStudentPostsError: null,
 
   // ✅ Basic post methods (unchanged)
   fetchPostsByStatus: async (status) => {
@@ -88,11 +117,11 @@ const usePostStore = create<PostState>((set, get) => ({
         set({
           posts: responseData.data.posts,
           pagination: responseData.data.pagination,
-          isLoading: false
+          isLoading: false,
         });
       }
     } catch (err) {
-      set({ error: 'Lỗi khi tải danh sách bài đăng', isLoading: false });
+      set({ error: "Lỗi khi tải danh sách bài đăng", isLoading: false });
     }
   },
 
@@ -104,13 +133,19 @@ const usePostStore = create<PostState>((set, get) => ({
         set({
           posts: responseData.data.posts || [],
           pagination: responseData.data.pagination || null,
-          isLoading: false
+          isLoading: false,
         });
       } else {
-        set({ isLoading: false, error: responseData.message || 'Không thể tải dữ liệu' });
+        set({
+          isLoading: false,
+          error: responseData.message || "Không thể tải dữ liệu",
+        });
       }
     } catch (err) {
-      set({ error: 'Lỗi khi tải danh sách bài đăng cho admin', isLoading: false });
+      set({
+        error: "Lỗi khi tải danh sách bài đăng cho admin",
+        isLoading: false,
+      });
     }
   },
 
@@ -121,10 +156,13 @@ const usePostStore = create<PostState>((set, get) => ({
       if (response.success) {
         set({ posts: response.data, isLoading: false, pagination: null });
       } else {
-        set({ error: response.message || 'Lỗi khi tải bài đăng của bạn', isLoading: false });
+        set({
+          error: response.message || "Lỗi khi tải bài đăng của bạn",
+          isLoading: false,
+        });
       }
     } catch (err) {
-      set({ error: 'Lỗi khi tải bài đăng của bạn', isLoading: false });
+      set({ error: "Lỗi khi tải bài đăng của bạn", isLoading: false });
     }
   },
 
@@ -132,14 +170,15 @@ const usePostStore = create<PostState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await PostService.createPost(data);
-      set((state) => ({ 
-        posts: [response.data, ...state.posts], 
-        isLoading: false 
+      set((state) => ({
+        posts: [response.data, ...state.posts],
+        isLoading: false,
       }));
-      toast.success('Tạo bài đăng thành công! Chờ admin duyệt.');
+      toast.success("Tạo bài đăng thành công! Chờ admin duyệt.");
       return true;
     } catch (err: any) {
-      const errorMessage = err.message || 'Có lỗi không xác định khi tạo bài đăng.';
+      const errorMessage =
+        err.message || "Có lỗi không xác định khi tạo bài đăng.";
       set({ error: errorMessage, isLoading: false });
       toast.error(errorMessage);
       return false;
@@ -152,14 +191,14 @@ const usePostStore = create<PostState>((set, get) => ({
       if (response.success) {
         const updatedPost = response.data;
         set((state) => ({
-          posts: state.posts.map((p) => (p.id === postId ? updatedPost : p))
+          posts: state.posts.map((p) => (p.id === postId ? updatedPost : p)),
         }));
         return true;
       }
-      set({ error: response.message || 'Lỗi khi duyệt bài đăng' });
+      set({ error: response.message || "Lỗi khi duyệt bài đăng" });
       return false;
     } catch (err) {
-      set({ error: 'Lỗi khi duyệt bài đăng' });
+      set({ error: "Lỗi khi duyệt bài đăng" });
       return false;
     }
   },
@@ -171,10 +210,13 @@ const usePostStore = create<PostState>((set, get) => ({
       if (response.success) {
         set({ selectedPost: response.data, isLoading: false });
       } else {
-        set({ error: response.message || 'Lỗi khi tải bài đăng', isLoading: false });
+        set({
+          error: response.message || "Lỗi khi tải bài đăng",
+          isLoading: false,
+        });
       }
     } catch (err) {
-      set({ error: 'Lỗi khi tải bài đăng', isLoading: false });
+      set({ error: "Lỗi khi tải bài đăng", isLoading: false });
     }
   },
 
@@ -185,13 +227,15 @@ const usePostStore = create<PostState>((set, get) => ({
       const updatedPost = response.data;
       set((state) => ({
         posts: state.posts.map((p) => (p.id === postId ? updatedPost : p)),
-        selectedPost: state.selectedPost?.id === postId ? updatedPost : state.selectedPost,
+        selectedPost:
+          state.selectedPost?.id === postId ? updatedPost : state.selectedPost,
         isLoading: false,
       }));
-      toast.success('Cập nhật bài đăng thành công!');
+      toast.success("Cập nhật bài đăng thành công!");
       return true;
     } catch (err: any) {
-      const errorMessage = err.message || 'Có lỗi xảy ra khi cập nhật bài đăng.';
+      const errorMessage =
+        err.message || "Có lỗi xảy ra khi cập nhật bài đăng.";
       set({ error: errorMessage, isLoading: false });
       toast.error(errorMessage);
       return false;
@@ -209,11 +253,41 @@ const usePostStore = create<PostState>((set, get) => ({
         }));
         return true;
       }
-      set({ error: response.message || 'Lỗi khi xóa bài đăng', isLoading: false });
+      set({
+        error: response.message || "Lỗi khi xóa bài đăng",
+        isLoading: false,
+      });
       return false;
     } catch (err) {
-      set({ error: 'Lỗi khi xóa bài đăng', isLoading: false });
+      set({ error: "Lỗi khi xóa bài đăng", isLoading: false });
       return false;
+    }
+  },
+
+  // Tutor: fetch approved student posts
+  fetchTutorStudentPosts: async (query: any = {}) => {
+    set({ tutorStudentPostsLoading: true, tutorStudentPostsError: null });
+    try {
+      const response = await PostService.getApprovedStudentPostsForTutor(query);
+      if (response.success && response.data) {
+        set({
+          tutorStudentPosts: response.data.posts || [],
+          tutorStudentPostsPagination: response.data.pagination || null,
+          tutorStudentPostsLoading: false,
+        });
+      } else {
+        set({
+          tutorStudentPostsLoading: false,
+          tutorStudentPostsError:
+            response.message || "Không thể tải danh sách bài đăng học viên",
+        });
+      }
+    } catch (err: any) {
+      set({
+        tutorStudentPostsLoading: false,
+        tutorStudentPostsError:
+          err.message || "Lỗi khi tải danh sách bài đăng học viên",
+      });
     }
   },
 
@@ -238,13 +312,16 @@ const usePostStore = create<PostState>((set, get) => ({
           smartSearchError: null,
         });
 
-        console.log(`✅ Smart Search successful: ${tutors?.length || 0} tutors loaded`);
+        console.log(
+          `✅ Smart Search successful: ${tutors?.length || 0} tutors loaded`
+        );
       } else {
         throw new Error(response.message || "Failed to smart search tutors");
       }
     } catch (error: any) {
       console.error("❌ Smart Search error:", error);
-      const errorMessage = error.message || "Có lỗi xảy ra khi tìm kiếm gia sư thông minh";
+      const errorMessage =
+        error.message || "Có lỗi xảy ra khi tìm kiếm gia sư thông minh";
 
       set({
         smartSearchLoading: false,
@@ -275,9 +352,15 @@ const usePostStore = create<PostState>((set, get) => ({
         page: (smartSearchPagination.currentPage || 1) + 1,
       };
 
-      console.log("📄 Loading more smart search results, page:", nextPageQuery.page);
+      console.log(
+        "📄 Loading more smart search results, page:",
+        nextPageQuery.page
+      );
 
-      const response = await PostService.smartSearchTutors(postId, nextPageQuery);
+      const response = await PostService.smartSearchTutors(
+        postId,
+        nextPageQuery
+      );
 
       if (response.success && response.data) {
         const { tutors: newTutors, pagination: newPagination } = response.data;
@@ -288,9 +371,13 @@ const usePostStore = create<PostState>((set, get) => ({
           smartSearchLoading: false,
         });
 
-        console.log(`✅ Loaded ${newTutors?.length || 0} more smart search results`);
+        console.log(
+          `✅ Loaded ${newTutors?.length || 0} more smart search results`
+        );
       } else {
-        throw new Error(response.message || "Failed to load more smart search results");
+        throw new Error(
+          response.message || "Failed to load more smart search results"
+        );
       }
     } catch (error: any) {
       console.error("❌ Load more smart search error:", error);

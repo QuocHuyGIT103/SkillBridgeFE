@@ -114,6 +114,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           path: "/tutor/posts",
         },
         {
+          id: "posts-student",
+          label: "Bài đăng học viên",
+          path: "/tutor/posts/student",
+        },
+        {
           id: "posts-create",
           label: "Tạo bài đăng mới",
           path: "/tutor/posts/create",
