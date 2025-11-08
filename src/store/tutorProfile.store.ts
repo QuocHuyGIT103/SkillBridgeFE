@@ -269,7 +269,10 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
     set({ isUpdatingIntroduction: true, error: null, validationErrors: null });
 
     try {
-      const response = await axiosClient.put("/tutor/profile/personal", data);
+      const response = await axiosClient.put(
+        "/tutor/profile/introduction",
+        data
+      );
 
       if (response.success && response.data) {
         // Update the profile data in the store
