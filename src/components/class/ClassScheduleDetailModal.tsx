@@ -155,8 +155,8 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
     setSelectedSession(null);
   };
 
-  const handleHomeworkSuccess = () => {
-    fetchClassSchedule(classId); // Refresh schedule
+  const handleHomeworkSuccess = async () => {
+    await fetchClassSchedule(classId); // Refresh schedule
   };
 
   const handleCancelSession = async (sessionNumber: number) => {

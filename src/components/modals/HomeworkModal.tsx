@@ -136,8 +136,20 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       );
 
       toast.success(response.message || 'Giao bài tập thành công!');
-      onSuccess();
-      onClose();
+      
+      // Refresh parent data to get updated session info
+      await onSuccess();
+      
+      // Reset form
+      setAssignmentData({
+        title: '',
+        description: '',
+        deadline: '',
+        fileUrl: '',
+      });
+      
+      // Switch to view tab after data refresh
+      setActiveTab('view');
     } catch (error: any) {
       console.error('Assign homework failed:', error);
       toast.error(error.response?.data?.message || 'Giao bài tập thất bại');
@@ -165,8 +177,18 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       );
 
       toast.success(response.message || 'Nộp bài tập thành công!');
-      onSuccess();
-      onClose();
+      
+      // Refresh parent data to get updated submission info
+      await onSuccess();
+      
+      // Reset form
+      setSubmissionData({
+        fileUrl: '',
+        notes: '',
+      });
+      
+      // Switch to view tab after data refresh
+      setActiveTab('view');
     } catch (error: any) {
       console.error('Submit homework failed:', error);
       toast.error(error.response?.data?.message || 'Nộp bài tập thất bại');
@@ -194,8 +216,18 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       );
 
       toast.success(response.message || 'Chấm điểm thành công!');
-      onSuccess();
-      onClose();
+      
+      // Refresh parent data to get updated grade info
+      await onSuccess();
+      
+      // Reset form
+      setGradeData({
+        score: 0,
+        feedback: '',
+      });
+      
+      // Switch to view tab after data refresh
+      setActiveTab('view');
     } catch (error: any) {
       console.error('Grade homework failed:', error);
       toast.error(error.response?.data?.message || 'Chấm điểm thất bại');

@@ -95,8 +95,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
     setSelectedSession(null);
   };
 
-  const handleHomeworkSuccess = () => {
-    fetchWeeklySchedule(); // Refresh to get updated homework status
+  const handleHomeworkSuccess = async () => {
+    await fetchWeeklySchedule(); // Refresh to get updated homework status
   };
 
   const getDayName = (dayOfWeek: number) => {
