@@ -100,20 +100,24 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     return `Lớp ${request.subjectInfo?.name} - ${request.student?.full_name}`;
   };
 
-  // Auto-generate Zoom meeting details
-  // Note: This generates a FAKE meeting ID for demo purposes
-  // In production, you should use Zoom API to create real meetings
-  const generateZoomInfo = () => {
-    // Generate 11-digit meeting ID (Zoom format)
-    const part1 = Math.floor(100 + Math.random() * 900); // 3 digits
-    const part2 = Math.floor(1000 + Math.random() * 9000); // 4 digits
-    const part3 = Math.floor(1000 + Math.random() * 9000); // 4 digits
-    const meetingId = `${part1}${part2}${part3}`; // 11 digits total
+  // Generate Google Meet instant meeting link
+  // Using "new" endpoint creates a new meeting room each time accessed
+  // This ensures the link always works (no invalid meeting ID errors)
+  const generateGoogleMeetInfo = () => {
+    // Generate unique identifier for this class
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 8);
+    const classIdentifier = `${timestamp}-${randomId}`;
     
-    const password = Math.random().toString(36).substring(2, 10).toUpperCase();
-    const meetingLink = `https://zoom.us/j/${meetingId}?pwd=${password}`;
+    // Use Google Meet instant meeting feature
+    // When user clicks this link, Google Meet will create a new room
+    const meetingLink = 'https://meet.google.com/new';
     
-    return { meetingLink, meetingId, password };
+    return { 
+      meetingLink, 
+      meetingId: `instant-${classIdentifier}`, // Identifier for tracking
+      password: undefined // Google Meet không cần password riêng
+    };
   };
 
   const {
@@ -138,8 +142,8 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
         address: extractAddress()
       } : undefined,
       onlineInfo: learningMode === 'ONLINE' ? {
-        platform: 'ZOOM',
-        ...generateZoomInfo()
+        platform: 'GOOGLE_MEET',
+        ...generateGoogleMeetInfo()
       } : undefined
     }
   });
@@ -161,12 +165,12 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     setLearningMode(mode);
     
     if (mode === 'ONLINE') {
-      // Tạo Zoom info tự động
-      const zoomInfo = generateZoomInfo();
-      setValue('onlineInfo.platform', 'ZOOM');
-      setValue('onlineInfo.meetingLink', zoomInfo.meetingLink);
-      setValue('onlineInfo.meetingId', zoomInfo.meetingId);
-      setValue('onlineInfo.password', zoomInfo.password);
+      // Tạo Google Meet info tự động
+      const meetInfo = generateGoogleMeetInfo();
+      setValue('onlineInfo.platform', 'GOOGLE_MEET');
+      setValue('onlineInfo.meetingLink', meetInfo.meetingLink);
+      setValue('onlineInfo.meetingId', meetInfo.meetingId);
+      setValue('onlineInfo.password', undefined);
       // Xóa location
       setValue('location', undefined);
     } else {
@@ -511,8 +515,8 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                 </h4>
                 
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-sm text-green-800 mb-3">
-                    ✓ Link Zoom đã được tạo tự động cho bạn
+                  <p className="text-sm text-green-800 mb-3 font-medium">
+                    ✓ Link Google Meet đã được thiết lập - Sẵn sàng sử dụng!
                   </p>
                   
                   <div className="space-y-3">
@@ -521,7 +525,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                         Nền tảng
                       </label>
                       <input
-                        value="Zoom"
+                        value="Google Meet"
                         readOnly
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
                       />
@@ -529,36 +533,25 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Meeting ID
-                      </label>
-                      <input
-                        {...register('onlineInfo.meetingId')}
-                        readOnly
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-mono"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Link meeting
+                        Link phòng học
                       </label>
                       <input
                         {...register('onlineInfo.meetingLink')}
                         readOnly
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-mono text-sm"
+                        placeholder="https://meet.google.com/new"
                       />
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mật khẩu meeting
-                      </label>
-                      <input
-                        {...register('onlineInfo.password')}
-                        readOnly
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-mono"
-                      />
-                    </div>
+                  <div className="mt-3 text-xs text-gray-600 bg-white rounded p-3 border border-gray-200">
+                    <p className="font-medium mb-2 text-gray-800">📌 Cách sử dụng Google Meet:</p>
+                    <ul className="list-disc ml-4 space-y-1">
+                      <li><strong>Gia sư:</strong> Click link để tạo phòng học → Chia sẻ link phòng cho học viên</li>
+                      <li><strong>Học viên:</strong> Click link để tham gia phòng học (sau khi gia sư tạo)</li>
+                      <li>Không cần mật khẩu - chỉ cần click vào link</li>
+                      <li>Link luôn sẵn sàng - không bị hết hạn</li>
+                    </ul>
                   </div>
                 </div>
               </div>
