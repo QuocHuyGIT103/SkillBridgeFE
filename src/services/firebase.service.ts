@@ -251,6 +251,14 @@ class FirebaseService {
 
   async sendTokenToServer(token: string): Promise<void> {
     try {
+      // Get access token from localStorage (support both key formats)
+      const accessToken = localStorage.getItem("access_token") || localStorage.getItem("accessToken");
+      
+      if (!accessToken) {
+        console.warn("No access token found, skipping FCM token registration");
+        return;
+      }
+
       // Send token to your backend server
       const response = await fetch(
         `${
@@ -260,7 +268,7 @@ class FirebaseService {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({ token }),
         }
@@ -269,7 +277,12 @@ class FirebaseService {
       if (response.ok) {
         console.log("FCM token sent to server successfully");
       } else {
-        console.error("Failed to send FCM token to server");
+        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+        console.error("Failed to send FCM token to server:", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+        });
       }
     } catch (error) {
       console.error("Error sending FCM token to server:", error);

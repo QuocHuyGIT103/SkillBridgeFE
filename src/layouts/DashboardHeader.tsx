@@ -105,8 +105,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     }
   };
 
-  const formatNotificationTime = (timestamp: string) => {
-    const date = new Date(timestamp);
+  const formatNotificationTime = (timestamp: string | Date) => {
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    if (isNaN(date.getTime())) return "Vừa xong";
+
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -239,15 +241,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                         notifications.map((notification) => (
                           <Link
                             key={notification.id}
-                            to={notification.data?.actionUrl || "#"}
-                            className={`block p-4 hover:bg-gray-50 transition-colors border-l-4 ${
-                              notification.read
+                            to={notification.actionUrl || notification.data?.actionUrl || "#"}
+                            className={`block p-4 hover:bg-gray-50 transition-colors border-l-4 ${notification.read
                                 ? "border-transparent"
                                 : "border-primary bg-primary/5"
-                            }`}
-                            onClick={() => {
+                              }`}
+                            onClick={async () => {
                               if (!notification.read) {
-                                markAsRead(notification.id);
+                                await markAsRead(notification.id);
                               }
                               setShowNotifications(false);
                             }}
@@ -256,11 +257,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                               {getNotificationIcon(notification.type)}
                               <div className="flex-1 min-w-0">
                                 <p
-                                  className={`text-sm font-medium ${
-                                    notification.read
+                                  className={`text-sm font-medium ${notification.read
                                       ? "text-gray-700"
                                       : "text-gray-900"
-                                  }`}
+                                    }`}
                                 >
                                   {notification.title}
                                 </p>
@@ -269,7 +269,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                                 </p>
                                 <p className="text-xs text-gray-400 mt-2">
                                   {formatNotificationTime(
-                                    notification.created_at
+                                    notification.created_at || notification.timestamp.toISOString()
                                   )}
                                 </p>
                               </div>

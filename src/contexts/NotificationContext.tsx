@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { socketService } from "../services/socket.service";
 import { useAuthStore } from "../store/auth.store";
+import NotificationService, { type NotificationData } from "../services/notification.service";
 
 interface Notification {
   id: string;
@@ -17,18 +18,22 @@ interface Notification {
   read: boolean;
   userId: string;
   data?: any;
+  created_at?: string;
+  actionUrl?: string;
 }
 
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   isConnected: boolean;
+  isLoading?: boolean;
   connectSocket: (token?: string) => void;
   disconnectSocket: () => void;
-  markAsRead: (notificationId: string) => void;
-  markAllAsRead: () => void;
+  markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
   removeNotification: (notificationId: string) => void;
   clearAllNotifications: () => void;
+  refreshNotifications?: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null);
@@ -41,46 +46,151 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   children,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // Fetch notifications from API
+  const fetchNotifications = async () => {
+    const userId = user?._id || user?.id;
+    if (!isAuthenticated || !userId) {
+      console.log('Cannot fetch notifications: not authenticated or no user ID');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      console.log('Fetching notifications for user:', userId);
+      const response = await NotificationService.getNotifications({ page: 1, limit: 50 });
+      console.log('Notifications response:', response);
+      if (response.success && response.data) {
+        const formattedNotifications = response.data.notifications.map((notif: NotificationData) => ({
+          id: notif._id,
+          title: notif.title,
+          message: notif.message,
+          type: mapNotificationType(notif.type),
+          timestamp: new Date(notif.createdAt),
+          read: notif.isRead,
+          userId: notif.userId,
+          data: notif.data,
+          created_at: notif.createdAt,
+          actionUrl: notif.actionUrl,
+        }));
+        setNotifications(formattedNotifications);
+        setUnreadCount(response.data.unreadCount);
+        console.log(`Loaded ${formattedNotifications.length} notifications, ${response.data.unreadCount} unread`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Map backend notification type to frontend type
+  const mapNotificationType = (type: NotificationData['type']): "info" | "success" | "warning" | "error" => {
+    switch (type) {
+      case 'HOMEWORK_GRADED':
+      case 'CLASS_CREATED':
+      case 'CONTACT_REQUEST':
+        return 'success';
+      case 'CANCELLATION_REQUESTED':
+      case 'HOMEWORK_ASSIGNED':
+        return 'warning';
+      case 'SYSTEM':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
 
   const connectSocket = (token?: string) => {
     if (!isAuthenticated) {
       console.log("User not authenticated, skipping socket connection");
       return;
     }
+    const userId = user?._id || user?.id;
+    if (!userId) {
+      console.log("No user ID available, skipping socket connection");
+      return;
+    }
+
+    // Cleanup existing listeners before setting up new ones
+    const existingSocket = socketService.getSocket();
+    if (existingSocket) {
+      existingSocket.off("connect");
+      existingSocket.off("disconnect");
+      existingSocket.off("notification");
+      existingSocket.off("connect_error");
+      existingSocket.off("reconnect");
+      existingSocket.off("notifications:history");
+    }
+
+    console.log("Connecting socket for user:", userId);
     const socket = socketService.connect(token);
 
-    socket.on("connect", () => {
+    const handleConnect = () => {
+      console.log("Socket connected, joining notifications room for user:", userId);
       setIsConnected(true);
-      if (user?.id) {
-        socket.emit("join-notifications", { userId: user.id });
-      }
-    });
+      socket.emit("join-notifications", { userId: userId });
+    };
 
-    socket.on("disconnect", () => {
+    const handleDisconnect = () => {
       setIsConnected(false);
-    });
+    };
 
-    socket.on("notification", (notification: Notification) => {
-      setNotifications((prev) => [notification, ...prev]);
-    });
+    const handleNotification = (notificationData: NotificationData) => {
+      console.log("Received notification via socket:", notificationData);
+      // Convert backend notification format to frontend format
+      const notification: Notification = {
+        id: notificationData._id,
+        title: notificationData.title,
+        message: notificationData.message,
+        type: mapNotificationType(notificationData.type),
+        timestamp: new Date(notificationData.createdAt),
+        read: notificationData.isRead,
+        userId: notificationData.userId,
+        data: notificationData.data,
+        created_at: notificationData.createdAt,
+        actionUrl: notificationData.actionUrl,
+      };
 
-    socket.on("connect_error", (error) => {
+      setNotifications((prev) => {
+        // Check if notification already exists to avoid duplicates
+        const exists = prev.some(n => n.id === notification.id);
+        if (exists) {
+          console.log("Notification already exists, skipping duplicate");
+          return prev;
+        }
+        return [notification, ...prev];
+      });
+      setUnreadCount((prev) => prev + 1);
+      console.log("Notification added to list");
+    };
+
+    const handleConnectError = (error: Error) => {
       console.error("Socket connection error:", error);
       setIsConnected(false);
-    });
+    };
 
-    socket.on("reconnect", (attemptNumber) => {
+    const handleReconnect = (attemptNumber: number) => {
       console.log("Reconnected after", attemptNumber, "attempts");
       setIsConnected(true);
-    });
+      // Rejoin notifications room after reconnect
+      socket.emit("join-notifications", { userId: userId });
+    };
 
-    socket.on("notifications:history", (history: Notification[]) => {
+    const handleHistory = (history: Notification[]) => {
       setNotifications(history);
-    });
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("notification", handleNotification);
+    socket.on("connect_error", handleConnectError);
+    socket.on("reconnect", handleReconnect);
+    socket.on("notifications:history", handleHistory);
   };
 
   const disconnectSocket = () => {
@@ -88,20 +198,40 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     setIsConnected(false);
   };
 
-  const markAsRead = (notificationId: string) => {
+  const markAsRead = async (notificationId: string) => {
+    // Optimistic update
     setNotifications((prev) =>
       prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
     );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
 
-    // Emit to server
-    socketService.emit("notification:read", { notificationId });
+    try {
+      await NotificationService.markAsRead(notificationId);
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+      // Revert on error
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, read: false } : n))
+      );
+      setUnreadCount((prev) => prev + 1);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markAllAsRead = async () => {
+    const currentUnread = unreadCount;
 
-    // Emit to server
-    socketService.emit("notifications:markAllRead");
+    // Optimistic update
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnreadCount(0);
+
+    try {
+      await NotificationService.markAllAsRead();
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+      // Revert on error
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: false })));
+      setUnreadCount(currentUnread);
+    }
   };
 
   const removeNotification = (notificationId: string) => {
@@ -120,12 +250,18 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
+    const userId = user?._id || user?.id;
+    if (isAuthenticated && userId) {
+      console.log("User authenticated, fetching notifications and connecting socket");
+      fetchNotifications();
       connectSocket();
     } else {
+      console.log("User not authenticated, disconnecting socket");
       disconnectSocket();
+      setNotifications([]);
+      setUnreadCount(0);
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?._id, user?.id]);
 
   const value: NotificationContextType = {
     notifications,
@@ -137,6 +273,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     markAllAsRead,
     removeNotification,
     clearAllNotifications,
+    isLoading,
+    refreshNotifications: fetchNotifications,
   };
 
   return (
