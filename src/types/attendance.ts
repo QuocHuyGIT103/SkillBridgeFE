@@ -49,10 +49,12 @@ export interface WeeklySession {
   timeSlot: string; // e.g., "14:00 - 15:30"
   duration: number;
   status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'MISSED' | 'PENDING_CANCELLATION';
+  learningMode: 'ONLINE' | 'OFFLINE';
   meetingLink?: string;
   location?: {
-    type: string;
-    details?: string;
+  type?: string;
+  details?: string;
+  address?: string;
   };
   attendance: SessionAttendance;
   homework: {

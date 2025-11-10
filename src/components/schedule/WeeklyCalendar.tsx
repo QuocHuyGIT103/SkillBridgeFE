@@ -258,30 +258,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                           </div>
                         </div>
 
-                        {/* Homework Badges */}
-                        {session.homework.hasAssignment && (
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {session.homework.hasAssignment && (
-                              <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
-                                📝 Có bài tập
-                              </span>
-                            )}
-                            {session.homework.hasSubmission && (
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                session.homework.isLate 
-                                  ? 'bg-orange-100 text-orange-700' 
-                                  : 'bg-green-100 text-green-700'
-                              }`}>
-                                {session.homework.isLate ? '⏰ Nộp trễ' : '✅ Đã nộp'}
-                              </span>
-                            )}
-                            {session.homework.hasGrade && (
-                              <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
-                                ⭐ Đã chấm
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        {/* Removed homework badges from calendar item as requested */}
 
                         {/* Action Buttons */}
                         <div className="space-y-1.5">
@@ -344,15 +321,19 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
 
                         {/* Location/Meeting Info */}
                         <div className="mt-2 pt-2 border-t border-blue-200">
-                          {session.meetingLink ? (
+                          {session.learningMode === 'ONLINE' ? (
                             <div className="flex items-center text-xs text-gray-600">
                               <VideoCameraIcon className="w-3 h-3 mr-1" />
-                              <span>Trực tuyến</span>
+                              <span>
+                                Trực tuyến{!session.meetingLink ? ' • Chưa có link' : ''}
+                              </span>
                             </div>
                           ) : session.location ? (
                             <div className="flex items-center text-xs text-gray-600">
                               <MapPinIcon className="w-3 h-3 mr-1" />
-                              <span className="truncate">{session.location.details || 'Trực tiếp'}</span>
+                              <span className="truncate">
+                                {session.location.details || (session as any).location?.address || 'Trực tiếp'}
+                              </span>
                             </div>
                           ) : null}
                         </div>

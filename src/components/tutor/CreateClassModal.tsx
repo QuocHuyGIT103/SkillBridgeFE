@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { 
+import {
   XMarkIcon,
   CalendarIcon,
   ClockIcon,
@@ -18,7 +18,7 @@ interface CreateClassModalProps {
   onSuccess: () => void;
 }
 
-interface FormData extends CreateLearningClassInput {}
+interface FormData extends CreateLearningClassInput { }
 
 const WEEKDAYS = [
   { value: 1, label: 'Thứ 2' },
@@ -36,30 +36,30 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   onSuccess
 }) => {
   const { createLearningClass, isCreatingClass } = useContactRequestStore();
-  
+
   // Get tutor post info
   const tutorPost = (request as any).tutorPost ?? (request as any).tutorPostId;
-  
+
   // Determine learning mode from tutor post or request
   const determineLearningMode = (): 'ONLINE' | 'OFFLINE' => {
     // Nếu request có learningMode cụ thể (ONLINE/OFFLINE), dùng nó
     if (request.learningMode === 'ONLINE' || request.learningMode === 'OFFLINE') {
       return request.learningMode;
     }
-    
+
     // Nếu request là FLEXIBLE, ưu tiên teachingMode từ tutorPost
     if (tutorPost?.teachingMode === 'ONLINE') return 'ONLINE';
     if (tutorPost?.teachingMode === 'OFFLINE') return 'OFFLINE';
-    
+
     // Nếu tutorPost là BOTH, ưu tiên ONLINE
     if (tutorPost?.teachingMode === 'BOTH') return 'ONLINE';
-    
+
     // Default là ONLINE
     return 'ONLINE';
   };
 
   const [learningMode, setLearningMode] = useState<'ONLINE' | 'OFFLINE'>(determineLearningMode());
-  
+
   // Extract schedule days from tutorPost
   const extractScheduleDays = (): number[] => {
     if (tutorPost?.teachingSchedule && Array.isArray(tutorPost.teachingSchedule)) {
@@ -67,7 +67,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     }
     return [];
   };
-  
+
   // Extract schedule time from tutorPost
   const extractScheduleTime = (): { startTime: string; endTime: string } => {
     if (tutorPost?.teachingSchedule && tutorPost.teachingSchedule.length > 0) {
@@ -91,7 +91,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
   const [selectedDays, setSelectedDays] = useState<number[]>(extractScheduleDays());
   const scheduleTime = extractScheduleTime();
-  
+
   // Generate class title from tutor post
   const generateClassTitle = () => {
     if (tutorPost?.title) {
@@ -100,22 +100,11 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     return `Lớp ${request.subjectInfo?.name} - ${request.student?.full_name}`;
   };
 
-  // Generate Google Meet instant meeting link
-  // Using "new" endpoint creates a new meeting room each time accessed
-  // This ensures the link always works (no invalid meeting ID errors)
+  // Prepare Google Meet info (auto-provisioned on server if empty)
   const generateGoogleMeetInfo = () => {
-    // Generate unique identifier for this class
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 8);
-    const classIdentifier = `${timestamp}-${randomId}`;
-    
-    // Use Google Meet instant meeting feature
-    // When user clicks this link, Google Meet will create a new room
-    const meetingLink = 'https://meet.google.com/new';
-    
-    return { 
-      meetingLink, 
-      meetingId: `instant-${classIdentifier}`, // Identifier for tracking
+    return {
+      meetingLink: '',
+      meetingId: undefined,
       password: undefined // Google Meet không cần password riêng
     };
   };
@@ -155,7 +144,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     const newDays = selectedDays.includes(day)
       ? selectedDays.filter(d => d !== day)
       : [...selectedDays, day].sort();
-    
+
     setSelectedDays(newDays);
     setValue('schedule.dayOfWeek', newDays);
   };
@@ -163,14 +152,13 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   // Update Zoom info when switching to ONLINE mode
   const handleModeChange = (mode: 'ONLINE' | 'OFFLINE') => {
     setLearningMode(mode);
-    
+
     if (mode === 'ONLINE') {
-      // Tạo Google Meet info tự động
-      const meetInfo = generateGoogleMeetInfo();
       setValue('onlineInfo.platform', 'GOOGLE_MEET');
+      const meetInfo = generateGoogleMeetInfo();
       setValue('onlineInfo.meetingLink', meetInfo.meetingLink);
       setValue('onlineInfo.meetingId', meetInfo.meetingId);
-      setValue('onlineInfo.password', undefined);
+      setValue('onlineInfo.password', meetInfo.password);
       // Xóa location
       setValue('location', undefined);
     } else {
@@ -214,10 +202,10 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     const totalSessions = watch('totalSessions');
     const sessionsPerWeek = selectedDays.length;
     const totalWeeks = Math.ceil(totalSessions / sessionsPerWeek);
-    
+
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + (totalWeeks * 7));
-    
+
     return endDate.toLocaleDateString('vi-VN');
   };
 
@@ -349,24 +337,22 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleModeChange('ONLINE')}
-                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${
-                    learningMode === 'ONLINE'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-blue-300'
-                  }`}
+                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${learningMode === 'ONLINE'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-blue-300'
+                    }`}
                 >
                   <VideoCameraIcon className="w-5 h-5" />
                   <span className="font-medium">Online</span>
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={() => handleModeChange('OFFLINE')}
-                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${
-                    learningMode === 'OFFLINE'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-blue-300'
-                  }`}
+                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${learningMode === 'OFFLINE'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-blue-300'
+                    }`}
                 >
                   <MapPinIcon className="w-5 h-5" />
                   <span className="font-medium">Trực tiếp</span>
@@ -392,11 +378,10 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                       key={day.value}
                       type="button"
                       onClick={() => handleDayToggle(day.value)}
-                      className={`p-2 text-sm border rounded-lg transition-colors ${
-                        selectedDays.includes(day.value)
-                          ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                          : 'border-gray-200 hover:border-blue-300'
-                      }`}
+                      className={`p-2 text-sm border rounded-lg transition-colors ${selectedDays.includes(day.value)
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                        : 'border-gray-200 hover:border-blue-300'
+                        }`}
                     >
                       {day.label}
                     </button>
@@ -458,7 +443,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                         const selectedDate = new Date(value);
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
-                        
+
                         if (selectedDate < today) {
                           return 'Ngày bắt đầu không được trong quá khứ';
                         }
@@ -513,12 +498,12 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                   <VideoCameraIcon className="w-5 h-5 text-blue-600" />
                   <span>Thông tin học online</span>
                 </h4>
-                
+
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-sm text-green-800 mb-3 font-medium">
-                    ✓ Link Google Meet đã được thiết lập - Sẵn sàng sử dụng!
+                    ✓ Hệ thống sẽ tự động tạo link Google Meet khi bạn bấm “Tạo lớp học”.
                   </p>
-                  
+
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -539,18 +524,16 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                         {...register('onlineInfo.meetingLink')}
                         readOnly
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-mono text-sm"
-                        placeholder="https://meet.google.com/new"
+                        placeholder="Sẽ được tạo tự động sau khi tạo lớp"
                       />
                     </div>
                   </div>
 
                   <div className="mt-3 text-xs text-gray-600 bg-white rounded p-3 border border-gray-200">
-                    <p className="font-medium mb-2 text-gray-800">📌 Cách sử dụng Google Meet:</p>
+                    <p className="font-medium mb-2 text-gray-800">📌 Ghi chú:</p>
                     <ul className="list-disc ml-4 space-y-1">
-                      <li><strong>Gia sư:</strong> Click link để tạo phòng học → Chia sẻ link phòng cho học viên</li>
-                      <li><strong>Học viên:</strong> Click link để tham gia phòng học (sau khi gia sư tạo)</li>
-                      <li>Không cần mật khẩu - chỉ cần click vào link</li>
-                      <li>Link luôn sẵn sàng - không bị hết hạn</li>
+                      <li>Link sẽ xuất hiện trong chi tiết lớp sau khi tạo thành công.</li>
+                      <li>Gia sư và học viên sẽ dùng CHUNG một link cho mọi buổi học.</li>
                     </ul>
                   </div>
                 </div>
