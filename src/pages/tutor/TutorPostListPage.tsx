@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTutorPostStore } from "../../store/tutorPost.store";
 import toast from "react-hot-toast";
+import DashboardStats from "../../components/dashboard/DashboardStats";
+import type { StatItem } from "../../components/dashboard/DashboardStats";
+import { DocumentTextIcon, CheckCircleIcon, ClockIcon, EyeIcon } from "@heroicons/react/24/outline";
 
 const TutorPostListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -352,33 +355,42 @@ const TutorPostListPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="text-2xl font-bold text-gray-900">
-                {myPosts.length}
-              </div>
-              <div className="text-sm text-gray-600">Tổng bài đăng</div>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="text-2xl font-bold text-green-600">
-                {myPosts.filter((p) => p.status === "ACTIVE").length}
-              </div>
-              <div className="text-sm text-gray-600">Đang hoạt động</div>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="text-2xl font-bold text-yellow-600">
-                {myPosts.filter((p) => p.status === "PENDING").length}
-              </div>
-              <div className="text-sm text-gray-600">Chờ duyệt</div>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="text-2xl font-bold text-blue-600">
-                {myPosts.reduce((sum, post) => sum + post.viewCount, 0)}
-              </div>
-              <div className="text-sm text-gray-600">Tổng lượt xem</div>
-            </div>
-          </div>
+          {/* Dashboard Stats */}
+          <DashboardStats
+            title="Tổng quan bài đăng"
+            description="Thống kê tổng quan về các bài đăng gia sư của bạn"
+            stats={[
+              {
+                label: "Tổng bài đăng",
+                value: myPosts.length,
+                icon: DocumentTextIcon,
+                color: "blue",
+                description: `${pagination?.totalItems || 0} bài đăng tổng cộng`,
+              },
+              {
+                label: "Đang hoạt động",
+                value: myPosts.filter((p) => p.status === "ACTIVE").length,
+                icon: CheckCircleIcon,
+                color: "green",
+                description: "Bài đăng đang hiển thị",
+              },
+              {
+                label: "Chờ duyệt",
+                value: myPosts.filter((p) => p.status === "PENDING").length,
+                icon: ClockIcon,
+                color: "yellow",
+                description: "Đang chờ phê duyệt",
+              },
+              {
+                label: "Tổng lượt xem",
+                value: myPosts.reduce((sum, post) => sum + (post.viewCount || 0), 0).toLocaleString('vi-VN'),
+                icon: EyeIcon,
+                color: "purple",
+                description: "Lượt xem tất cả bài đăng",
+              },
+            ]}
+            className="mb-8"
+          />
 
           {/* Posts List */}
           {isLoading ? (

@@ -3,6 +3,7 @@ export interface ContactRequest {
   studentId: string | { full_name?: string; email?: string; phone_number?: string; avatar_url?: string; id?: string };
   tutorId: string;
   tutorPostId: string | Record<string, any>; // backend có thể trả object populate ở đây
+  initiatedBy?: 'STUDENT' | 'TUTOR';
   tutorPost?: Record<string, any>; // optional fallback nếu backend dùng khác tên
   subject: string | { _id?: string; name?: string };
   message: string;
@@ -115,6 +116,7 @@ export interface ContactRequestFilters {
   status?: string;
   subject?: string;
   learningMode?: string;
+  initiatedBy?: 'STUDENT' | 'TUTOR';
   dateFrom?: string;
   dateTo?: string;
   page?: number;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, X, Paperclip, MoreVertical } from "lucide-react";
+import { Send, X, Paperclip, MoreVertical, AlertCircle } from "lucide-react";
 import useMessageStore from "../../store/message.store";
 import type { ConversationData } from "../../services/message.service";
 import { messageService } from "../../services/message.service";
@@ -7,6 +7,7 @@ import { socketService } from "../../services/socket.service";
 import MessageBubble from "./MessageBubble";
 import TypingIndicator from "./TypingIndicator";
 import toast from "react-hot-toast";
+import { filterSensitiveContent, getFilterErrorMessage } from "../../utils/contentFilter";
 
 // Inline styles cho scrollbar
 const scrollbarStyles = `
@@ -52,6 +53,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 }) => {
   const [messageText, setMessageText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [contentWarning, setContentWarning] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -129,6 +131,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const value = e.target.value;
     setMessageText(value);
 
+    // Kiểm tra nội dung nhạy cảm khi người dùng nhập
+    if (value.trim()) {
+      const filterResult = filterSensitiveContent(value, true);
+      if (!filterResult.isValid) {
+        setContentWarning(getFilterErrorMessage(filterResult.violations));
+      } else {
+        setContentWarning(null);
+      }
+    } else {
+      setContentWarning(null);
+    }
+
     if (!isTyping && value.trim()) {
       setIsTyping(true);
       startTyping(conversation._id, currentUserId);
@@ -153,7 +167,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     if (!messageText.trim()) return;
 
     const messageContent = messageText.trim();
+
+    // Kiểm tra nội dung nhạy cảm trước khi gửi
+    const filterResult = filterSensitiveContent(messageContent, true);
+    if (!filterResult.isValid) {
+      toast.error(getFilterErrorMessage(filterResult.violations), {
+        duration: 5000,
+        icon: '⚠️',
+      });
+      return;
+    }
+
     setMessageText("");
+    setContentWarning(null);
 
     // Stop typing
     if (isTyping) {
@@ -337,9 +363,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 value={messageText}
                 onChange={handleInputChange}
                 placeholder="Nhập tin nhắn..."
-                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm placeholder-gray-400 bg-white"
+                className={`w-full px-4 py-2 text-sm border rounded-full focus:outline-none focus:ring-2 focus:border-transparent shadow-sm placeholder-gray-400 bg-white ${contentWarning
+                  ? 'border-red-300 focus:ring-red-500'
+                  : 'border-gray-300 focus:ring-blue-500'
+                  }`}
                 disabled={conversation.status === "closed"}
               />
+              {contentWarning && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 p-2 bg-red-50 border border-red-200 rounded-lg shadow-md z-20">
+                  <div className="flex items-start space-x-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-red-700">{contentWarning}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <button

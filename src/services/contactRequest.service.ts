@@ -42,6 +42,23 @@ class ContactRequestService {
   }
 
   /**
+   * Tutor creates teach request to student's post
+   */
+  async createTeachRequestFromTutor(data: {
+    tutorPostId: string;
+    studentPostId: string;
+    subject: string;
+    message: string;
+    preferredSchedule?: string;
+    expectedPrice?: number;
+    sessionDuration?: number;
+    learningMode: 'ONLINE' | 'OFFLINE' | 'FLEXIBLE';
+  }): Promise<ContactRequestResponse> {
+    const response = await axiosClient.post('/contact-requests/from-tutor', data);
+    return response;
+  }
+
+  /**
    * Get student's contact requests
    */
   async getStudentRequests(filters: ContactRequestFilters = {}): Promise<ContactRequestListResponse> {
@@ -85,6 +102,14 @@ class ContactRequestService {
   async respondToRequest(requestId: string, data: TutorResponseInput): Promise<ContactRequestResponse> {
     debugger;
     const response = await axiosClient.put(`/contact-requests/${requestId}/respond`, data);
+    return response;
+  }
+
+  /**
+   * Student responds to tutor-initiated request
+   */
+  async studentRespondToRequest(requestId: string, data: { action: 'ACCEPT' | 'REJECT'; message?: string }): Promise<ContactRequestResponse> {
+    const response = await axiosClient.put(`/contact-requests/${requestId}/student-respond`, data);
     return response;
   }
 

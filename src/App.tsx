@@ -21,6 +21,8 @@ import CreateTutorPostPage from "./pages/tutor/CreateTutorPostPage";
 import EditTutorPostPage from "./pages/tutor/EditTutorPostPage";
 import TutorPostListPage from "./pages/tutor/TutorPostListPage";
 import TutorStudentPostsPage from "./pages/tutor/TutorStudentPostsPage";
+import TutorStudentPostDetailPage from "./pages/tutor/TutorStudentPostDetailPage";
+import CreateTeachRequestPage from "./pages/tutor/CreateTeachRequestPage";
 import TutorSearchPage from "./pages/TutorSearchPage";
 import TutorPostDetailPage from "./pages/TutorPostDetailPage";
 import StudentDashboardLayout from "./layouts/StudentDashboardLayout";
@@ -62,6 +64,7 @@ import ContactRequestDetail from "./components/contactRequest/ContactRequestDeta
 import TutorContactRequestsPage from "./pages/tutor/TutorContactRequestsPage";
 import StudentClassesPage from "./pages/student/StudentClassesPage";
 import StudentClassDetailPage from "./pages/student/StudentClassDetailPage";
+import StudentClassSchedulePage from "./pages/student/StudentClassSchedulePage";
 import TutorClassesPage from "./pages/tutor/TutorClassesPage";
 import TutorClassDetailPage from "./pages/tutor/TutorClassDetailPage";
 import TutorMessagesPage from "./pages/tutor/TutorMessagesPage";
@@ -202,6 +205,10 @@ function App() {
                 path="classes/:classId"
                 element={<StudentClassDetailPage />}
               />
+              <Route
+                path="classes/:classId/schedule"
+                element={<StudentClassSchedulePage />}
+              />
               <Route path="assignments" element={<StudentAssignmentsPage />} />
               <Route
                 path="ratings"
@@ -296,6 +303,22 @@ function App() {
                 element={
                   <RequireTutorOperate>
                     <TutorStudentPostsPage />
+                  </RequireTutorOperate>
+                }
+              />
+              <Route
+                path="posts/student/:id"
+                element={
+                  <RequireTutorOperate>
+                    <TutorStudentPostDetailPage />
+                  </RequireTutorOperate>
+                }
+              />
+              <Route
+                path="posts/student/:id/request"
+                element={
+                  <RequireTutorOperate>
+                    <CreateTeachRequestPage />
                   </RequireTutorOperate>
                 }
               />

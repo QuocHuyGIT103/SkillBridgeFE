@@ -7,6 +7,8 @@ import { socketService } from '../../services/socket.service';
 import ConversationList from '../../components/chat/ConversationList';
 import ChatWindow from '../../components/chat/ChatWindow';
 import { useSearchParams } from 'react-router-dom';
+import DashboardStats from '../../components/dashboard/DashboardStats';
+import { ChatBubbleLeftRightIcon, EnvelopeIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 const StudentMessagesPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -64,15 +66,57 @@ const StudentMessagesPage: React.FC = () => {
     setShowConversationList(true);
   };
 
+  const { conversations } = useMessageStore();
+  const totalConversations = conversations.length;
+  const unreadCount = conversations.filter(c => c.unreadCount && c.unreadCount > 0).length;
+  const totalMessages = conversations.reduce((sum, c) => sum + (c.messageCount || 0), 0);
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <MessageCircle className="text-blue-600" size={24} />
-          <h1 className="text-lg font-semibold text-gray-900">Tin nhắn</h1>
+    <div className="space-y-6">
+      {/* Dashboard Stats */}
+      <DashboardStats
+        title="Tin nhắn"
+        description="Tổng quan về các cuộc trò chuyện và tin nhắn của bạn"
+        stats={[
+          {
+            label: 'Tổng cuộc trò chuyện',
+            value: totalConversations,
+            icon: ChatBubbleLeftRightIcon,
+            color: 'blue',
+            description: 'Số cuộc trò chuyện',
+          },
+          {
+            label: 'Tin nhắn chưa đọc',
+            value: unreadCount,
+            icon: EnvelopeIcon,
+            color: 'yellow',
+            description: 'Cần xem',
+          },
+          {
+            label: 'Tổng tin nhắn',
+            value: totalMessages.toLocaleString('vi-VN'),
+            icon: MessageCircle,
+            color: 'purple',
+            description: 'Tất cả tin nhắn',
+          },
+          {
+            label: 'Đã đọc',
+            value: totalConversations - unreadCount,
+            icon: CheckCircleIcon,
+            color: 'green',
+            description: 'Đã xem',
+          },
+        ]}
+      />
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="text-blue-600" size={24} />
+            <h1 className="text-lg font-semibold text-gray-900">Tin nhắn</h1>
+          </div>
         </div>
-      </div>
 
       {/* Content */}
       <div className="h-[70vh] sm:h-[75vh]">
@@ -107,6 +151,7 @@ const StudentMessagesPage: React.FC = () => {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

@@ -80,6 +80,25 @@ interface PostState {
   tutorStudentPostsError: string | null;
   fetchTutorStudentPosts: (query?: any) => Promise<void>;
 
+  // Tutor smart search student posts
+  smartTutorStudentPosts: IPost[];
+  smartTutorStudentPostsPagination: IPagination | null;
+  smartTutorStudentPostsLoading: boolean;
+  smartTutorStudentPostsError: string | null;
+  smartSearchStudentPostsForTutor: (query: {
+    tutorPostId: string;
+    subjects?: string[];
+    grade_levels?: string[];
+    is_online?: boolean;
+    search_term?: string;
+    min_hourly_rate?: number;
+    max_hourly_rate?: number;
+    page?: number;
+    limit?: number;
+    sort_by?: "compatibility" | "created_at";
+    sort_order?: "asc" | "desc";
+  }) => Promise<void>;
+
   // ✅ FIXED: Complete smart search methods
   smartSearchTutors: (postId: string, query?: any) => Promise<void>;
   loadMoreSmartSearchResults: (postId: string, query?: any) => Promise<void>; // ✅ ADD: Missing method
@@ -107,6 +126,12 @@ const usePostStore = create<PostState>((set, get) => ({
   tutorStudentPostsPagination: null,
   tutorStudentPostsLoading: false,
   tutorStudentPostsError: null,
+
+  // Tutor smart search student posts initial state
+  smartTutorStudentPosts: [],
+  smartTutorStudentPostsPagination: null,
+  smartTutorStudentPostsLoading: false,
+  smartTutorStudentPostsError: null,
 
   // ✅ Basic post methods (unchanged)
   fetchPostsByStatus: async (status) => {
@@ -270,17 +295,54 @@ const usePostStore = create<PostState>((set, get) => ({
     try {
       const response = await PostService.getApprovedStudentPostsForTutor(query);
       if (response.success && response.data) {
+        const posts = response.data.posts || [];
+        const pagination = response.data.pagination || null;
         set({
-          tutorStudentPosts: response.data.posts || [],
-          tutorStudentPostsPagination: response.data.pagination || null,
+          tutorStudentPosts: posts,
+          tutorStudentPostsPagination: pagination,
           tutorStudentPostsLoading: false,
         });
+
+        // If zero results and not already relaxed, auto retry with relax=true for quick diagnosis
+        if ((!posts || posts.length === 0) && !query?.relax) {
+          // eslint-disable-next-line no-console
+          console.info("No results with strict filters. Retrying with relax=true...");
+          const relaxed = await PostService.getApprovedStudentPostsForTutor({
+            ...query,
+            relax: true,
+          });
+          if (relaxed.success && relaxed.data) {
+            const relaxedPosts = relaxed.data.posts || [];
+            set({
+              tutorStudentPosts: relaxedPosts,
+              tutorStudentPostsPagination: relaxed.data.pagination || null,
+            });
+            if (relaxedPosts.length > 0) {
+              // Notify that relaxed mode brought results
+              toast.success(
+                "Đã nới lỏng bộ lọc tạm thời và tìm thấy bài đăng phù hợp."
+              );
+            } else {
+              // Still zero
+              toast("Không tìm thấy bài đăng. Hãy thử bỏ bớt bộ lọc.", {
+                icon: "ℹ️",
+              });
+            }
+          }
+        } else if (posts.length === 0) {
+          toast("Không tìm thấy bài đăng. Hãy thử bỏ bớt bộ lọc.", {
+            icon: "ℹ️",
+          });
+        }
       } else {
         set({
           tutorStudentPostsLoading: false,
           tutorStudentPostsError:
             response.message || "Không thể tải danh sách bài đăng học viên",
         });
+        toast.error(
+          response.message || "Không thể tải danh sách bài đăng học viên"
+        );
       }
     } catch (err: any) {
       set({
@@ -288,6 +350,47 @@ const usePostStore = create<PostState>((set, get) => ({
         tutorStudentPostsError:
           err.message || "Lỗi khi tải danh sách bài đăng học viên",
       });
+      toast.error(err.message || "Lỗi khi tải danh sách bài đăng học viên");
+    }
+  },
+
+  // Tutor: smart search student posts
+  smartSearchStudentPostsForTutor: async (query) => {
+    set({
+      smartTutorStudentPostsLoading: true,
+      smartTutorStudentPostsError: null,
+    });
+    try {
+      const response = await PostService.smartSearchStudentPostsForTutor(query);
+      if (response.success && response.data) {
+        const posts = response.data.posts || [];
+        set({
+          smartTutorStudentPosts: response.data.posts || [],
+          smartTutorStudentPostsPagination: response.data.pagination || null,
+          smartTutorStudentPostsLoading: false,
+        });
+        if (!posts.length) {
+          toast("Không tìm thấy bài đăng phù hợp với tiêu chí.", { icon: "ℹ️" });
+        }
+      } else {
+        set({
+          smartTutorStudentPostsLoading: false,
+          smartTutorStudentPostsError:
+            response.message || "Không thể tải kết quả tìm kiếm thông minh",
+        });
+        toast.error(
+          response.message || "Không thể tải kết quả tìm kiếm thông minh"
+        );
+      }
+    } catch (err: any) {
+      set({
+        smartTutorStudentPostsLoading: false,
+        smartTutorStudentPostsError:
+          err.message || "Lỗi khi tìm kiếm thông minh bài đăng học viên",
+      });
+      toast.error(
+        err.message || "Lỗi khi tìm kiếm thông minh bài đăng học viên"
+      );
     }
   },
 

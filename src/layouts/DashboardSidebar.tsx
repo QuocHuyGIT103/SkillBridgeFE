@@ -115,7 +115,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         },
         {
           id: "posts-student",
-          label: "Bài đăng học viên",
+          label: "Tìm học viên thông minh",
           path: "/tutor/posts/student",
         },
         {
@@ -355,11 +355,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             return (
               <div key={item.id} className="space-y-1">
                 <div
-                  className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${
-                    isActive
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-gray-700 hover:bg-secondary/10 hover:text-primary"
-                  }`}
+                  className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${isActive
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-gray-700 hover:bg-secondary/10 hover:text-primary"
+                    }`}
                   onClick={() => {
                     if (hasChildren) {
                       toggleExpanded(item.id);
@@ -412,11 +411,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                         <Link
                           key={child.id}
                           to={child.path}
-                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-                            isChildActive(child.path)
-                              ? "bg-accent text-primary font-medium"
-                              : "text-gray-600 hover:bg-secondary/5 hover:text-primary"
-                          }`}
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200 ${isChildActive(child.path)
+                            ? "bg-accent text-primary font-medium"
+                            : "text-gray-600 hover:bg-secondary/5 hover:text-primary"
+                            }`}
                         >
                           <span>{child.label}</span>
                           {child.badge && (

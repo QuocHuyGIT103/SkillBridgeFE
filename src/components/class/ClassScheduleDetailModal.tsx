@@ -41,7 +41,7 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
 
   useEffect(() => {
     fetchClassSchedule(classId);
-    
+
     return () => {
       clearCurrentSchedule();
     };
@@ -115,6 +115,7 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
       timeSlot: `${classData.schedule.startTime} - ${classData.schedule.endTime}`,
       duration: classData.sessionDuration,
       status: session.status,
+      learningMode: classData.learningMode,
       meetingLink: classData.onlineInfo?.meetingLink,
       location: classData.location ? {
         type: 'address',
@@ -148,7 +149,7 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
         avatar_url: classData.studentId.avatar_url,
       },
     };
-    
+
     setSelectedSession(weeklySession);
     setShowHomeworkModal(true);
   };
@@ -189,10 +190,10 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
     sessionNumber: number,
     action: 'APPROVE' | 'REJECT'
   ) => {
-    const message = action === 'APPROVE' 
+    const message = action === 'APPROVE'
       ? 'Bạn có chắc chắn muốn chấp nhận huỷ buổi học này?'
       : 'Bạn có chắc chắn muốn từ chối yêu cầu huỷ buổi học?';
-    
+
     if (!window.confirm(message)) {
       return;
     }
@@ -201,8 +202,8 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
     try {
       await attendanceService.respondToCancellationRequest(classId, sessionNumber, action);
       toast.success(
-        action === 'APPROVE' 
-          ? 'Đã chấp nhận huỷ buổi học' 
+        action === 'APPROVE'
+          ? 'Đã chấp nhận huỷ buổi học'
           : 'Đã từ chối yêu cầu huỷ buổi học'
       );
       await fetchClassSchedule(classId); // Refresh
@@ -361,7 +362,7 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
                         {getStatusText(session.status)}
                       </span>
-                      
+
                       {session.isUpcoming && (
                         <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
                           Sắp tới
@@ -394,24 +395,24 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
                   {/* Action Buttons */}
                   <div className="flex items-center space-x-2 pt-3 border-t border-gray-100">
                     {/* Homework Button - Show after both attended or completed */}
-                    {(session.status === 'COMPLETED' || 
+                    {(session.status === 'COMPLETED' ||
                       (session.attendance?.tutorAttended && session.attendance?.studentAttended)) && (
-                      <button
-                        onClick={() => handleOpenHomework(session)}
-                        className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
-                      >
-                        <DocumentTextIcon className="w-4 h-4" />
-                        <span>
-                          {userRole === 'TUTOR'
-                            ? session.homework?.assignment
-                              ? 'Quản lý bài tập'
-                              : 'Giao bài tập'
-                            : session.homework?.assignment
-                            ? 'Xem bài tập'
-                            : 'Chưa có bài tập'}
-                        </span>
-                      </button>
-                    )}
+                        <button
+                          onClick={() => handleOpenHomework(session)}
+                          className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                        >
+                          <DocumentTextIcon className="w-4 h-4" />
+                          <span>
+                            {userRole === 'TUTOR'
+                              ? session.homework?.assignment
+                                ? 'Quản lý bài tập'
+                                : 'Giao bài tập'
+                              : session.homework?.assignment
+                                ? 'Xem bài tập'
+                                : 'Chưa có bài tập'}
+                          </span>
+                        </button>
+                      )}
 
                     {/* Cancel Request Button - For scheduled sessions */}
                     {session.status === 'SCHEDULED' && (

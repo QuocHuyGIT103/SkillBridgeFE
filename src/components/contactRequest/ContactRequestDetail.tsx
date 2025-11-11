@@ -1,30 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
+import {
   ArrowLeftIcon,
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
   UserIcon,
-  PhoneIcon,
-  EnvelopeIcon,
   AcademicCapIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 
 import { useContactRequestStore } from '../../store/contactRequest.store';
 import { useAuthStore } from '../../store/auth.store';
 import { REQUEST_STATUS_LABELS, REJECTION_REASONS } from '../../types/contactRequest.types';
-import { ChatButton } from '../chat';
 import CreateClassModal from '../tutor/CreateClassModal';
-import { MessageCircle } from 'lucide-react';
+
 
 const ContactRequestDetail: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { currentRequest, isLoading, getRequestDetail } = useContactRequestStore();
+  const { studentRespondToRequest } = useContactRequestStore();
 
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
 
@@ -62,6 +61,19 @@ const ContactRequestDetail: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
+  };
+
+  const handleStudentRespond = async (action: 'ACCEPT' | 'REJECT') => {
+    if (!requestId) return;
+    const confirmText =
+      action === 'ACCEPT'
+        ? 'Chấp nhận đề nghị dạy? Gia sư sẽ tạo lớp học sau khi bạn chấp nhận.'
+        : 'Từ chối đề nghị dạy này?';
+    if (!window.confirm(confirmText)) return;
+    try {
+      await studentRespondToRequest(requestId, { action });
+      await getRequestDetail(requestId);
+    } catch { }
   };
 
   const formatCurrency = (amount: number) => {
@@ -107,7 +119,17 @@ const ContactRequestDetail: React.FC = () => {
     );
   }
 
+  // Backend ensures studentId is always a string after transformation
   const isStudent = user?.id === currentRequest.studentId;
+  const initiatedBy = (currentRequest as any).initiatedBy as 'STUDENT' | 'TUTOR' | undefined;
+  const currentStatus = currentRequest.status || 'PENDING';
+  const rawRequestId = currentRequest.id || (currentRequest as any)._id || requestId;
+  const normalizedRequestId =
+    typeof rawRequestId === 'string'
+      ? rawRequestId
+      : rawRequestId?.toString?.() || '';
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -122,175 +144,245 @@ const ContactRequestDetail: React.FC = () => {
         </button>
 
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
-              {getStatusIcon(currentRequest.status || '')}
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Chi tiết yêu cầu học tập
-                </h1>
-                <p className="text-gray-600">
-                  Gửi lúc {formatDate(currentRequest.createdAt)}
-                </p>
+        <div className="relative overflow-hidden rounded-3xl border border-gray-100 shadow-sm mb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-indigo-50" />
+          <div className="absolute -right-10 top-10 h-32 w-32 rounded-full bg-blue-100/50 blur-3xl" />
+          <div className="absolute -left-12 bottom-0 h-24 w-24 rounded-full bg-indigo-100/40 blur-2xl" />
+          <div className="relative p-6 md:p-8 space-y-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/80 shadow-inner ring-1 ring-white backdrop-blur-sm">
+                  {getStatusIcon(currentStatus)}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.2em] text-blue-500 uppercase">
+                    {initiatedBy === 'TUTOR' ? 'Đề nghị dạy của gia sư' : 'Yêu cầu học tập của học viên'}
+                  </p>
+                  <h1 className="text-3xl font-semibold text-gray-900 mt-1">
+                    {initiatedBy === 'TUTOR' ? 'Chi tiết đề nghị dạy' : 'Chi tiết yêu cầu học tập'}
+                  </h1>
+                  <p className="text-gray-600 mt-2">
+                    Gửi lúc {formatDate(currentRequest.createdAt)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-start md:items-end gap-3">
+                <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(currentStatus)}`}>
+                  {REQUEST_STATUS_LABELS[currentStatus as keyof typeof REQUEST_STATUS_LABELS]}
+                </span>
+
+                {currentRequest.status === 'PENDING' && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/80 text-sm text-blue-700 border border-blue-100 backdrop-blur-sm">
+                    <ClockIcon className="w-4 h-4" />
+                    <span>Hết hạn vào {formatDate(currentRequest.expiresAt)}</span>
+                  </div>
+                )}
+
+                {/* Student actions when pending (for tutor-initiated flow) */}
+                {isStudent && currentRequest.status === 'PENDING' && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleStudentRespond('ACCEPT')}
+                      className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700"
+                    >
+                      Chấp nhận
+                    </button>
+                    <button
+                      onClick={() => handleStudentRespond('REJECT')}
+                      className="px-4 py-2 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700"
+                    >
+                      Từ chối
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(currentRequest.status || '')}`}>
-              {REQUEST_STATUS_LABELS[currentRequest.status as keyof typeof REQUEST_STATUS_LABELS]}
-            </span>
-          </div>
 
-          {/* Expire Warning */}
-          {currentRequest.status === 'PENDING' && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800">
-                <ClockIcon className="w-4 h-4 inline mr-1" />
-                Yêu cầu sẽ hết hạn vào {formatDate(currentRequest.expiresAt)}
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-2xl border border-white/60 bg-white/60 backdrop-blur-sm p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Gia sư</p>
+                <p className="text-sm font-semibold text-gray-900">{currentRequest.tutor?.full_name || 'Đang cập nhật'}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{currentRequest.tutorPost?.title || '—'}</p>
+              </div>
+              <div className="rounded-2xl border border-white/60 bg-white/60 backdrop-blur-sm p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Môn học</p>
+                <p className="text-sm font-semibold text-gray-900">{currentRequest.subjectInfo?.name || 'Chưa rõ'}</p>
+                <p className="text-xs text-gray-500 mt-0.5">Hình thức: {currentRequest.learningMode}</p>
+              </div>
+              <div className="rounded-2xl border border-white/60 bg-white/60 backdrop-blur-sm p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Thời lượng buổi học</p>
+                <p className="text-sm font-semibold text-gray-900">{currentRequest.sessionDuration} phút</p>
+                {currentRequest.expectedPrice && (
+                  <p className="text-xs text-gray-500 mt-0.5">Ngân sách: {formatCurrency(currentRequest.expectedPrice)}</p>
+                )}
+              </div>
             </div>
-          )}
+
+            {/* Removed status timeline cards per request */}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Participants */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 md:p-7">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
                 Thông tin tham gia
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Student */}
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start gap-4 rounded-2xl border border-blue-100/70 bg-blue-50/50 p-4">
                   <div className="flex-shrink-0">
                     {currentRequest.student?.avatar_url ? (
                       <img
                         src={currentRequest.student.avatar_url}
                         alt={currentRequest.student.full_name}
-                        className="w-12 h-12 rounded-full object-cover"
+                        className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-sm"
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <UserIcon className="w-6 h-6 text-blue-600" />
+                      <div className="w-12 h-12 bg-blue-100/80 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm">
+                        <UserIcon className="w-6 h-6 text-blue-600/80" />
                       </div>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Học viên</h3>
-                    <p className="text-gray-700">{currentRequest.student?.full_name}</p>
-                    <div className="mt-2 space-y-1">
-                      {currentRequest.studentContact.phone && (
-                        <div className="flex items-center space-x-1 text-sm text-gray-600">
-                          <PhoneIcon className="w-4 h-4" />
-                          <span>{currentRequest.studentContact.phone}</span>
-                        </div>
-                      )}
-                      {currentRequest.studentContact.email && (
-                        <div className="flex items-center space-x-1 text-sm text-gray-600">
-                          <EnvelopeIcon className="w-4 h-4" />
-                          <span>{currentRequest.studentContact.email}</span>
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-semibold text-gray-900">
+                        {currentRequest.student?.full_name || 'Học viên'}
+                      </h3>
+                      <span className="inline-flex items-center rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-blue-600">
+                        Học viên
+                      </span>
                     </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Sẵn sàng trao đổi lịch học phù hợp.
+                    </p>
+                    {/* Intentionally hide direct contact details to prevent external contact */}
                   </div>
                 </div>
 
                 {/* Tutor */}
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start gap-4 rounded-2xl border border-emerald-100/70 bg-emerald-50/40 p-4">
                   <div className="flex-shrink-0">
                     {currentRequest.tutor?.avatar_url ? (
                       <img
                         src={currentRequest.tutor.avatar_url}
                         alt={currentRequest.tutor.full_name}
-                        className="w-12 h-12 rounded-full object-cover"
+                        className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-sm"
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <AcademicCapIcon className="w-6 h-6 text-green-600" />
+                      <div className="w-12 h-12 bg-green-100/80 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm">
+                        <AcademicCapIcon className="w-6 h-6 text-green-600/80" />
                       </div>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Gia sư</h3>
-                    <p className="text-gray-700">{currentRequest.tutor?.full_name}</p>
-                    <div className="mt-2 space-y-1">
-                      {currentRequest.tutor?.phone_number && (
-                        <div className="flex items-center space-x-1 text-sm text-gray-600">
-                          <PhoneIcon className="w-4 h-4" />
-                          <span>{currentRequest.tutor.phone_number}</span>
-                        </div>
-                      )}
-                      {currentRequest.tutor?.email && (
-                        <div className="flex items-center space-x-1 text-sm text-gray-600">
-                          <EnvelopeIcon className="w-4 h-4" />
-                          <span>{currentRequest.tutor.email}</span>
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-semibold text-gray-900">
+                        {currentRequest.tutor?.full_name || 'Gia sư'}
+                      </h3>
+                      <span className="inline-flex items-center rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
+                        Gia sư
+                      </span>
                     </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Đã nhận yêu cầu và sẽ liên hệ để trao đổi chi tiết.
+                    </p>
+                    {/* Intentionally hide tutor contact details to prevent external contact */}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Student Message */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            {/* Message block: label follows who initiated the request */}
+            <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 md:p-7">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Tin nhắn từ học viên
+                {initiatedBy === 'TUTOR' ? 'Tin nhắn từ gia sư' : 'Tin nhắn từ học viên'}
               </h2>
-              <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-blue-900 whitespace-pre-line">
-                  "{currentRequest.message}"
+              <div className="relative rounded-2xl border border-blue-100 bg-blue-50/60 p-5">
+                <span className="absolute -top-5 left-5 text-5xl text-blue-200 leading-none">“</span>
+                <p className="text-blue-900 whitespace-pre-line text-base leading-7 pl-4">
+                  {currentRequest.message}
                 </p>
+                <span className="absolute -bottom-7 right-6 text-5xl text-blue-200 leading-none">”</span>
               </div>
             </div>
 
             {/* Tutor Response */}
             {currentRequest.tutorResponse && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 md:p-7">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
                   Phản hồi từ gia sư
                 </h2>
-                
-                <div className={`rounded-lg p-4 ${
-                  currentRequest.status === 'ACCEPTED' ? 'bg-green-50' : 'bg-red-50'
-                }`}>
-                  <p className={`mb-4 ${
-                    currentRequest.status === 'ACCEPTED' ? 'text-green-900' : 'text-red-900'
-                  } whitespace-pre-line`}>
+
+                <div
+                  className={`rounded-2xl border-l-4 p-5 transition-all ${currentRequest.status === 'ACCEPTED'
+                    ? 'bg-emerald-50/70 border-emerald-400'
+                    : 'bg-rose-50/70 border-rose-400'
+                    }`}
+                >
+                  <p
+                    className={`mb-4 text-base leading-7 whitespace-pre-line ${currentRequest.status === 'ACCEPTED' ? 'text-emerald-900' : 'text-rose-900'
+                      }`}
+                  >
                     {currentRequest.tutorResponse.message}
                   </p>
 
                   {currentRequest.status === 'REJECTED' && currentRequest.tutorResponse.rejectionReason && (
-                    <div className="text-sm text-red-800">
-                      <strong>Lý do từ chối:</strong> {REJECTION_REASONS[currentRequest.tutorResponse.rejectionReason as keyof typeof REJECTION_REASONS]}
+                    <div className="text-sm text-rose-800 space-y-1">
+                      <p className="font-semibold uppercase tracking-wide text-xs text-rose-500">
+                        Lý do từ chối
+                      </p>
+                      <p>
+                        {REJECTION_REASONS[currentRequest.tutorResponse.rejectionReason as keyof typeof REJECTION_REASONS]}
+                      </p>
                     </div>
                   )}
-                  
+
                   {currentRequest.tutorResponse.counterOffer && (
-                    <div className="mt-4 p-4 bg-white rounded-lg border border-green-200">
-                      <h4 className="font-medium text-green-900 mb-3">Đề xuất của gia sư:</h4>
-                      <div className="space-y-2 text-sm text-green-800">
+                    <div className="mt-5 rounded-2xl border border-emerald-200 bg-white/90 p-5 shadow-sm">
+                      <h4 className="font-semibold text-emerald-900 mb-3 flex items-center gap-2">
+                        <CurrencyDollarIcon className="w-5 h-5 text-emerald-500" />
+                        Đề xuất của gia sư
+                      </h4>
+                      <div className="space-y-3 text-sm text-emerald-800">
                         {currentRequest.tutorResponse.counterOffer.pricePerSession && (
-                          <div className="flex items-center space-x-2">
-                            <CurrencyDollarIcon className="w-4 h-4" />
-                            <span>Giá: {formatCurrency(currentRequest.tutorResponse.counterOffer.pricePerSession)}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50">
+                              <CurrencyDollarIcon className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <span className="font-medium">
+                              Giá: {formatCurrency(currentRequest.tutorResponse.counterOffer.pricePerSession)}
+                            </span>
                           </div>
                         )}
                         {currentRequest.tutorResponse.counterOffer.sessionDuration && (
-                          <div className="flex items-center space-x-2">
-                            <ClockIcon className="w-4 h-4" />
-                            <span>Thời lượng: {currentRequest.tutorResponse.counterOffer.sessionDuration} phút</span>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50">
+                              <ClockIcon className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <span>
+                              Thời lượng: {currentRequest.tutorResponse.counterOffer.sessionDuration} phút
+                            </span>
                           </div>
                         )}
                         {currentRequest.tutorResponse.counterOffer.schedule && (
-                          <div>
-                            <strong>Lịch học:</strong> {currentRequest.tutorResponse.counterOffer.schedule}
+                          <div className="rounded-xl bg-emerald-50/80 p-3">
+                            <strong className="block text-xs font-semibold uppercase tracking-wide text-emerald-600 mb-1">
+                              Lịch học
+                            </strong>
+                            <p>{currentRequest.tutorResponse.counterOffer.schedule}</p>
                           </div>
                         )}
                         {currentRequest.tutorResponse.counterOffer.conditions && (
-                          <div>
-                            <strong>Điều kiện:</strong> {currentRequest.tutorResponse.counterOffer.conditions}
+                          <div className="rounded-xl bg-emerald-50/80 p-3">
+                            <strong className="block text-xs font-semibold uppercase tracking-wide text-emerald-600 mb-1">
+                              Điều kiện
+                            </strong>
+                            <p>{currentRequest.tutorResponse.counterOffer.conditions}</p>
                           </div>
                         )}
                       </div>
@@ -298,7 +390,7 @@ const ContactRequestDetail: React.FC = () => {
                   )}
                 </div>
 
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 mt-3 italic">
                   Phản hồi lúc {formatDate(currentRequest.tutorResponse.acceptedAt || currentRequest.tutorResponse.rejectedAt || '')}
                 </p>
               </div>
@@ -308,45 +400,80 @@ const ContactRequestDetail: React.FC = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Request Info */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-5">
                 Thông tin yêu cầu
               </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Bài đăng</label>
-                  <p className="text-gray-900 font-medium">{currentRequest.tutorPost?.title}</p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Môn học</label>
-                  <p className="text-gray-900">{currentRequest.subjectInfo?.name}</p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Hình thức học</label>
-                  <p className="text-gray-900">{currentRequest.learningMode}</p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Thời lượng buổi học</label>
-                  <p className="text-gray-900">{currentRequest.sessionDuration} phút</p>
-                </div>
-                
-                {currentRequest.expectedPrice && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Giá mong muốn</label>
-                    <p className="text-gray-900">{formatCurrency(currentRequest.expectedPrice)}</p>
+
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-inner">
+                    <AcademicCapIcon className="w-4 h-4 text-blue-500" />
                   </div>
-                )}
-                
-                {currentRequest.preferredSchedule && (
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Lịch học mong muốn</label>
-                    <p className="text-gray-900 text-sm bg-gray-50 rounded p-3">
-                      {currentRequest.preferredSchedule}
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Bài đăng
                     </p>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {currentRequest.tutorPost?.title || '—'}
+                    </p>
+                    {currentRequest.tutorPost?.description && (
+                      <p className="text-xs text-gray-500 mt-1 leading-5">
+                        {currentRequest.tutorPost.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-inner">
+                    <AcademicCapIcon className="w-4 h-4 text-indigo-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Môn học
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {currentRequest.subjectInfo?.name || '—'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Hình thức: {currentRequest.learningMode}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-inner">
+                    <ClockIcon className="w-4 h-4 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Thời lượng buổi học
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {currentRequest.sessionDuration} phút
+                    </p>
+                    {currentRequest.expectedPrice && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Ngân sách: {formatCurrency(currentRequest.expectedPrice)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {currentRequest.preferredSchedule && (
+                  <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
+                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-inner">
+                      <CalendarIcon className="w-4 h-4 text-purple-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Lịch học mong muốn
+                      </p>
+                      <p className="mt-2 rounded-xl bg-white/80 p-3 text-sm text-gray-700">
+                        {currentRequest.preferredSchedule}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -354,94 +481,62 @@ const ContactRequestDetail: React.FC = () => {
 
             {/* Actions */}
             {currentRequest.status === 'ACCEPTED' && isStudent && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-6 shadow-sm"
+                className="relative overflow-hidden rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-indigo-100 p-6 shadow-md"
               >
-                <h4 className="font-semibold text-blue-900 text-lg mb-3 flex items-center">
-                  <CheckCircleIcon className="w-5 h-5 mr-2 text-blue-500" />
-                  Yêu cầu đã được chấp nhận!
-                </h4>
-                <p className="text-sm text-blue-800 mb-6">
-                  Bạn có thể liên hệ với gia sư qua các phương thức bên dưới để trao đổi chi tiết về lớp học.
-                </p>
-                <div className="space-y-3">
-                  <ChatButton
-                    contactRequestId={currentRequest.id}
-                    currentUserId={user?.id || ''}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center shadow-sm"
-                  >
-                    <MessageCircle className="w-5 h-5 mr-2" />
-                    Nhắn tin với gia sư
-                  </ChatButton>
-                  
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    <a
-                      href={`mailto:${currentRequest.tutor?.email}`}
-                      className="flex items-center justify-center px-4 py-3 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors border border-blue-200 font-medium group"
-                    >
-                      <EnvelopeIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                      Gửi email
-                    </a>
-                    {currentRequest.tutor?.phone_number && (
-                      <a
-                        href={`tel:${currentRequest.tutor.phone_number}`}
-                        className="flex items-center justify-center px-4 py-3 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors border border-blue-200 font-medium group"
-                      >
-                        <PhoneIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                        Gọi điện
-                      </a>
-                    )}
-                  </div>
-                </div>
+                <div className="absolute inset-0 opacity-30 pointer-events-none bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.15),_transparent_50%)]" />
+                <div className="relative space-y-6">
+                  <h4 className="font-semibold text-blue-900 text-lg mb-3 flex items-center">
+                    <CheckCircleIcon className="w-5 h-5 mr-2 text-blue-500" />
+                    Yêu cầu đã được chấp nhận!
+                  </h4>
+                  <p className="text-sm text-blue-800 mb-2">
+                    Yêu cầu của bạn đã được chấp nhận. Thông tin liên hệ được ẩn để đảm bảo an toàn. Hãy chờ lớp học được tạo để bắt đầu học.
+                  </p>
 
-                <div className="mt-6 pt-4 border-t border-blue-100">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      {currentRequest.tutor?.avatar_url ? (
-                        <img
-                          src={currentRequest.tutor.avatar_url}
-                          alt={currentRequest.tutor.full_name}
-                          className="w-10 h-10 rounded-full object-cover ring-2 ring-white"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center ring-2 ring-white">
-                          <UserIcon className="w-6 h-6 text-blue-600" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-blue-900">
-                        {currentRequest.tutor?.full_name}
-                      </p>
-                      <p className="text-xs text-blue-600 mt-0.5">
-                        Gia sư môn {currentRequest.subjectInfo?.name}
-                      </p>
+                  <div className="mt-6 pt-4 border-t border-blue-100">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0">
+                        {currentRequest.tutor?.avatar_url ? (
+                          <img
+                            src={currentRequest.tutor.avatar_url}
+                            alt={currentRequest.tutor.full_name}
+                            className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-md"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center ring-2 ring-white shadow-md">
+                            <UserIcon className="w-6 h-6 text-blue-600" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">
+                          {currentRequest.tutor?.full_name}
+                        </p>
+                        <p className="text-xs text-blue-600 mt-0.5">
+                          Gia sư môn {currentRequest.subjectInfo?.name}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </motion.div>
             )}
-             {currentRequest.status === 'ACCEPTED' && !isStudent && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h4 className="font-medium text-green-900 mb-2">
+            {currentRequest.status === 'ACCEPTED' && !isStudent && (
+              <div className="rounded-3xl border border-emerald-200 bg-emerald-50/80 p-6 shadow-sm">
+                <h4 className="font-semibold text-emerald-900 mb-3 flex items-center gap-2">
+                  <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
                   Bạn đã chấp nhận yêu cầu!
                 </h4>
-                <p className="text-sm text-green-800 mb-4">
-                  Bạn có thể nhắn tin với học viên hoặc tạo lớp học ngay.
+                <p className="text-sm text-emerald-800 mb-5">
+                  Vui lòng tạo lớp học để bắt đầu; thông tin liên hệ trực tiếp được ẩn để đảm bảo an toàn.
                 </p>
                 <div className="space-y-2">
-                  <ChatButton
-                    contactRequestId={currentRequest.id}
-                    currentUserId={(user?.id || '')}
-                    className="w-full"
-                  >
-                    Nhắn tin
-                  </ChatButton>
                   <button
                     onClick={handleCreateClass}
-                    className="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    className="w-full inline-flex items-center justify-center px-4 py-3 bg-white text-emerald-600 rounded-2xl hover:bg-emerald-50 transition-colors border border-emerald-200 text-sm font-semibold shadow-sm"
                   >
                     Tạo lớp học
                   </button>

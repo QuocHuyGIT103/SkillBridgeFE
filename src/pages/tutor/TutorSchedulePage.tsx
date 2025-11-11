@@ -15,6 +15,7 @@ import {
 import { useClassStore } from "../../store/class.store";
 import WeeklyCalendar from "../../components/schedule/WeeklyCalendar";
 import ClassScheduleDetailModal from "../../components/class/ClassScheduleDetailModal";
+import DashboardStats from "../../components/dashboard/DashboardStats";
 
 const TutorSchedulePage: React.FC = () => {
   const { tutorClasses, fetchTutorClasses } = useClassStore();
@@ -98,57 +99,43 @@ const TutorSchedulePage: React.FC = () => {
             </p>
           </div>
         </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[
-            {
-              label: "Lớp đang dạy",
-              value: activeClasses.length,
-              icon: CalendarIcon,
-              color: "blue",
-            },
-            {
-              label: "Tổng học viên",
-              value: totalStudents,
-              icon: UserGroupIcon,
-              color: "green",
-            },
-            {
-              label: "Tổng buổi học",
-              value: `${completedSessions}/${totalSessions}`,
-              icon: BookOpenIcon,
-              color: "indigo",
-            },
-            {
-              label: "Tỷ lệ hoàn thành",
-              value: `${completionRate}%`,
-              icon: ChartBarIcon,
-              color: "purple",
-            },
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="p-4 bg-gray-50 rounded-lg"
-            >
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-lg bg-${stat.color}-100`}>
-                  <stat.icon className={`w-5 h-5 text-${stat.color}-600`} />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">{stat.label}</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {stat.value}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
       </motion.div>
+
+      {/* Dashboard Stats */}
+      <DashboardStats
+        title="Tổng quan lịch học"
+        description="Thống kê về các lớp học và buổi học của bạn"
+        stats={[
+          {
+            label: "Lớp đang dạy",
+            value: activeClasses.length,
+            icon: CalendarIcon,
+            color: "blue",
+            description: "Lớp học đang hoạt động",
+          },
+          {
+            label: "Tổng học viên",
+            value: totalStudents,
+            icon: UserGroupIcon,
+            color: "green",
+            description: "Số học viên hiện tại",
+          },
+          {
+            label: "Tổng buổi học",
+            value: `${completedSessions}/${totalSessions}`,
+            icon: BookOpenIcon,
+            color: "indigo",
+            description: "Đã hoàn thành / Tổng số",
+          },
+          {
+            label: "Tỷ lệ hoàn thành",
+            value: `${completionRate}%`,
+            icon: ChartBarIcon,
+            color: "purple",
+            description: "Phần trăm hoàn thành",
+          },
+        ]}
+      />
 
       {/* Class List Section - MOVED TO TOP, AFTER STATS */}
       <motion.div

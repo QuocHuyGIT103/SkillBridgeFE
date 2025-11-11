@@ -178,9 +178,8 @@ export class PostService {
       }
 
       // ✅ Build final URL
-      const url = `/posts/${postId.trim()}/smart-tutors${
-        params.toString() ? `?${params.toString()}` : ""
-      }`;
+      const url = `/posts/${postId.trim()}/smart-tutors${params.toString() ? `?${params.toString()}` : ""
+        }`;
       console.log("🌐 Smart Search API URL:", url);
 
       // ✅ Make request - axiosClient returns ApiResponse<T>
@@ -256,6 +255,7 @@ export class PostService {
       grade_levels?: string[];
       is_online?: boolean;
       search_term?: string;
+      relax?: boolean;
       page?: number;
       limit?: number;
       sort_order?: "asc" | "desc";
@@ -282,9 +282,50 @@ export class PostService {
     if (query.limit && query.limit > 0)
       params.append("limit", String(Math.min(query.limit, 100)));
     if (query.sort_order) params.append("sort_order", query.sort_order);
+    if (typeof query.relax === "boolean") params.append("relax", String(query.relax));
 
     const qs = params.toString();
     const url = `/posts/tutors/student-posts${qs ? `?${qs}` : ""}`;
+    return axiosClient.get<IPaginatedPosts>(url);
+  }
+
+  // Tutor: Smart search student posts based on a tutorPost context
+  static async smartSearchStudentPostsForTutor(
+    query: {
+      tutorPostId: string;
+      subjects?: string[];
+      grade_levels?: string[];
+      is_online?: boolean;
+      search_term?: string;
+      min_hourly_rate?: number;
+      max_hourly_rate?: number;
+      page?: number;
+      limit?: number;
+      sort_by?: "compatibility" | "created_at";
+      sort_order?: "asc" | "desc";
+    }
+  ): Promise<ApiResponse<IPaginatedPosts>> {
+    const params = new URLSearchParams();
+
+    params.append("tutorPostId", query.tutorPostId);
+
+    if (query.subjects && query.subjects.length) {
+      query.subjects.forEach((s) => s && params.append("subjects", s));
+    }
+    if (query.grade_levels && query.grade_levels.length) {
+      query.grade_levels.forEach((g) => g && params.append("grade_levels", g));
+    }
+
+    if (typeof query.is_online === "boolean") params.append("is_online", String(query.is_online));
+    if (query.search_term && query.search_term.trim()) params.append("search_term", query.search_term.trim());
+    if (typeof query.min_hourly_rate === "number") params.append("min_hourly_rate", String(query.min_hourly_rate));
+    if (typeof query.max_hourly_rate === "number") params.append("max_hourly_rate", String(query.max_hourly_rate));
+    if (query.page && query.page > 0) params.append("page", String(query.page));
+    if (query.limit && query.limit > 0) params.append("limit", String(Math.min(query.limit, 100)));
+    if (query.sort_by) params.append("sort_by", query.sort_by);
+    if (query.sort_order) params.append("sort_order", query.sort_order);
+
+    const url = `/posts/tutors/student-posts/smart?${params.toString()}`;
     return axiosClient.get<IPaginatedPosts>(url);
   }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarDaysIcon,
   ClockIcon,
@@ -7,15 +8,18 @@ import {
   MapPinIcon,
   AcademicCapIcon,
   FunnelIcon,
+  UserGroupIcon,
+  BookOpenIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 import { useClassStore } from "../../store/class.store";
 import WeeklyCalendar from "../../components/schedule/WeeklyCalendar";
-import ClassScheduleDetailModal from "../../components/class/ClassScheduleDetailModal";
+import DashboardStats from "../../components/dashboard/DashboardStats";
 
 const StudentSchedulePage: React.FC = () => {
   const { studentClasses, fetchStudentClasses } = useClassStore();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchStudentClasses();
@@ -25,6 +29,21 @@ const StudentSchedulePage: React.FC = () => {
     if (statusFilter === "ALL") return true;
     return cls.status === statusFilter;
   });
+
+  const activeClasses = studentClasses.filter((c) => c.status === "ACTIVE");
+  const totalTutors = new Set(studentClasses.map((c) => c.tutorId.id)).size;
+  const totalSessions = studentClasses.reduce(
+    (sum, c) => sum + c.totalSessions,
+    0
+  );
+  const completedSessions = studentClasses.reduce(
+    (sum, c) => sum + c.completedSessions,
+    0
+  );
+  const completionRate =
+    totalSessions > 0
+      ? Math.round((completedSessions / totalSessions) * 100)
+      : 0;
 
   const getDayName = (dayOfWeek: number) => {
     const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -82,6 +101,42 @@ const StudentSchedulePage: React.FC = () => {
         </div>
       </motion.div>
 
+      {/* Dashboard Stats */}
+      <DashboardStats
+        title="Tổng quan lịch học"
+        description="Thống kê về các lớp học và buổi học của bạn"
+        stats={[
+          {
+            label: "Lớp đang học",
+            value: activeClasses.length,
+            icon: CalendarDaysIcon,
+            color: "blue",
+            description: "Lớp học đang hoạt động",
+          },
+          {
+            label: "Tổng gia sư",
+            value: totalTutors,
+            icon: UserGroupIcon,
+            color: "green",
+            description: "Số gia sư hiện tại",
+          },
+          {
+            label: "Tổng buổi học",
+            value: `${completedSessions}/${totalSessions}`,
+            icon: BookOpenIcon,
+            color: "indigo",
+            description: "Đã hoàn thành / Tổng số",
+          },
+          {
+            label: "Tỷ lệ hoàn thành",
+            value: `${completionRate}%`,
+            icon: ChartBarIcon,
+            color: "purple",
+            description: "Phần trăm hoàn thành",
+          },
+        ]}
+      />
+
       {/* Class List Section - MOVED TO TOP */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -116,7 +171,7 @@ const StudentSchedulePage: React.FC = () => {
             <motion.div
               key={cls._id}
               whileHover={{ scale: 1.02 }}
-              onClick={() => setSelectedClassId(cls._id)}
+              onClick={() => navigate(`/student/classes/${cls._id}/schedule`)}
               className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all"
             >
               {/* Class Header */}
@@ -223,17 +278,6 @@ const StudentSchedulePage: React.FC = () => {
       >
         <WeeklyCalendar userRole="STUDENT" />
       </motion.div>
-
-      {/* Class Schedule Detail Modal */}
-      <AnimatePresence>
-        {selectedClassId && (
-          <ClassScheduleDetailModal
-            classId={selectedClassId}
-            userRole="STUDENT"
-            onClose={() => setSelectedClassId(null)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };

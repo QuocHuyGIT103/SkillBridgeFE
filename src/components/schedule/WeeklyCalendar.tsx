@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -21,6 +22,7 @@ interface WeeklyCalendarProps {
 }
 
 const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [sessions, setSessions] = useState<WeeklySession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
     try {
       const dateStr = currentDate.toISOString().split('T')[0];
       const response = await attendanceService.getWeeklySchedule(dateStr);
-      
+
       setSessions(response.data.sessions);
       setWeekStart(new Date(response.data.weekStart));
       setWeekEnd(new Date(response.data.weekEnd));
@@ -54,10 +56,10 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
     try {
       const response = await attendanceService.markAttendance(classId, sessionNumber);
       toast.success(response.message || 'Điểm danh thành công');
-      
+
       // Refresh schedule
       fetchWeeklySchedule();
-      
+
       if (response.data.bothAttended) {
         toast.success('Cả 2 đã điểm danh! Có thể vào lớp học.', {
           duration: 5000,
@@ -148,7 +150,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
               </p>
             )}
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <button
               onClick={goToPreviousWeek}
@@ -157,14 +159,14 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
             >
               <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
             </button>
-            
+
             <button
               onClick={goToCurrentWeek}
               className="px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-medium transition-colors"
             >
               Hôm nay
             </button>
-            
+
             <button
               onClick={goToNextWeek}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -180,24 +182,48 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
       <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
         {[1, 2, 3, 4, 5, 6, 0].map((dayOfWeek) => {
           const daySessions = getSessionsForDay(dayOfWeek);
-          const isToday = new Date().getDay() === dayOfWeek;
-          
+
+          // Calculate the actual date for this day column
+          // weekStart is always Monday (dayOfWeek = 1) based on backend logic
+          let isToday = false;
+          if (weekStart) {
+            const today = new Date();
+            const dayDate = new Date(weekStart);
+
+            // Calculate days to add from Monday (weekStart) to target dayOfWeek
+            // Monday = 1, Tuesday = 2, ..., Sunday = 0
+            let dayDiff = 0;
+            if (dayOfWeek === 0) {
+              // Sunday is 6 days after Monday
+              dayDiff = 6;
+            } else {
+              // Other days: dayOfWeek - 1 (e.g., Tuesday (2) = 1 day after Monday)
+              dayDiff = dayOfWeek - 1;
+            }
+
+            dayDate.setDate(weekStart.getDate() + dayDiff);
+
+            // Compare only date (year, month, day), not time
+            isToday =
+              dayDate.getFullYear() === today.getFullYear() &&
+              dayDate.getMonth() === today.getMonth() &&
+              dayDate.getDate() === today.getDate();
+          }
+
           return (
             <motion.div
               key={dayOfWeek}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: dayOfWeek * 0.05 }}
-              className={`bg-white rounded-xl shadow-sm border ${
-                isToday ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-100'
-              }`}
+              className={`bg-white rounded-xl shadow-sm border ${isToday ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-100'
+                }`}
             >
               {/* Day Header */}
               <div className={`p-4 border-b ${isToday ? 'bg-blue-50' : 'bg-gray-50'}`}>
                 <div className="text-center">
-                  <div className={`text-sm font-semibold ${
-                    isToday ? 'text-blue-600' : 'text-gray-900'
-                  }`}>
+                  <div className={`text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-900'
+                    }`}>
                     {getDayName(dayOfWeek)}
                   </div>
                   {isToday && (
@@ -227,7 +253,17 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                         {/* Session Header */}
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-semibold text-gray-900 truncate">
+                            <h4
+                              onClick={() => {
+                                if (userRole === 'STUDENT') {
+                                  navigate(`/student/classes/${session.classId}/schedule`);
+                                } else {
+                                  navigate(`/tutor/classes/${session.classId}/schedule`);
+                                }
+                              }}
+                              className="text-sm font-semibold text-gray-900 truncate cursor-pointer hover:text-blue-600 transition-colors"
+                              title="Click để xem chi tiết lớp học"
+                            >
                               {session.className}
                             </h4>
                             <div className="flex items-center text-xs text-gray-600 mt-1">
@@ -235,9 +271,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                               {session.timeSlot}
                             </div>
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                            getStatusBadgeColor(session.status)
-                          }`}>
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBadgeColor(session.status)
+                            }`}>
                             Buổi {session.sessionNumber}
                           </span>
                         </div>
@@ -245,15 +280,13 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                         {/* Attendance Status */}
                         <div className="flex items-center space-x-2 mb-2">
                           <div className="flex items-center space-x-1">
-                            <div className={`w-2 h-2 rounded-full ${
-                              session.attendance.tutorAttended ? 'bg-green-500' : 'bg-gray-300'
-                            }`} />
+                            <div className={`w-2 h-2 rounded-full ${session.attendance.tutorAttended ? 'bg-green-500' : 'bg-gray-300'
+                              }`} />
                             <span className="text-xs text-gray-600">Gia sư</span>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <div className={`w-2 h-2 rounded-full ${
-                              session.attendance.studentAttended ? 'bg-green-500' : 'bg-gray-300'
-                            }`} />
+                            <div className={`w-2 h-2 rounded-full ${session.attendance.studentAttended ? 'bg-green-500' : 'bg-gray-300'
+                              }`} />
                             <span className="text-xs text-gray-600">Học viên</span>
                           </div>
                         </div>
@@ -267,11 +300,10 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                             <button
                               onClick={() => handleAttendance(session.classId, session.sessionNumber)}
                               disabled={!session.canAttend}
-                              className={`w-full px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1 ${
-                                session.canAttend 
-                                  ? 'bg-green-600 hover:bg-green-700 cursor-pointer' 
-                                  : 'bg-gray-400 cursor-not-allowed'
-                              }`}
+                              className={`w-full px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1 ${session.canAttend
+                                ? 'bg-green-600 hover:bg-green-700 cursor-pointer'
+                                : 'bg-gray-400 cursor-not-allowed'
+                                }`}
                             >
                               <CheckCircleIcon className="w-4 h-4" />
                               <span>{session.canAttend ? 'Điểm danh' : 'Chưa đến giờ'}</span>
@@ -312,8 +344,8 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                                     ? 'Quản lý bài tập'
                                     : 'Giao bài tập'
                                   : session.homework.hasAssignment
-                                  ? 'Xem bài tập'
-                                  : 'Chưa có bài tập'}
+                                    ? 'Xem bài tập'
+                                    : 'Chưa có bài tập'}
                               </span>
                             </button>
                           )}
@@ -368,7 +400,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">
-              {sessions.filter(s => s.homework.hasAssignment).length}
+              {sessions.filter(s => s.homework.assignment && s.homework.assignment.title).length}
             </div>
             <div className="text-sm text-gray-600 mt-1">Có bài tập</div>
           </div>

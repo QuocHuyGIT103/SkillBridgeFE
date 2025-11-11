@@ -31,9 +31,20 @@ interface ContactRequestStore {
   
   // Actions
   createContactRequest: (data: CreateContactRequestInput) => Promise<void>;
+  createTeachRequestFromTutor: (data: {
+    tutorPostId: string;
+    studentPostId: string;
+    subject: string;
+    message: string;
+    preferredSchedule?: string;
+    expectedPrice?: number;
+    sessionDuration?: number;
+    learningMode: 'ONLINE' | 'OFFLINE' | 'FLEXIBLE';
+  }) => Promise<void>;
   getStudentRequests: (filters?: ContactRequestFilters) => Promise<void>;
   getTutorRequests: (filters?: ContactRequestFilters) => Promise<void>;
   respondToRequest: (requestId: string, data: TutorResponseInput) => Promise<void>;
+  studentRespondToRequest: (requestId: string, data: { action: 'ACCEPT' | 'REJECT'; message?: string }) => Promise<void>;
   createLearningClass: (data: CreateLearningClassInput) => Promise<any>; // ✅ Fix return type
   cancelRequest: (requestId: string) => Promise<void>;
   getRequestDetail: (requestId: string) => Promise<void>;
@@ -61,6 +72,17 @@ const initialState = {
     page: 1,
     limit: 10
   }
+};
+
+const getRequestId = (request: any): string => {
+  if (!request) return '';
+  const rawId = request.id || request._id;
+  if (!rawId) return '';
+  if (typeof rawId === 'string') return rawId;
+  if (typeof rawId === 'object' && typeof rawId.toString === 'function') {
+    return rawId.toString();
+  }
+  return '';
 };
 
 export const useContactRequestStore = create<ContactRequestStore>((set, get) => ({
@@ -125,6 +147,28 @@ export const useContactRequestStore = create<ContactRequestStore>((set, get) => 
     }
   },
 
+  createTeachRequestFromTutor: async (data) => {
+    set({ isCreating: true, error: null });
+    try {
+      const response = await contactRequestService.createTeachRequestFromTutor(data);
+      if (response.success) {
+        toast.success(response.message || 'Đã gửi đề nghị dạy');
+        // Refresh tutor incoming requests list
+        const currentFilters = get().filters;
+        await get().getTutorRequests(currentFilters);
+      } else {
+        throw new Error(response.message);
+      }
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.message || 'Gửi đề nghị thất bại';
+      set({ error: message });
+      toast.error(message);
+      throw error;
+    } finally {
+      set({ isCreating: false });
+    }
+  },
+
   getTutorRequests: async (filters: ContactRequestFilters = {}) => {
     set({ isLoading: true, error: null });
     
@@ -162,13 +206,13 @@ export const useContactRequestStore = create<ContactRequestStore>((set, get) => 
         
         // Update the request in the list
         const requests = get().requests.map(request => 
-          request.id === requestId ? response.data! : request
+          getRequestId(request) === requestId ? response.data! : request
         );
         set({ requests });
         
         // Update current request if viewing detail
         const currentRequest = get().currentRequest;
-        if (currentRequest && currentRequest.id === requestId) {
+        if (currentRequest && getRequestId(currentRequest) === requestId) {
           set({ currentRequest: response.data! });
         }
         
@@ -177,6 +221,28 @@ export const useContactRequestStore = create<ContactRequestStore>((set, get) => 
       }
     } catch (error: any) {
       const message = error.response?.data?.message || error.message || 'Phản hồi yêu cầu thất bại';
+      set({ error: message });
+      toast.error(message);
+      throw error;
+    } finally {
+      set({ isResponding: false });
+    }
+  },
+
+  studentRespondToRequest: async (requestId, data) => {
+    set({ isResponding: true, error: null });
+    try {
+      const response = await contactRequestService.studentRespondToRequest(requestId, data);
+      if (response.success) {
+        toast.success(response.message);
+        // Update list for student
+        const currentFilters = get().filters;
+        await get().getStudentRequests(currentFilters);
+      } else {
+        throw new Error(response.message);
+      }
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.message || 'Phản hồi thất bại';
       set({ error: message });
       toast.error(message);
       throw error;
@@ -224,7 +290,7 @@ export const useContactRequestStore = create<ContactRequestStore>((set, get) => 
         
         // Remove or update the request in the list
         const requests = get().requests.map(request => 
-          request.id === requestId ? { ...request, status: 'CANCELLED' as const } : request
+          getRequestId(request) === requestId ? { ...request, status: 'CANCELLED' as const } : request
         );
         set({ requests });
         
