@@ -67,6 +67,7 @@ import StudentClassDetailPage from "./pages/student/StudentClassDetailPage";
 import StudentClassSchedulePage from "./pages/student/StudentClassSchedulePage";
 import TutorClassesPage from "./pages/tutor/TutorClassesPage";
 import TutorClassDetailPage from "./pages/tutor/TutorClassDetailPage";
+import TutorClassSchedulePage from "./pages/tutor/TutorClassSchedulePage";
 import TutorMessagesPage from "./pages/tutor/TutorMessagesPage";
 import RequireTutorOperate from "./features/tutor/RequireTutorOperate";
 
@@ -272,6 +273,10 @@ function App() {
               <Route
                 path="classes/:classId"
                 element={<TutorClassDetailPage />}
+              />
+              <Route
+                path="classes/:classId/schedule"
+                element={<TutorClassSchedulePage />}
               />
 
               <Route

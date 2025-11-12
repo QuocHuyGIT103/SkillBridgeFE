@@ -339,14 +339,16 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {tutorPost?.title ?? 'Yêu cầu học tập'}
+                  {request.initiatedBy === 'TUTOR'
+                    ? (request.studentPost?.title ?? 'Yêu cầu học tập')
+                    : (tutorPost?.title ?? 'Yêu cầu học tập')}
                 </h3>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${style.chip} ${style.chipText}`}>
                   {statusLabel}
                 </span>
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Nhận lúc {formatDate(request.createdAt)}
+                {request.initiatedBy === 'TUTOR' ? 'Gửi lúc' : 'Nhận lúc'} {formatDate(request.createdAt)}
               </p>
               <p className={`text-xs mt-2 ${style.subtle}`}>
                 Học viên: {studentName}

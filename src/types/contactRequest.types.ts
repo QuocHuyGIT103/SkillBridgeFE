@@ -3,8 +3,21 @@ export interface ContactRequest {
   studentId: string | { full_name?: string; email?: string; phone_number?: string; avatar_url?: string; id?: string };
   tutorId: string;
   tutorPostId: string | Record<string, any>; // backend có thể trả object populate ở đây
+  studentPostId?: string | Record<string, any>; // backend có thể trả object populate ở đây
   initiatedBy?: 'STUDENT' | 'TUTOR';
   tutorPost?: Record<string, any>; // optional fallback nếu backend dùng khác tên
+  studentPost?: { // populated when initiatedBy = 'TUTOR'
+    id: string;
+    title: string;
+    content?: string;
+    subjects?: string[];
+    grade_levels?: string[];
+    hourly_rate?: {
+      min: number;
+      max: number;
+    };
+    is_online?: boolean;
+  };
   subject: string | { _id?: string; name?: string };
   message: string;
   preferredSchedule?: string;

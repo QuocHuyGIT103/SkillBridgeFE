@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { 
+import {
   XMarkIcon,
   CheckCircleIcon,
   XCircleIcon,
@@ -12,6 +12,8 @@ import {
 import { useContactRequestStore } from '../../store/contactRequest.store';
 import type { ContactRequest, TutorResponseInput } from '../../types/contactRequest.types';
 import { REJECTION_REASONS, SESSION_DURATIONS } from '../../types/contactRequest.types';
+import { parseScheduleFromString } from '../../utils/scheduleParser';
+import type { ParsedSchedule } from '../../utils/scheduleParser';
 
 interface TutorResponseModalProps {
   request: ContactRequest;
@@ -19,7 +21,7 @@ interface TutorResponseModalProps {
   onSuccess: () => void;
 }
 
-interface FormData extends TutorResponseInput {}
+interface FormData extends TutorResponseInput { }
 
 const WEEKDAYS = [
   { value: 1, label: 'Thứ 2' },
@@ -39,31 +41,19 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
   const { respondToRequest, isResponding } = useContactRequestStore();
   const [responseType, setResponseType] = useState<'ACCEPT' | 'REJECT'>('ACCEPT');
 
-  // Get tutor post info
   const tutorPost = (request as any).tutorPost ?? (request as any).tutorPostId;
+  const isTutorInitiated = request?.initiatedBy === 'TUTOR';
+  const isScheduleLocked = request?.initiatedBy === 'STUDENT';
+  const DEFAULT_START_TIME = '19:00';
+  const DEFAULT_END_TIME = '20:30';
 
-  // Extract schedule days from tutorPost
-  const extractScheduleDays = (): number[] => {
-    if (tutorPost?.teachingSchedule && Array.isArray(tutorPost.teachingSchedule)) {
-      return tutorPost.teachingSchedule.map((schedule: any) => schedule.dayOfWeek).sort();
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [scheduleTime, setScheduleTime] = useState<{ startTime: string; endTime: string }>(
+    {
+      startTime: DEFAULT_START_TIME,
+      endTime: DEFAULT_END_TIME,
     }
-    return [];
-  };
-  
-  // Extract schedule time from tutorPost
-  const extractScheduleTime = (): { startTime: string; endTime: string } => {
-    if (tutorPost?.teachingSchedule && tutorPost.teachingSchedule.length > 0) {
-      const firstSchedule = tutorPost.teachingSchedule[0];
-      return {
-        startTime: firstSchedule.startTime || '19:00',
-        endTime: firstSchedule.endTime || '20:30'
-      };
-    }
-    return { startTime: '19:00', endTime: '20:30' };
-  };
-
-  const [selectedDays, setSelectedDays] = useState<number[]>(extractScheduleDays());
-  const [scheduleTime, setScheduleTime] = useState(extractScheduleTime());
+  );
 
   const {
     register,
@@ -85,27 +75,161 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
     }
   });
 
+  useEffect(() => {
+    if (!request) return;
+
+    const preferredParsed = request.preferredSchedule
+      ? parseScheduleFromString(request.preferredSchedule)
+      : { days: [] };
+
+    const studentPost = (request as any).studentPost;
+    const studentParsed = studentPost?.availability
+      ? parseScheduleFromString(studentPost.availability)
+      : { days: [] };
+
+    const tutorSchedules = Array.isArray(tutorPost?.teachingSchedule)
+      ? tutorPost.teachingSchedule
+      : [];
+
+    const tutorDays = tutorSchedules
+      .map((schedule: any) => schedule?.dayOfWeek)
+      .filter((day: any) => typeof day === 'number')
+      .sort((a: number, b: number) => a - b);
+
+    const firstTutorSlot =
+      tutorSchedules.find((schedule: any) => schedule?.startTime && schedule?.endTime) ||
+      tutorSchedules[0] ||
+      undefined;
+
+    const tutorFallbackStart = firstTutorSlot?.startTime || DEFAULT_START_TIME;
+    const tutorFallbackEnd = firstTutorSlot?.endTime || DEFAULT_END_TIME;
+
+    const studentSchedules = Array.isArray(studentPost?.teachingSchedule)
+      ? studentPost.teachingSchedule
+      : [];
+
+    const studentDays = studentSchedules
+      .map((schedule: any) => schedule?.dayOfWeek)
+      .filter((day: any) => typeof day === 'number')
+      .sort((a: number, b: number) => a - b);
+
+    const firstStudentSlot =
+      studentSchedules.find((schedule: any) => schedule?.startTime && schedule?.endTime) ||
+      studentSchedules[0] ||
+      undefined;
+
+    const studentFallbackStart = firstStudentSlot?.startTime || DEFAULT_START_TIME;
+    const studentFallbackEnd = firstStudentSlot?.endTime || DEFAULT_END_TIME;
+
+    const hasScheduleData = (parsed: ParsedSchedule) =>
+      (parsed.days && parsed.days.length > 0) || parsed.startTime || parsed.endTime;
+
+    let initialSchedule: ParsedSchedule | null = null;
+
+    if (isTutorInitiated) {
+      if (hasScheduleData(preferredParsed)) {
+        initialSchedule = preferredParsed;
+      } else if (hasScheduleData(studentParsed)) {
+        initialSchedule = studentParsed;
+      } else if (studentDays.length > 0) {
+        initialSchedule = {
+          days: studentDays,
+          startTime: firstStudentSlot?.startTime,
+          endTime: firstStudentSlot?.endTime
+        };
+      }
+    } else {
+      if (tutorDays.length > 0) {
+        initialSchedule = {
+          days: tutorDays,
+          startTime: firstTutorSlot?.startTime,
+          endTime: firstTutorSlot?.endTime
+        };
+      } else if (hasScheduleData(preferredParsed)) {
+        initialSchedule = preferredParsed;
+      }
+    }
+
+    if (!initialSchedule) {
+      initialSchedule = hasScheduleData(preferredParsed) ? preferredParsed : { days: [] };
+    }
+
+    const fallbackStart = isTutorInitiated ? studentFallbackStart : tutorFallbackStart;
+    const fallbackEnd = isTutorInitiated ? studentFallbackEnd : tutorFallbackEnd;
+
+    setSelectedDays(initialSchedule.days);
+    const resolvedStart = initialSchedule.startTime || fallbackStart;
+    const resolvedEnd = initialSchedule.endTime || fallbackEnd;
+
+    setScheduleTime({
+      startTime: resolvedStart,
+      endTime: resolvedEnd,
+    });
+
+    const formatSchedule = (days: number[], start: string, end: string) => {
+      if (days.length === 0) {
+        return request.preferredSchedule?.trim() ?? `${start}-${end}`;
+      }
+
+      const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+      const formattedDays = days
+        .map((day) => dayNames[day] || '')
+        .filter(Boolean)
+        .join(', ');
+
+      return formattedDays ? `${formattedDays} từ ${start}-${end}` : `${start}-${end}`;
+    };
+
+    if (initialSchedule.days.length > 0 || initialSchedule.startTime || initialSchedule.endTime || request.preferredSchedule) {
+      setValue('counterOffer.schedule', formatSchedule(initialSchedule.days, resolvedStart, resolvedEnd));
+    }
+  }, [request, tutorPost, setValue, isScheduleLocked]);
+
+  const schedulePreview = watch('counterOffer.schedule');
+
   const handleDayToggle = (day: number) => {
+    if (isScheduleLocked) {
+      return;
+    }
     const newDays = selectedDays.includes(day)
       ? selectedDays.filter(d => d !== day)
       : [...selectedDays, day].sort();
     setSelectedDays(newDays);
   };
 
+  const trimmedPreferredSchedule = request.preferredSchedule?.trim() ?? '';
+  const hasPreferredSchedule = Boolean(trimmedPreferredSchedule);
+
   // Format schedule to text when days or time changes
   useEffect(() => {
-    if (responseType === 'ACCEPT') {
-      const formatScheduleToText = (): string => {
-        if (selectedDays.length === 0) return '';
-        
-        const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-        const dayList = selectedDays.map(d => dayNames[d]).join(', ');
-        return `${dayList} từ ${scheduleTime.startTime}-${scheduleTime.endTime}`;
-      };
-
-      setValue('counterOffer.schedule', formatScheduleToText());
+    if (responseType !== 'ACCEPT') {
+      return;
     }
-  }, [selectedDays, scheduleTime, responseType, setValue]);
+
+    if (isScheduleLocked) {
+      // đã được thiết lập trong useEffect phía trên, không cho chỉnh sửa lại
+      return;
+    }
+
+    if (selectedDays.length === 0) {
+      if (hasPreferredSchedule) {
+        setValue('counterOffer.schedule', trimmedPreferredSchedule);
+      }
+      return;
+    }
+
+    const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    const formattedDays = selectedDays
+      .map((day) => dayNames[day] || '')
+      .filter(Boolean)
+      .join(', ');
+
+    const start = scheduleTime.startTime || DEFAULT_START_TIME;
+    const end = scheduleTime.endTime || DEFAULT_END_TIME;
+    const formatted = formattedDays ? `${formattedDays} từ ${start}-${end}` : `${start}-${end}`;
+
+    setValue('counterOffer.schedule', formatted);
+  }, [selectedDays, scheduleTime, responseType, hasPreferredSchedule, trimmedPreferredSchedule, setValue, isScheduleLocked]);
 
   // Build defaults from tutorPost (preferred) or from request
   useEffect(() => {
@@ -199,7 +323,7 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
               {request.message ?? '—'}
             </div>
           </div>
- 
+
           {/* Response Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Response Type */}
@@ -211,24 +335,22 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setResponseType('ACCEPT')}
-                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${
-                    responseType === 'ACCEPT'
-                      ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-gray-200 hover:border-green-300'
-                  }`}
+                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${responseType === 'ACCEPT'
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : 'border-gray-200 hover:border-green-300'
+                    }`}
                 >
                   <CheckCircleIcon className="w-5 h-5" />
                   <span className="font-medium">Chấp nhận</span>
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={() => setResponseType('REJECT')}
-                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${
-                    responseType === 'REJECT'
-                      ? 'border-red-500 bg-red-50 text-red-700'
-                      : 'border-gray-200 hover:border-red-300'
-                  }`}
+                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${responseType === 'REJECT'
+                    ? 'border-red-500 bg-red-50 text-red-700'
+                    : 'border-gray-200 hover:border-red-300'
+                    }`}
                 >
                   <XCircleIcon className="w-5 h-5" />
                   <span className="font-medium">Từ chối</span>
@@ -296,7 +418,7 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
                 <p className="text-xs text-gray-500 mb-2">
                   Giá trị mặc định được lấy từ bài đăng của bạn (không thể chọn bài khác). Bạn vẫn có thể chỉnh sửa các trường trước khi gửi phản hồi.
                 </p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Price */}
                   <div>
@@ -342,83 +464,100 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
                 </div>
 
                 {/* Schedule */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
-                    <CalendarIcon className="w-5 h-5" />
-                    <span>Lịch học đề xuất</span>
-                  </h4>
+                {(!isScheduleLocked || schedulePreview || trimmedPreferredSchedule) && (
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-medium text-gray-900 flex items-center space-x-2">
+                      <CalendarIcon className="w-5 h-5" />
+                      <span>Lịch học đề xuất</span>
+                    </h4>
 
-                  {/* Days of Week */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ngày trong tuần *
-                    </label>
-                    <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
-                      {WEEKDAYS.map((day) => (
-                        <button
-                          key={day.value}
-                          type="button"
-                          onClick={() => handleDayToggle(day.value)}
-                          className={`p-2 text-sm border rounded-lg transition-colors ${
-                            selectedDays.includes(day.value)
-                              ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                              : 'border-gray-200 hover:border-blue-300'
-                          }`}
-                        >
-                          {day.label}
-                        </button>
-                      ))}
-                    </div>
-                    {selectedDays.length === 0 && (
-                      <p className="mt-1 text-sm text-red-600">Vui lòng chọn ít nhất 1 ngày</p>
+                    {/* Days of Week */}
+                    {!isScheduleLocked && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Ngày trong tuần *
+                        </label>
+                        <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+                          {WEEKDAYS.map((day) => (
+                            <button
+                              key={day.value}
+                              type="button"
+                              onClick={() => handleDayToggle(day.value)}
+                              className={`p-2 text-sm border rounded-lg transition-colors ${selectedDays.includes(day.value)
+                                ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                                : 'border-gray-200 hover:border-blue-300'
+                                }`}
+                            >
+                              {day.label}
+                            </button>
+                          ))}
+                        </div>
+                        {!isScheduleLocked && selectedDays.length === 0 && !hasPreferredSchedule && (
+                          <p className="mt-1 text-sm text-red-600">Vui lòng chọn ít nhất 1 ngày</p>
+                        )}
+                      </div>
                     )}
-                  </div>
 
-                  {/* Time */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center space-x-2">
-                        <ClockIcon className="w-4 h-4" />
-                        <span>Giờ bắt đầu *</span>
-                      </label>
-                      <input
-                        type="time"
-                        value={scheduleTime.startTime}
-                        onChange={(e) => setScheduleTime({ ...scheduleTime, startTime: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center space-x-2">
-                        <ClockIcon className="w-4 h-4" />
-                        <span>Giờ kết thúc *</span>
-                      </label>
-                      <input
-                        type="time"
-                        value={scheduleTime.endTime}
-                        onChange={(e) => setScheduleTime({ ...scheduleTime, endTime: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Preview */}
-                  {selectedDays.length > 0 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-sm text-blue-800">
-                        <span className="font-medium">Lịch học: </span>
-                        {watch('counterOffer.schedule') || 'Chưa có lịch học'}
+                    {isScheduleLocked && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Lịch học được cố định theo bài đăng bạn đã thiết lập.
                       </p>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Hidden input for form submission */}
+                    {/* Time */}
+                    {!isScheduleLocked && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center space-x-2">
+                            <ClockIcon className="w-4 h-4" />
+                            <span>Giờ bắt đầu *</span>
+                          </label>
+                          <input
+                            type="time"
+                            value={scheduleTime.startTime}
+                            onChange={(e) => setScheduleTime({ ...scheduleTime, startTime: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus-border-transparent"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center space-x-2">
+                            <ClockIcon className="w-4 h-4" />
+                            <span>Giờ kết thúc *</span>
+                          </label>
+                          <input
+                            type="time"
+                            value={scheduleTime.endTime}
+                            onChange={(e) => setScheduleTime({ ...scheduleTime, endTime: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus-border-transparent"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Preview */}
+                    {(selectedDays.length > 0 || schedulePreview || trimmedPreferredSchedule) && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p className="text-sm text-blue-800">
+                          <span className="font-medium">Lịch học: </span>
+                          {schedulePreview || trimmedPreferredSchedule || 'Chưa có lịch học'}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Hidden input for form submission */}
+                    <input
+                      type="hidden"
+                      {...register('counterOffer.schedule')}
+                    />
+                  </div>
+                )}
+                {isScheduleLocked && !(schedulePreview || trimmedPreferredSchedule) && (
                   <input
                     type="hidden"
                     {...register('counterOffer.schedule')}
                   />
-                </div>
+                )}
 
                 {/* Conditions */}
                 <div>
@@ -448,11 +587,10 @@ const TutorResponseModal: React.FC<TutorResponseModalProps> = ({
               <button
                 type="submit"
                 disabled={isResponding}
-                className={`px-6 py-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                  responseType === 'ACCEPT'
-                    ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
-                    : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-                } focus:ring-2 focus:ring-offset-2`}
+                className={`px-6 py-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${responseType === 'ACCEPT'
+                  ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
+                  : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+                  } focus:ring-2 focus:ring-offset-2`}
               >
                 {isResponding ? 'Đang xử lý...' : (responseType === 'ACCEPT' ? 'Chấp nhận' : 'Từ chối')}
               </button>

@@ -16,6 +16,7 @@ import { useContactRequestStore } from '../../store/contactRequest.store';
 import { useAuthStore } from '../../store/auth.store';
 import { REQUEST_STATUS_LABELS, REJECTION_REASONS } from '../../types/contactRequest.types';
 import CreateClassModal from '../tutor/CreateClassModal';
+import ConfirmResponseModal from './ConfirmResponseModal';
 
 
 const ContactRequestDetail: React.FC = () => {
@@ -26,6 +27,9 @@ const ContactRequestDetail: React.FC = () => {
   const { studentRespondToRequest } = useContactRequestStore();
 
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'ACCEPT' | 'REJECT' | null>(null);
+  const [isResponding, setIsResponding] = useState(false);
 
   useEffect(() => {
     if (requestId) {
@@ -63,17 +67,32 @@ const ContactRequestDetail: React.FC = () => {
     }
   };
 
-  const handleStudentRespond = async (action: 'ACCEPT' | 'REJECT') => {
-    if (!requestId) return;
-    const confirmText =
-      action === 'ACCEPT'
-        ? 'Chấp nhận đề nghị dạy? Gia sư sẽ tạo lớp học sau khi bạn chấp nhận.'
-        : 'Từ chối đề nghị dạy này?';
-    if (!window.confirm(confirmText)) return;
+  const handleStudentRespondClick = (action: 'ACCEPT' | 'REJECT') => {
+    setPendingAction(action);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmResponse = async () => {
+    if (!requestId || !pendingAction) return;
+
+    setIsResponding(true);
     try {
-      await studentRespondToRequest(requestId, { action });
+      await studentRespondToRequest(requestId, { action: pendingAction });
       await getRequestDetail(requestId);
-    } catch { }
+      setShowConfirmModal(false);
+      setPendingAction(null);
+    } catch (error) {
+      console.error('Error responding to request:', error);
+    } finally {
+      setIsResponding(false);
+    }
+  };
+
+  const handleCloseConfirmModal = () => {
+    if (!isResponding) {
+      setShowConfirmModal(false);
+      setPendingAction(null);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -123,11 +142,6 @@ const ContactRequestDetail: React.FC = () => {
   const isStudent = user?.id === currentRequest.studentId;
   const initiatedBy = (currentRequest as any).initiatedBy as 'STUDENT' | 'TUTOR' | undefined;
   const currentStatus = currentRequest.status || 'PENDING';
-  const rawRequestId = currentRequest.id || (currentRequest as any)._id || requestId;
-  const normalizedRequestId =
-    typeof rawRequestId === 'string'
-      ? rawRequestId
-      : rawRequestId?.toString?.() || '';
 
 
 
@@ -180,17 +194,17 @@ const ContactRequestDetail: React.FC = () => {
                 )}
 
                 {/* Student actions when pending (for tutor-initiated flow) */}
-                {isStudent && currentRequest.status === 'PENDING' && (
+                {isStudent && currentRequest.status === 'PENDING' && initiatedBy === 'TUTOR' && (
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleStudentRespond('ACCEPT')}
-                      className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700"
+                      onClick={() => handleStudentRespondClick('ACCEPT')}
+                      className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors"
                     >
                       Chấp nhận
                     </button>
                     <button
-                      onClick={() => handleStudentRespond('REJECT')}
-                      className="px-4 py-2 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700"
+                      onClick={() => handleStudentRespondClick('REJECT')}
+                      className="px-4 py-2 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition-colors"
                     >
                       Từ chối
                     </button>
@@ -203,7 +217,11 @@ const ContactRequestDetail: React.FC = () => {
               <div className="rounded-2xl border border-white/60 bg-white/60 backdrop-blur-sm p-4">
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Gia sư</p>
                 <p className="text-sm font-semibold text-gray-900">{currentRequest.tutor?.full_name || 'Đang cập nhật'}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{currentRequest.tutorPost?.title || '—'}</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {currentRequest.initiatedBy === 'TUTOR'
+                    ? (currentRequest.studentPost?.title || '—')
+                    : (currentRequest.tutorPost?.title || '—')}
+                </p>
               </div>
               <div className="rounded-2xl border border-white/60 bg-white/60 backdrop-blur-sm p-4">
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Môn học</p>
@@ -415,13 +433,21 @@ const ContactRequestDetail: React.FC = () => {
                       Bài đăng
                     </p>
                     <p className="text-sm font-medium text-gray-900 mt-1">
-                      {currentRequest.tutorPost?.title || '—'}
+                      {currentRequest.initiatedBy === 'TUTOR'
+                        ? (currentRequest.studentPost?.title || '—')
+                        : (currentRequest.tutorPost?.title || '—')}
                     </p>
-                    {currentRequest.tutorPost?.description && (
-                      <p className="text-xs text-gray-500 mt-1 leading-5">
-                        {currentRequest.tutorPost.description}
-                      </p>
-                    )}
+                    {currentRequest.initiatedBy === 'TUTOR'
+                      ? (currentRequest.studentPost?.content && (
+                        <p className="text-xs text-gray-500 mt-1 leading-5">
+                          {currentRequest.studentPost.content}
+                        </p>
+                      ))
+                      : (currentRequest.tutorPost?.description && (
+                        <p className="text-xs text-gray-500 mt-1 leading-5">
+                          {currentRequest.tutorPost.description}
+                        </p>
+                      ))}
                   </div>
                 </div>
 
@@ -556,6 +582,19 @@ const ContactRequestDetail: React.FC = () => {
                 getRequestDetail(requestId);
               }
             }}
+          />
+        )}
+
+        {/* Confirm Response Modal */}
+        {pendingAction && (
+          <ConfirmResponseModal
+            isOpen={showConfirmModal}
+            onClose={handleCloseConfirmModal}
+            onConfirm={handleConfirmResponse}
+            action={pendingAction}
+            tutorName={currentRequest.tutor?.full_name}
+            subjectName={currentRequest.subjectInfo?.name}
+            isLoading={isResponding}
           />
         )}
       </div>

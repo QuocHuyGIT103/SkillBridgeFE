@@ -306,7 +306,13 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                                 }`}
                             >
                               <CheckCircleIcon className="w-4 h-4" />
-                              <span>{session.canAttend ? 'Điểm danh' : 'Chưa đến giờ'}</span>
+                              {(() => {
+                                const now = new Date();
+                                const start = new Date(session.scheduledDate);
+                                const end = new Date(start.getTime() + (session.duration || 0) * 60000);
+                                const isPast = now > end;
+                                return <span>{session.canAttend ? 'Điểm danh' : (isPast ? 'Đã quá giờ' : 'Chưa đến giờ')}</span>;
+                              })()}
                             </button>
                           )}
 

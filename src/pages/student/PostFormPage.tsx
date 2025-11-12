@@ -73,7 +73,6 @@ const PostFormPage: React.FC = () => {
       hourly_rate: { min: 20000, max: 100000 },
       availability: '',
       requirements: '',
-      expiry_date: '',
       teachingMode: 'BOTH',
       address: { province: '', district: '', ward: '', specificAddress: '' },
       teachingSchedule: [],
@@ -166,9 +165,6 @@ const PostFormPage: React.FC = () => {
         hourly_rate: selectedPost.hourly_rate || { min: 20000, max: 100000 },
         availability: availability,
         requirements: selectedPost.requirements || '',
-        expiry_date: selectedPost.expiry_date
-          ? new Date(selectedPost.expiry_date).toISOString().split('T')[0]
-          : '',
         teachingMode: selectedPost.is_online ? 'BOTH' : 'OFFLINE',
         address: {
           province: '',
@@ -282,7 +278,6 @@ const PostFormPage: React.FC = () => {
       },
       availability: data.availability,
       requirements: data.requirements,
-      expiry_date: data.expiry_date || undefined,
     };
 
     try {
@@ -694,18 +689,6 @@ const PostFormPage: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {errors.requirements && <span className="text-sm text-red-600 mt-1 block">{errors.requirements.message}</span>}
-          </div>
-
-          {/* Expiry Date */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ngày hết hạn
-            </label>
-            <input
-              type="date"
-              {...register('expiry_date')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
           </div>
         </div>
 

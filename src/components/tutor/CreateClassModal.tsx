@@ -11,6 +11,7 @@ import {
 
 import { useContactRequestStore } from '../../store/contactRequest.store';
 import type { ContactRequest, CreateLearningClassInput } from '../../types/contactRequest.types';
+import { parseScheduleFromString } from '../../utils/scheduleParser';
 
 interface CreateClassModalProps {
   request: ContactRequest;
@@ -37,14 +38,26 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 }) => {
   const { createLearningClass, isCreatingClass } = useContactRequestStore();
 
-  // Get tutor post info
+  // Check if request was initiated by tutor (tutor sends teaching offer to student's post)
+  const isTutorInitiated = request.initiatedBy === 'TUTOR';
+
+  // Get tutor post info (when student sends request to tutor's post)
   const tutorPost = (request as any).tutorPost ?? (request as any).tutorPostId;
 
-  // Determine learning mode from tutor post or request
+  // Get student post info (when tutor sends offer to student's post)
+  const studentPost = (request as any).studentPost;
+
+  // Determine learning mode from student post, tutor post or request
   const determineLearningMode = (): 'ONLINE' | 'OFFLINE' => {
     // Nếu request có learningMode cụ thể (ONLINE/OFFLINE), dùng nó
     if (request.learningMode === 'ONLINE' || request.learningMode === 'OFFLINE') {
       return request.learningMode;
+    }
+
+    // Nếu là tutor-initiated, lấy từ studentPost
+    if (isTutorInitiated && studentPost) {
+      if (studentPost.is_online === true) return 'ONLINE';
+      if (studentPost.is_online === false) return 'OFFLINE';
     }
 
     // Nếu request là FLEXIBLE, ưu tiên teachingMode từ tutorPost
@@ -60,17 +73,70 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
   const [learningMode, setLearningMode] = useState<'ONLINE' | 'OFFLINE'>(determineLearningMode());
 
-  // Extract schedule days from tutorPost
+  // Extract schedule days from tutorPost or studentPost
   const extractScheduleDays = (): number[] => {
+    // Nếu là tutor-initiated, lấy từ studentPost hoặc request.preferredSchedule
+    if (isTutorInitiated) {
+      // Ưu tiên từ request.preferredSchedule
+      if (request.preferredSchedule) {
+        const parsed = parseScheduleFromString(request.preferredSchedule);
+        if (parsed.days.length > 0) return parsed.days;
+      }
+      // Hoặc từ studentPost.availability
+      if (studentPost?.availability) {
+        const parsed = parseScheduleFromString(studentPost.availability);
+        if (parsed.days.length > 0) return parsed.days;
+      }
+      // Hoặc từ studentPost.teachingSchedule nếu có
+      if (studentPost?.teachingSchedule && Array.isArray(studentPost.teachingSchedule)) {
+        return studentPost.teachingSchedule.map((schedule: any) => schedule.dayOfWeek).sort();
+      }
+      return [];
+    }
+
+    // Nếu là student-initiated, lấy từ tutorPost
     if (tutorPost?.teachingSchedule && Array.isArray(tutorPost.teachingSchedule)) {
       return tutorPost.teachingSchedule.map((schedule: any) => schedule.dayOfWeek).sort();
     }
     return [];
   };
 
-  // Extract schedule time from tutorPost
+  // Extract schedule time from tutorPost or studentPost
   const extractScheduleTime = (): { startTime: string; endTime: string } => {
-    if (tutorPost?.teachingSchedule && tutorPost.teachingSchedule.length > 0) {
+    // Nếu là tutor-initiated, lấy từ studentPost
+    if (isTutorInitiated) {
+      // Ưu tiên từ request.preferredSchedule (parse từ string)
+      if (request.preferredSchedule) {
+        const parsed = parseScheduleFromString(request.preferredSchedule);
+        if (parsed.startTime && parsed.endTime) {
+          return {
+            startTime: parsed.startTime,
+            endTime: parsed.endTime
+          };
+        }
+      }
+      // Hoặc từ studentPost.availability (parse từ string)
+      if (studentPost?.availability) {
+        const parsed = parseScheduleFromString(studentPost.availability);
+        if (parsed.startTime && parsed.endTime) {
+          return {
+            startTime: parsed.startTime,
+            endTime: parsed.endTime
+          };
+        }
+      }
+      // Hoặc từ studentPost.teachingSchedule array
+      if (studentPost?.teachingSchedule && Array.isArray(studentPost.teachingSchedule) && studentPost.teachingSchedule.length > 0) {
+        const firstSchedule = studentPost.teachingSchedule[0];
+        return {
+          startTime: firstSchedule.startTime || '19:00',
+          endTime: firstSchedule.endTime || '20:30'
+        };
+      }
+    }
+
+    // Nếu là student-initiated, lấy từ tutorPost
+    if (tutorPost?.teachingSchedule && Array.isArray(tutorPost.teachingSchedule) && tutorPost.teachingSchedule.length > 0) {
       const firstSchedule = tutorPost.teachingSchedule[0];
       return {
         startTime: firstSchedule.startTime || '19:00',
@@ -80,8 +146,22 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     return { startTime: '19:00', endTime: '20:30' };
   };
 
-  // Extract address from tutorPost
+  // Extract address from tutorPost or studentPost
   const extractAddress = (): string => {
+    // Nếu là tutor-initiated, lấy từ studentPost
+    if (isTutorInitiated && studentPost) {
+      if (studentPost.location) {
+        return studentPost.location;
+      }
+      if (studentPost.address) {
+        const addr = studentPost.address;
+        if (typeof addr === 'string') return addr;
+        return addr.specificAddress || '';
+      }
+      return '';
+    }
+
+    // Nếu là student-initiated, lấy từ tutorPost
     if (tutorPost?.address) {
       const addr = tutorPost.address;
       return addr.specificAddress || '';
@@ -92,12 +172,34 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   const [selectedDays, setSelectedDays] = useState<number[]>(extractScheduleDays());
   const scheduleTime = extractScheduleTime();
 
-  // Generate class title from tutor post
+  // Generate class title from student post or tutor post
   const generateClassTitle = () => {
+    // Nếu là tutor-initiated, lấy từ studentPost
+    if (isTutorInitiated && studentPost?.title) {
+      return studentPost.title;
+    }
+
+    // Nếu là student-initiated, lấy từ tutorPost
     if (tutorPost?.title) {
       return tutorPost.title;
     }
+
     return `Lớp ${request.subjectInfo?.name} - ${request.student?.full_name}`;
+  };
+
+  // Generate description from student post or tutor post
+  const generateDescription = (): string => {
+    // Nếu là tutor-initiated, lấy từ studentPost
+    if (isTutorInitiated && studentPost?.content) {
+      return studentPost.content;
+    }
+
+    // Nếu là student-initiated, lấy từ tutorPost
+    if (tutorPost?.description) {
+      return tutorPost.description;
+    }
+
+    return '';
   };
 
   // Prepare Google Meet info (auto-provisioned on server if empty)
@@ -119,7 +221,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     defaultValues: {
       contactRequestId: request.id,
       title: generateClassTitle(),
-      description: tutorPost?.description || '',
+      description: generateDescription(),
       totalSessions: 10,
       schedule: {
         dayOfWeek: extractScheduleDays(),
@@ -162,7 +264,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
       // Xóa location
       setValue('location', undefined);
     } else {
-      // Lấy địa chỉ từ tutorPost
+      // Lấy địa chỉ từ tutorPost hoặc studentPost
       const address = extractAddress();
       setValue('location.address', address);
       // Xóa onlineInfo
@@ -216,7 +318,27 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     }).format(amount);
   };
 
-  const totalAmount = (watch('totalSessions') || 0) * (request.tutorPost?.pricePerSession || 0);
+  // Calculate total amount based on who initiated the request
+  const getPricePerSession = (): number => {
+    // Nếu là tutor-initiated, lấy từ request.expectedPrice hoặc studentPost.hourly_rate
+    if (isTutorInitiated) {
+      if (request.expectedPrice) {
+        return request.expectedPrice;
+      }
+      if (studentPost?.hourly_rate?.max) {
+        return studentPost.hourly_rate.max;
+      }
+      if (studentPost?.hourly_rate?.min) {
+        return studentPost.hourly_rate.min;
+      }
+      return 0;
+    }
+
+    // Nếu là student-initiated, lấy từ tutorPost
+    return request.tutorPost?.pricePerSession || 0;
+  };
+
+  const totalAmount = (watch('totalSessions') || 0) * getPricePerSession();
 
   return (
     <motion.div
@@ -245,10 +367,12 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
         </div>
 
         <div className="p-6">
-          {/* Student Message */}
+          {/* Message from student or tutor */}
           {request.message && (
             <div className="bg-blue-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-blue-900 mb-2">Tin nhắn từ học viên</h4>
+              <h4 className="font-medium text-blue-900 mb-2">
+                {isTutorInitiated ? 'Tin nhắn từ gia sư' : 'Tin nhắn từ học viên'}
+              </h4>
               <p className="text-sm text-blue-800 italic">"{request.message}"</p>
             </div>
           )}

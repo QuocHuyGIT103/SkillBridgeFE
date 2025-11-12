@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarIcon,
   UserGroupIcon,
@@ -14,13 +15,12 @@ import {
 } from "@heroicons/react/24/outline";
 import { useClassStore } from "../../store/class.store";
 import WeeklyCalendar from "../../components/schedule/WeeklyCalendar";
-import ClassScheduleDetailModal from "../../components/class/ClassScheduleDetailModal";
 import DashboardStats from "../../components/dashboard/DashboardStats";
 
 const TutorSchedulePage: React.FC = () => {
   const { tutorClasses, fetchTutorClasses } = useClassStore();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchTutorClasses();
@@ -171,7 +171,7 @@ const TutorSchedulePage: React.FC = () => {
             <motion.div
               key={cls._id}
               whileHover={{ scale: 1.02 }}
-              onClick={() => setSelectedClassId(cls._id)}
+              onClick={() => navigate(`/tutor/classes/${cls._id}/schedule`)}
               className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all"
             >
               {/* Class Header */}
@@ -278,17 +278,6 @@ const TutorSchedulePage: React.FC = () => {
       >
         <WeeklyCalendar userRole="TUTOR" />
       </motion.div>
-
-      {/* Class Schedule Detail Modal */}
-      <AnimatePresence>
-        {selectedClassId && (
-          <ClassScheduleDetailModal
-            classId={selectedClassId}
-            userRole="TUTOR"
-            onClose={() => setSelectedClassId(null)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };
