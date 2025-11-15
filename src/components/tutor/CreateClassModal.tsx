@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { motion } from "framer-motion";
 import {
   XMarkIcon,
   CalendarIcon,
   ClockIcon,
   MapPinIcon,
-  VideoCameraIcon
-} from '@heroicons/react/24/outline';
+  VideoCameraIcon,
+} from "@heroicons/react/24/outline";
 
-import { useContactRequestStore } from '../../store/contactRequest.store';
-import type { ContactRequest, CreateLearningClassInput } from '../../types/contactRequest.types';
-import { parseScheduleFromString } from '../../utils/scheduleParser';
+import { useContractStore } from "../../store/contract.store";
+import type { ContactRequest } from "../../types/contactRequest.types";
+import type { CreateContractInput } from "../../types/contract.types";
+import { parseScheduleFromString } from "../../utils/scheduleParser";
+import {
+  generateContractCode,
+  generateContractTerms,
+} from "../../utils/contractGenerator";
+import ContractPreviewModal from "./ContractPreviewModal";
+
+interface ContractDataWithClassInfo extends CreateContractInput {
+  classTitle: string;
+  classDescription?: string;
+  contractCode: string;
+  contractTerms: string;
+}
 
 interface CreateClassModalProps {
   request: ContactRequest;
@@ -19,27 +32,64 @@ interface CreateClassModalProps {
   onSuccess: () => void;
 }
 
-interface FormData extends CreateLearningClassInput { }
+interface FormData {
+  contactRequestId: string;
+  title: string;
+  description?: string;
+  totalSessions: number;
+  schedule: {
+    dayOfWeek: number[];
+    startTime: string;
+    endTime: string;
+  };
+  startDate: string;
+  location?: {
+    address: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+  onlineInfo?: {
+    platform: "ZOOM" | "GOOGLE_MEET" | "MICROSOFT_TEAMS" | "OTHER";
+    meetingLink?: string;
+    meetingId?: string;
+    password?: string;
+  };
+  paymentTerms?: {
+    paymentMethod: "FULL_PAYMENT" | "INSTALLMENTS";
+    installmentPlan?: {
+      numberOfInstallments: number;
+      firstPaymentPercentage: number;
+    };
+  };
+}
 
 const WEEKDAYS = [
-  { value: 1, label: 'Thứ 2' },
-  { value: 2, label: 'Thứ 3' },
-  { value: 3, label: 'Thứ 4' },
-  { value: 4, label: 'Thứ 5' },
-  { value: 5, label: 'Thứ 6' },
-  { value: 6, label: 'Thứ 7' },
-  { value: 0, label: 'Chủ nhật' }
+  { value: 1, label: "Thứ 2" },
+  { value: 2, label: "Thứ 3" },
+  { value: 3, label: "Thứ 4" },
+  { value: 4, label: "Thứ 5" },
+  { value: 5, label: "Thứ 6" },
+  { value: 6, label: "Thứ 7" },
+  { value: 0, label: "Chủ nhật" },
 ];
 
 const CreateClassModal: React.FC<CreateClassModalProps> = ({
   request,
   onClose,
-  onSuccess
+  onSuccess,
 }) => {
-  const { createLearningClass, isCreatingClass } = useContactRequestStore();
+  const { createContract, autoSignForTutor, isCreatingContract } =
+    useContractStore();
+
+  // State for preview modal
+  const [showPreview, setShowPreview] = useState(false);
+  const [preparedContractData, setPreparedContractData] =
+    useState<ContractDataWithClassInfo | null>(null);
 
   // Check if request was initiated by tutor (tutor sends teaching offer to student's post)
-  const isTutorInitiated = request.initiatedBy === 'TUTOR';
+  const isTutorInitiated = request.initiatedBy === "TUTOR";
 
   // Get tutor post info (when student sends request to tutor's post)
   const tutorPost = (request as any).tutorPost ?? (request as any).tutorPostId;
@@ -48,30 +98,35 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   const studentPost = (request as any).studentPost;
 
   // Determine learning mode from student post, tutor post or request
-  const determineLearningMode = (): 'ONLINE' | 'OFFLINE' => {
+  const determineLearningMode = (): "ONLINE" | "OFFLINE" => {
     // Nếu request có learningMode cụ thể (ONLINE/OFFLINE), dùng nó
-    if (request.learningMode === 'ONLINE' || request.learningMode === 'OFFLINE') {
+    if (
+      request.learningMode === "ONLINE" ||
+      request.learningMode === "OFFLINE"
+    ) {
       return request.learningMode;
     }
 
     // Nếu là tutor-initiated, lấy từ studentPost
     if (isTutorInitiated && studentPost) {
-      if (studentPost.is_online === true) return 'ONLINE';
-      if (studentPost.is_online === false) return 'OFFLINE';
+      if (studentPost.is_online === true) return "ONLINE";
+      if (studentPost.is_online === false) return "OFFLINE";
     }
 
     // Nếu request là FLEXIBLE, ưu tiên teachingMode từ tutorPost
-    if (tutorPost?.teachingMode === 'ONLINE') return 'ONLINE';
-    if (tutorPost?.teachingMode === 'OFFLINE') return 'OFFLINE';
+    if (tutorPost?.teachingMode === "ONLINE") return "ONLINE";
+    if (tutorPost?.teachingMode === "OFFLINE") return "OFFLINE";
 
     // Nếu tutorPost là BOTH, ưu tiên ONLINE
-    if (tutorPost?.teachingMode === 'BOTH') return 'ONLINE';
+    if (tutorPost?.teachingMode === "BOTH") return "ONLINE";
 
     // Default là ONLINE
-    return 'ONLINE';
+    return "ONLINE";
   };
 
-  const [learningMode, setLearningMode] = useState<'ONLINE' | 'OFFLINE'>(determineLearningMode());
+  const [learningMode, setLearningMode] = useState<"ONLINE" | "OFFLINE">(
+    determineLearningMode()
+  );
 
   // Extract schedule days from tutorPost or studentPost
   const extractScheduleDays = (): number[] => {
@@ -88,15 +143,25 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
         if (parsed.days.length > 0) return parsed.days;
       }
       // Hoặc từ studentPost.teachingSchedule nếu có
-      if (studentPost?.teachingSchedule && Array.isArray(studentPost.teachingSchedule)) {
-        return studentPost.teachingSchedule.map((schedule: any) => schedule.dayOfWeek).sort();
+      if (
+        studentPost?.teachingSchedule &&
+        Array.isArray(studentPost.teachingSchedule)
+      ) {
+        return studentPost.teachingSchedule
+          .map((schedule: any) => schedule.dayOfWeek)
+          .sort();
       }
       return [];
     }
 
     // Nếu là student-initiated, lấy từ tutorPost
-    if (tutorPost?.teachingSchedule && Array.isArray(tutorPost.teachingSchedule)) {
-      return tutorPost.teachingSchedule.map((schedule: any) => schedule.dayOfWeek).sort();
+    if (
+      tutorPost?.teachingSchedule &&
+      Array.isArray(tutorPost.teachingSchedule)
+    ) {
+      return tutorPost.teachingSchedule
+        .map((schedule: any) => schedule.dayOfWeek)
+        .sort();
     }
     return [];
   };
@@ -111,7 +176,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
         if (parsed.startTime && parsed.endTime) {
           return {
             startTime: parsed.startTime,
-            endTime: parsed.endTime
+            endTime: parsed.endTime,
           };
         }
       }
@@ -121,55 +186,108 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
         if (parsed.startTime && parsed.endTime) {
           return {
             startTime: parsed.startTime,
-            endTime: parsed.endTime
+            endTime: parsed.endTime,
           };
         }
       }
       // Hoặc từ studentPost.teachingSchedule array
-      if (studentPost?.teachingSchedule && Array.isArray(studentPost.teachingSchedule) && studentPost.teachingSchedule.length > 0) {
+      if (
+        studentPost?.teachingSchedule &&
+        Array.isArray(studentPost.teachingSchedule) &&
+        studentPost.teachingSchedule.length > 0
+      ) {
         const firstSchedule = studentPost.teachingSchedule[0];
         return {
-          startTime: firstSchedule.startTime || '19:00',
-          endTime: firstSchedule.endTime || '20:30'
+          startTime: firstSchedule.startTime || "19:00",
+          endTime: firstSchedule.endTime || "20:30",
         };
       }
     }
 
     // Nếu là student-initiated, lấy từ tutorPost
-    if (tutorPost?.teachingSchedule && Array.isArray(tutorPost.teachingSchedule) && tutorPost.teachingSchedule.length > 0) {
+    if (
+      tutorPost?.teachingSchedule &&
+      Array.isArray(tutorPost.teachingSchedule) &&
+      tutorPost.teachingSchedule.length > 0
+    ) {
       const firstSchedule = tutorPost.teachingSchedule[0];
       return {
-        startTime: firstSchedule.startTime || '19:00',
-        endTime: firstSchedule.endTime || '20:30'
+        startTime: firstSchedule.startTime || "19:00",
+        endTime: firstSchedule.endTime || "20:30",
       };
     }
-    return { startTime: '19:00', endTime: '20:30' };
+    return { startTime: "19:00", endTime: "20:30" };
   };
 
   // Extract address from tutorPost or studentPost
   const extractAddress = (): string => {
+    let address = "";
+
     // Nếu là tutor-initiated, lấy từ studentPost
     if (isTutorInitiated && studentPost) {
       if (studentPost.location) {
-        return studentPost.location;
-      }
-      if (studentPost.address) {
+        address = studentPost.location;
+      } else if (studentPost.address) {
         const addr = studentPost.address;
-        if (typeof addr === 'string') return addr;
-        return addr.specificAddress || '';
+        if (typeof addr === "string") {
+          address = addr;
+        } else {
+          address = addr.specificAddress || "";
+        }
       }
-      return '';
+    } else if (tutorPost?.address) {
+      // Nếu là student-initiated, lấy từ tutorPost
+      const addr = tutorPost.address;
+      address = addr.specificAddress || "";
     }
 
-    // Nếu là student-initiated, lấy từ tutorPost
-    if (tutorPost?.address) {
-      const addr = tutorPost.address;
-      return addr.specificAddress || '';
+    // Fallback address nếu không có thông tin
+    if (!address || address.trim().length < 5) {
+      address = "Địa chỉ sẽ được thỏa thuận sau khi hợp đồng được phê duyệt";
     }
-    return '';
+
+    return address;
   };
 
-  const [selectedDays, setSelectedDays] = useState<number[]>(extractScheduleDays());
+  // Calculate session duration in minutes
+  const calculateSessionDuration = (
+    startTime: string,
+    endTime: string
+  ): number => {
+    if (!startTime || !endTime) return 90; // Default 90 minutes
+
+    const [startHour, startMin] = startTime.split(":").map(Number);
+    const [endHour, endMin] = endTime.split(":").map(Number);
+
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+
+    return endMinutes - startMinutes;
+  };
+
+  // Calculate expected end date
+  const calculateExpectedEndDate = (
+    startDateStr: string,
+    totalSessions: number,
+    dayOfWeek: number[]
+  ): string => {
+    if (!startDateStr || totalSessions <= 0 || dayOfWeek.length === 0) {
+      return startDateStr;
+    }
+
+    const startDate = new Date(startDateStr);
+    const sessionsPerWeek = dayOfWeek.length;
+    const totalWeeks = Math.ceil(totalSessions / sessionsPerWeek);
+
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + totalWeeks * 7);
+
+    return endDate.toISOString().split("T")[0];
+  };
+
+  const [selectedDays, setSelectedDays] = useState<number[]>(
+    extractScheduleDays()
+  );
   const scheduleTime = extractScheduleTime();
 
   // Generate class title from student post or tutor post
@@ -199,15 +317,15 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
       return tutorPost.description;
     }
 
-    return '';
+    return "";
   };
 
   // Prepare Google Meet info (auto-provisioned on server if empty)
   const generateGoogleMeetInfo = () => {
     return {
-      meetingLink: '',
+      meetingLink: "",
       meetingId: undefined,
-      password: undefined // Google Meet không cần password riêng
+      password: undefined, // Google Meet không cần password riêng
     };
   };
 
@@ -216,7 +334,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     handleSubmit,
     watch,
     setValue,
-    formState: { errors }
+    formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
       contactRequestId: request.id,
@@ -226,95 +344,203 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
       schedule: {
         dayOfWeek: extractScheduleDays(),
         startTime: scheduleTime.startTime,
-        endTime: scheduleTime.endTime
+        endTime: scheduleTime.endTime,
       },
-      startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Next week
-      location: learningMode === 'OFFLINE' ? {
-        address: extractAddress()
-      } : undefined,
-      onlineInfo: learningMode === 'ONLINE' ? {
-        platform: 'GOOGLE_MEET',
-        ...generateGoogleMeetInfo()
-      } : undefined
-    }
+      startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0], // Next week
+      location:
+        learningMode === "OFFLINE"
+          ? {
+              address: extractAddress(),
+            }
+          : undefined,
+      onlineInfo:
+        learningMode === "ONLINE"
+          ? {
+              platform: "GOOGLE_MEET",
+              ...generateGoogleMeetInfo(),
+            }
+          : undefined,
+    },
   });
 
-  const watchStartTime = watch('schedule.startTime');
-  const watchEndTime = watch('schedule.endTime');
+  const watchStartTime = watch("schedule.startTime");
+  const watchEndTime = watch("schedule.endTime");
 
   const handleDayToggle = (day: number) => {
     const newDays = selectedDays.includes(day)
-      ? selectedDays.filter(d => d !== day)
+      ? selectedDays.filter((d) => d !== day)
       : [...selectedDays, day].sort();
 
     setSelectedDays(newDays);
-    setValue('schedule.dayOfWeek', newDays);
+    setValue("schedule.dayOfWeek", newDays);
   };
 
   // Update Zoom info when switching to ONLINE mode
-  const handleModeChange = (mode: 'ONLINE' | 'OFFLINE') => {
+  const handleModeChange = (mode: "ONLINE" | "OFFLINE") => {
     setLearningMode(mode);
 
-    if (mode === 'ONLINE') {
-      setValue('onlineInfo.platform', 'GOOGLE_MEET');
+    if (mode === "ONLINE") {
+      setValue("onlineInfo.platform", "GOOGLE_MEET");
       const meetInfo = generateGoogleMeetInfo();
-      setValue('onlineInfo.meetingLink', meetInfo.meetingLink);
-      setValue('onlineInfo.meetingId', meetInfo.meetingId);
-      setValue('onlineInfo.password', meetInfo.password);
+      setValue("onlineInfo.meetingLink", meetInfo.meetingLink);
+      setValue("onlineInfo.meetingId", meetInfo.meetingId);
+      setValue("onlineInfo.password", meetInfo.password);
       // Xóa location
-      setValue('location', undefined);
+      setValue("location", undefined);
     } else {
       // Lấy địa chỉ từ tutorPost hoặc studentPost
       const address = extractAddress();
-      setValue('location.address', address);
+      setValue("location.address", address);
       // Xóa onlineInfo
-      setValue('onlineInfo', undefined);
+      setValue("onlineInfo", undefined);
     }
   };
 
   const onSubmit = async (data: FormData) => {
-    try {
-      const classData: CreateLearningClassInput = {
-        ...data,
-        schedule: {
-          ...data.schedule,
-          dayOfWeek: selectedDays
-        }
-      };
+    // Tính toán các field bắt buộc
+    const pricePerSession = getPricePerSession();
+    const totalSessions = data.totalSessions || 1;
+    const totalAmount = pricePerSession * totalSessions;
+    const sessionDuration = calculateSessionDuration(
+      data.schedule.startTime,
+      data.schedule.endTime
+    );
+    const expectedEndDate = calculateExpectedEndDate(
+      data.startDate,
+      totalSessions,
+      selectedDays
+    );
 
-      if (learningMode === 'OFFLINE') {
-        delete classData.onlineInfo;
-      } else {
-        delete classData.location;
+    // Generate contract code and terms (separate from class info)
+    const contractCode = generateContractCode();
+    const contractTerms = generateContractTerms({
+      tutorName: request.tutor?.full_name || "Gia sư",
+      studentName: request.student?.full_name || "Học viên",
+      subjectName: request.subjectInfo?.name || "Môn học",
+      totalSessions: totalSessions,
+      pricePerSession: pricePerSession,
+      learningMode: learningMode,
+    });
+
+    const contractData: ContractDataWithClassInfo = {
+      ...data,
+      // Keep original class title and description from user input
+      title: data.title, // This is the class title
+      description: data.description, // This is the class description
+      // Contract info (auto-generated) - stored separately for contract generation
+      classTitle: data.title,
+      classDescription: data.description,
+      contractCode: contractCode,
+      contractTerms: contractTerms,
+      // Other fields
+      pricePerSession,
+      totalAmount,
+      sessionDuration,
+      learningMode,
+      expectedEndDate,
+      schedule: {
+        ...data.schedule,
+        dayOfWeek: selectedDays,
+      },
+    };
+
+    // Cleanup dữ liệu dựa trên learning mode
+    if (learningMode === "OFFLINE") {
+      // Xóa hoàn toàn onlineInfo cho lớp offline
+      delete contractData.onlineInfo;
+
+      // Đảm bảo location có address hợp lệ
+      if (
+        !contractData.location?.address ||
+        contractData.location.address.trim().length < 5
+      ) {
+        contractData.location = {
+          address: extractAddress(),
+        };
+      }
+    } else {
+      // Xóa location cho lớp online
+      delete contractData.location;
+
+      // Đảm bảo onlineInfo có dữ liệu hợp lệ cho lớp online
+      if (!contractData.onlineInfo?.platform) {
+        contractData.onlineInfo = {
+          platform: "OTHER",
+        };
       }
 
-      await createLearningClass(classData);
+      // Xóa meetingLink nếu rỗng để tránh lỗi validation
+      if (
+        contractData.onlineInfo.meetingLink &&
+        contractData.onlineInfo.meetingLink.trim() === ""
+      ) {
+        delete contractData.onlineInfo.meetingLink;
+      }
+    }
+
+    // Show preview modal instead of creating immediately
+    setPreparedContractData(contractData);
+    setShowPreview(true);
+  };
+
+  // Handle contract confirmation from preview modal
+  const handleConfirmContract = async () => {
+    if (!preparedContractData) return;
+
+    try {
+      // Remove only the display fields before sending to API, keep title/description for class
+      const { contractCode, contractTerms, ...contractInput } =
+        preparedContractData;
+
+      console.log("Contract data to be sent:", contractInput); // Debug log
+
+      // Step 1: Create contract
+      const contract = await createContract(contractInput);
+
+      // Step 2: Auto-sign for tutor
+      await autoSignForTutor(contract.id);
+
+      setShowPreview(false);
       onSuccess();
     } catch (error) {
       // Error handled in store
+      setShowPreview(false);
+    }
+  };
+
+  // Handle close preview modal
+  const handleClosePreview = () => {
+    if (!isCreatingContract) {
+      setShowPreview(false);
     }
   };
 
   const calculateEndDate = () => {
-    if (selectedDays.length === 0 || !watch('totalSessions') || !watch('startDate')) {
+    if (
+      selectedDays.length === 0 ||
+      !watch("totalSessions") ||
+      !watch("startDate")
+    ) {
       return null;
     }
 
-    const startDate = new Date(watch('startDate'));
-    const totalSessions = watch('totalSessions');
+    const startDate = new Date(watch("startDate"));
+    const totalSessions = watch("totalSessions");
     const sessionsPerWeek = selectedDays.length;
     const totalWeeks = Math.ceil(totalSessions / sessionsPerWeek);
 
     const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + (totalWeeks * 7));
+    endDate.setDate(endDate.getDate() + totalWeeks * 7);
 
-    return endDate.toLocaleDateString('vi-VN');
+    return endDate.toLocaleDateString("vi-VN");
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
@@ -338,7 +564,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
     return request.tutorPost?.pricePerSession || 0;
   };
 
-  const totalAmount = (watch('totalSessions') || 0) * getPricePerSession();
+  const totalAmount = (watch("totalSessions") || 0) * getPricePerSession();
 
   return (
     <motion.div
@@ -355,9 +581,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900">
-            Tạo lớp học mới
-          </h3>
+          <h3 className="text-xl font-semibold text-gray-900">Tạo lớp học</h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -371,9 +595,13 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
           {request.message && (
             <div className="bg-blue-50 rounded-lg p-4 mb-6">
               <h4 className="font-medium text-blue-900 mb-2">
-                {isTutorInitiated ? 'Tin nhắn từ gia sư' : 'Tin nhắn từ học viên'}
+                {isTutorInitiated
+                  ? "Tin nhắn từ gia sư"
+                  : "Tin nhắn từ học viên"}
               </h4>
-              <p className="text-sm text-blue-800 italic">"{request.message}"</p>
+              <p className="text-sm text-blue-800 italic">
+                "{request.message}"
+              </p>
             </div>
           )}
 
@@ -386,21 +614,23 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                   Tên lớp học *
                 </label>
                 <input
-                  {...register('title', {
-                    required: 'Vui lòng nhập tên lớp học',
+                  {...register("title", {
+                    required: "Vui lòng nhập tên lớp học",
                     minLength: {
                       value: 5,
-                      message: 'Tên lớp học phải có ít nhất 5 ký tự'
+                      message: "Tên lớp học phải có ít nhất 5 ký tự",
                     },
                     maxLength: {
                       value: 200,
-                      message: 'Tên lớp học không được vượt quá 200 ký tự'
-                    }
+                      message: "Tên lớp học không được vượt quá 200 ký tự",
+                    },
                   })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 {errors.title && (
-                  <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.title.message}
+                  </p>
                 )}
               </div>
 
@@ -409,16 +639,16 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                   Tổng số buổi học *
                 </label>
                 <input
-                  {...register('totalSessions', {
-                    required: 'Vui lòng nhập số buổi học',
+                  {...register("totalSessions", {
+                    required: "Vui lòng nhập số buổi học",
                     min: {
                       value: 1,
-                      message: 'Số buổi học tối thiểu là 1'
+                      message: "Số buổi học tối thiểu là 1",
                     },
                     max: {
                       value: 100,
-                      message: 'Số buổi học tối đa là 100'
-                    }
+                      message: "Số buổi học tối đa là 100",
+                    },
                   })}
                   type="number"
                   min="1"
@@ -426,7 +656,9 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 {errors.totalSessions && (
-                  <p className="mt-1 text-sm text-red-600">{errors.totalSessions.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.totalSessions.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -437,18 +669,20 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                 Mô tả lớp học
               </label>
               <textarea
-                {...register('description', {
+                {...register("description", {
                   maxLength: {
                     value: 1000,
-                    message: 'Mô tả không được vượt quá 1000 ký tự'
-                  }
+                    message: "Mô tả không được vượt quá 1000 ký tự",
+                  },
                 })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 placeholder="Mô tả về nội dung, mục tiêu, phương pháp giảng dạy..."
               />
               {errors.description && (
-                <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.description.message}
+                </p>
               )}
             </div>
 
@@ -460,11 +694,12 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
-                  onClick={() => handleModeChange('ONLINE')}
-                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${learningMode === 'ONLINE'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-blue-300'
-                    }`}
+                  onClick={() => handleModeChange("ONLINE")}
+                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${
+                    learningMode === "ONLINE"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 hover:border-blue-300"
+                  }`}
                 >
                   <VideoCameraIcon className="w-5 h-5" />
                   <span className="font-medium">Online</span>
@@ -472,11 +707,12 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => handleModeChange('OFFLINE')}
-                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${learningMode === 'OFFLINE'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-blue-300'
-                    }`}
+                  onClick={() => handleModeChange("OFFLINE")}
+                  className={`flex items-center justify-center space-x-2 p-4 border-2 rounded-lg transition-colors ${
+                    learningMode === "OFFLINE"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 hover:border-blue-300"
+                  }`}
                 >
                   <MapPinIcon className="w-5 h-5" />
                   <span className="font-medium">Trực tiếp</span>
@@ -502,17 +738,20 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                       key={day.value}
                       type="button"
                       onClick={() => handleDayToggle(day.value)}
-                      className={`p-2 text-sm border rounded-lg transition-colors ${selectedDays.includes(day.value)
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                        : 'border-gray-200 hover:border-blue-300'
-                        }`}
+                      className={`p-2 text-sm border rounded-lg transition-colors ${
+                        selectedDays.includes(day.value)
+                          ? "border-blue-500 bg-blue-50 text-blue-700 font-medium"
+                          : "border-gray-200 hover:border-blue-300"
+                      }`}
                     >
                       {day.label}
                     </button>
                   ))}
                 </div>
                 {selectedDays.length === 0 && (
-                  <p className="mt-1 text-sm text-red-600">Vui lòng chọn ít nhất 1 ngày</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    Vui lòng chọn ít nhất 1 ngày
+                  </p>
                 )}
               </div>
 
@@ -523,14 +762,16 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                     Giờ bắt đầu *
                   </label>
                   <input
-                    {...register('schedule.startTime', {
-                      required: 'Vui lòng chọn giờ bắt đầu'
+                    {...register("schedule.startTime", {
+                      required: "Vui lòng chọn giờ bắt đầu",
                     })}
                     type="time"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   {errors.schedule?.startTime && (
-                    <p className="mt-1 text-sm text-red-600">{errors.schedule.startTime.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.schedule.startTime.message}
+                    </p>
                   )}
                 </div>
 
@@ -539,20 +780,22 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                     Giờ kết thúc *
                   </label>
                   <input
-                    {...register('schedule.endTime', {
-                      required: 'Vui lòng chọn giờ kết thúc',
+                    {...register("schedule.endTime", {
+                      required: "Vui lòng chọn giờ kết thúc",
                       validate: (value) => {
                         if (value <= watchStartTime) {
-                          return 'Giờ kết thúc phải sau giờ bắt đầu';
+                          return "Giờ kết thúc phải sau giờ bắt đầu";
                         }
                         return true;
-                      }
+                      },
                     })}
                     type="time"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   {errors.schedule?.endTime && (
-                    <p className="mt-1 text-sm text-red-600">{errors.schedule.endTime.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.schedule.endTime.message}
+                    </p>
                   )}
                 </div>
 
@@ -561,25 +804,27 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                     Ngày bắt đầu *
                   </label>
                   <input
-                    {...register('startDate', {
-                      required: 'Vui lòng chọn ngày bắt đầu',
+                    {...register("startDate", {
+                      required: "Vui lòng chọn ngày bắt đầu",
                       validate: (value) => {
                         const selectedDate = new Date(value);
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
 
                         if (selectedDate < today) {
-                          return 'Ngày bắt đầu không được trong quá khứ';
+                          return "Ngày bắt đầu không được trong quá khứ";
                         }
                         return true;
-                      }
+                      },
                     })}
                     type="date"
-                    min={new Date().toISOString().split('T')[0]}
+                    min={new Date().toISOString().split("T")[0]}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   {errors.startDate && (
-                    <p className="mt-1 text-sm text-red-600">{errors.startDate.message}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.startDate.message}
+                    </p>
                   )}
                 </div>
               </div>
@@ -588,7 +833,8 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
               {calculateEndDate() && (
                 <div className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
                   <ClockIcon className="w-4 h-4 inline mr-1" />
-                  Dự kiến kết thúc: <span className="font-medium">{calculateEndDate()}</span>
+                  Dự kiến kết thúc:{" "}
+                  <span className="font-medium">{calculateEndDate()}</span>
                   {selectedDays.length > 0 && (
                     <span className="ml-2">
                       ({selectedDays.length} buổi/tuần)
@@ -599,21 +845,23 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
             </div>
 
             {/* Location/Online Info */}
-            {learningMode === 'OFFLINE' ? (
+            {learningMode === "OFFLINE" ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Địa chỉ học *
                 </label>
                 <input
-                  {...register('location.address', {
-                    required: 'Vui lòng nhập địa chỉ học'
+                  {...register("location.address", {
+                    required: "Vui lòng nhập địa chỉ học",
                   })}
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="123 Nguyễn Văn A, Phường B, Quận C, TP.HCM"
                 />
                 {errors.location?.address && (
-                  <p className="mt-1 text-sm text-red-600">{errors.location.address.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.location.address.message}
+                  </p>
                 )}
               </div>
             ) : (
@@ -625,7 +873,8 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-sm text-green-800 mb-3 font-medium">
-                    ✓ Hệ thống sẽ tự động tạo link Google Meet khi bạn bấm “Tạo lớp học”.
+                    ✓ Hệ thống sẽ tự động tạo link Google Meet khi bạn bấm “Tạo
+                    lớp học”.
                   </p>
 
                   <div className="space-y-3">
@@ -645,7 +894,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                         Link phòng học
                       </label>
                       <input
-                        {...register('onlineInfo.meetingLink')}
+                        {...register("onlineInfo.meetingLink")}
                         readOnly
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-mono text-sm"
                         placeholder="Sẽ được tạo tự động sau khi tạo lớp"
@@ -654,10 +903,18 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                   </div>
 
                   <div className="mt-3 text-xs text-gray-600 bg-white rounded p-3 border border-gray-200">
-                    <p className="font-medium mb-2 text-gray-800">📌 Ghi chú:</p>
+                    <p className="font-medium mb-2 text-gray-800">
+                      📌 Ghi chú:
+                    </p>
                     <ul className="list-disc ml-4 space-y-1">
-                      <li>Link sẽ xuất hiện trong chi tiết lớp sau khi tạo thành công.</li>
-                      <li>Gia sư và học viên sẽ dùng CHUNG một link cho mọi buổi học.</li>
+                      <li>
+                        Link sẽ xuất hiện trong chi tiết lớp sau khi tạo thành
+                        công.
+                      </li>
+                      <li>
+                        Gia sư và học viên sẽ dùng CHUNG một link cho mọi buổi
+                        học.
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -666,15 +923,21 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
             {/* Summary */}
             <div className="bg-green-50 rounded-lg p-4">
-              <h4 className="font-medium text-green-900 mb-3">Tóm tắt lớp học</h4>
+              <h4 className="font-medium text-green-900 mb-3">
+                Tóm tắt hợp đồng
+              </h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-green-700">Tổng số buổi:</span>
-                  <span className="ml-2 font-medium text-green-900">{watch('totalSessions')} buổi</span>
+                  <span className="ml-2 font-medium text-green-900">
+                    {watch("totalSessions")} buổi
+                  </span>
                 </div>
                 <div>
                   <span className="text-green-700">Tổng học phí:</span>
-                  <span className="ml-2 font-medium text-green-900">{formatCurrency(totalAmount)}</span>
+                  <span className="ml-2 font-medium text-green-900">
+                    {formatCurrency(totalAmount)}
+                  </span>
                 </div>
                 <div>
                   <span className="text-green-700">Ngày trong tuần:</span>
@@ -697,21 +960,32 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                 type="button"
                 onClick={onClose}
                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                disabled={isCreatingClass}
+                disabled={isCreatingContract}
               >
                 Hủy
               </button>
               <button
                 type="submit"
-                disabled={isCreatingClass || selectedDays.length === 0}
+                disabled={isCreatingContract || selectedDays.length === 0}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isCreatingClass ? 'Đang tạo...' : 'Tạo lớp học'}
+                {isCreatingContract ? "Đang tạo..." : "Tạo lớp học và hợp đồng"}
               </button>
             </div>
           </form>
         </div>
       </motion.div>
+
+      {/* Contract Preview Modal */}
+      {showPreview && preparedContractData && (
+        <ContractPreviewModal
+          contractData={preparedContractData}
+          request={request}
+          onClose={handleClosePreview}
+          onConfirm={handleConfirmContract}
+          isCreating={isCreatingContract}
+        />
+      )}
     </motion.div>
   );
 };

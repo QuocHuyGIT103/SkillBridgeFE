@@ -96,6 +96,12 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       badge: 0, // Có thể cập nhật từ store
     },
     {
+      id: "contracts",
+      label: "Hợp đồng",
+      icon: "document",
+      path: "/student/contracts",
+    },
+    {
       id: "schedule",
       label: "Lịch học",
       icon: "calendar",
@@ -387,7 +393,8 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
                         className="ml-6 mt-1 space-y-1"
                       >
                         {item.children?.map((child) => {
-                          const isChildActive = location.pathname === child.path;
+                          const isChildActive =
+                            location.pathname === child.path;
                           return (
                             <Link
                               key={child.id}

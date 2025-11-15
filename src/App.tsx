@@ -36,6 +36,8 @@ import StudentProfilePage from "./pages/student/profile/StudentProfilePage";
 import StudentPersonalProfilePage from "./pages/student/profile/StudentPersonalProfilePage";
 import StudentPreferencesPage from "./pages/student/profile/StudentPreferencesPage";
 import StudentContactRequestsPage from "./pages/student/StudentContactRequestsPage";
+import StudentContractsPage from "./pages/student/StudentContractsPage";
+import StudentContractDetailPage from "./pages/student/StudentContractDetailPage";
 
 // ✅ AI Survey Pages
 import AISurveyPage from "./pages/student/AISurveyPage";
@@ -187,6 +189,13 @@ function App() {
               <Route
                 path="contact-requests/:requestId"
                 element={<ContactRequestDetail />}
+              />
+
+              {/* Student Contracts Routes */}
+              <Route path="contracts" element={<StudentContractsPage />} />
+              <Route
+                path="contracts/:contractId"
+                element={<StudentContractDetailPage />}
               />
 
               {/* Student Profile Routes */}

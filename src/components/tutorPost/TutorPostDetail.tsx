@@ -92,7 +92,6 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
   };
 
   const handleContactClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    debugger;
     e.preventDefault();
     if (!isAuthenticated) {
       toast.error("Vui lòng đăng nhập để liên hệ với gia sư");

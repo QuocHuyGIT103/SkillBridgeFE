@@ -1,12 +1,12 @@
-import  axiosClient  from '../api/axiosClient';
+import axiosClient from "../api/axiosClient";
 import type {
   ContactRequest,
   CreateContactRequestInput,
   TutorResponseInput,
   CreateLearningClassInput,
   ContactRequestFilters,
-  LearningClass
-} from '../types/contactRequest.types';
+  LearningClass,
+} from "../types/contactRequest.types";
 
 export interface ContactRequestListResponse {
   success: boolean;
@@ -36,8 +36,10 @@ class ContactRequestService {
   /**
    * Student creates contact request
    */
-  async createContactRequest(data: CreateContactRequestInput): Promise<ContactRequestResponse> {
-    const response = await axiosClient.post('/contact-requests', data);
+  async createContactRequest(
+    data: CreateContactRequestInput
+  ): Promise<ContactRequestResponse> {
+    const response = await axiosClient.post("/contact-requests", data);
     return response;
   }
 
@@ -52,72 +54,99 @@ class ContactRequestService {
     preferredSchedule?: string;
     expectedPrice?: number;
     sessionDuration?: number;
-    learningMode: 'ONLINE' | 'OFFLINE' | 'FLEXIBLE';
+    learningMode: "ONLINE" | "OFFLINE" | "FLEXIBLE";
   }): Promise<ContactRequestResponse> {
-    const response = await axiosClient.post('/contact-requests/from-tutor', data);
+    const response = await axiosClient.post(
+      "/contact-requests/from-tutor",
+      data
+    );
     return response;
   }
 
   /**
    * Get student's contact requests
    */
-  async getStudentRequests(filters: ContactRequestFilters = {}): Promise<ContactRequestListResponse> {
+  async getStudentRequests(
+    filters: ContactRequestFilters = {}
+  ): Promise<ContactRequestListResponse> {
     const params = new URLSearchParams();
-    
+
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null && value !== "") {
         params.append(key, value.toString());
       }
     });
-    
-    const response = await axiosClient.get(`/contact-requests/student/my-requests?${params}`);
+
+    const response = await axiosClient.get(
+      `/contact-requests/student/my-requests?${params}`
+    );
     return {
       success: true,
-      data: response.data 
+      data: response.data,
     };
   }
 
   /**
    * Get tutor's incoming requests
    */
-  async getTutorRequests(filters: ContactRequestFilters = {}): Promise<ContactRequestListResponse> {
+  async getTutorRequests(
+    filters: ContactRequestFilters = {}
+  ): Promise<ContactRequestListResponse> {
     const params = new URLSearchParams();
-    
+
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null && value !== "") {
         params.append(key, value.toString());
       }
     });
-    
-    const response = await axiosClient.get(`/contact-requests/tutor/incoming-requests?${params}`);
+
+    const response = await axiosClient.get(
+      `/contact-requests/tutor/incoming-requests?${params}`
+    );
     return {
       success: true,
-      data: response.data 
+      data: response.data,
     };
   }
 
   /**
    * Tutor responds to contact request
    */
-  async respondToRequest(requestId: string, data: TutorResponseInput): Promise<ContactRequestResponse> {
-    debugger;
-    const response = await axiosClient.put(`/contact-requests/${requestId}/respond`, data);
+  async respondToRequest(
+    requestId: string,
+    data: TutorResponseInput
+  ): Promise<ContactRequestResponse> {
+    const response = await axiosClient.put(
+      `/contact-requests/${requestId}/respond`,
+      data
+    );
     return response;
   }
 
   /**
    * Student responds to tutor-initiated request
    */
-  async studentRespondToRequest(requestId: string, data: { action: 'ACCEPT' | 'REJECT'; message?: string }): Promise<ContactRequestResponse> {
-    const response = await axiosClient.put(`/contact-requests/${requestId}/student-respond`, data);
+  async studentRespondToRequest(
+    requestId: string,
+    data: { action: "ACCEPT" | "REJECT"; message?: string }
+  ): Promise<ContactRequestResponse> {
+    const response = await axiosClient.put(
+      `/contact-requests/${requestId}/student-respond`,
+      data
+    );
     return response;
   }
 
   /**
    * Create learning class from accepted request
    */
-  async createLearningClass(data: CreateLearningClassInput): Promise<LearningClassResponse> {
-    const response = await axiosClient.post('/contact-requests/create-class', data);
+  async createLearningClass(
+    data: CreateLearningClassInput
+  ): Promise<LearningClassResponse> {
+    const response = await axiosClient.post(
+      "/contact-requests/create-class",
+      data
+    );
     return response;
   }
 
@@ -125,8 +154,9 @@ class ContactRequestService {
    * Cancel contact request (by student)
    */
   async cancelRequest(requestId: string): Promise<ContactRequestResponse> {
-    debugger;
-    const response = await axiosClient.put(`/contact-requests/${requestId}/cancel`);
+    const response = await axiosClient.put(
+      `/contact-requests/${requestId}/cancel`
+    );
     return response;
   }
 
