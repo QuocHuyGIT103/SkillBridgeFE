@@ -80,6 +80,47 @@ export interface BatchVectorizeResponse {
   total: number;
 }
 
+// ==================== TUTOR STUDENT RECOMMENDATIONS ====================
+
+export interface StudentPostInfo {
+  id: string;
+  title: string;
+  content?: string;
+  subjects: Array<{
+    _id?: string;
+    name: string;
+    category?: string;
+  }>;
+  grade_levels: string[];
+  hourly_rate?: {
+    min: number;
+    max: number;
+  };
+  is_online: boolean;
+  location?: string;
+  requirements?: string;
+  availability?: string;
+  author: {
+    name: string;
+    email: string;
+    phone?: string;
+    avatar?: string;
+  };
+}
+
+export interface SmartStudentRecommendation {
+  postId: string;
+  matchScore: number;        // 0-100 percentage
+  explanation: string;       // AI-generated match reason
+  studentPost: StudentPostInfo;
+  matchDetails: MatchDetails;
+}
+
+export interface SmartStudentRecommendationResponse {
+  total: number;
+  recommendations: SmartStudentRecommendation[];
+}
+
 // ==================== SERVICE CLASS ====================
 
 class AIService {
@@ -175,6 +216,69 @@ class AIService {
    */
   static async batchVectorizeProfiles(): Promise<ApiResponse<BatchVectorizeResponse>> {
     return axiosClient.post<BatchVectorizeResponse>('/ai/admin/tutors/vectorize-all');
+  }
+
+  /**
+   * Get AI-powered smart student post recommendations for a tutor
+   * Uses Gemini embeddings + hybrid search (70% structured + 30% semantic)
+   * 
+   * @param tutorId - Tutor ID (must match authenticated user)
+   * @param query - Query parameters (limit, minScore, includeExplanations)
+   * @returns Smart recommendations with match scores and AI explanations
+   * 
+   * @example
+   * ```typescript
+   * const recommendations = await AIService.getSmartStudentRecommendations('tutor-123', {
+   *   limit: 10,
+   *   minScore: 0.6,
+   *   includeExplanations: true
+   * });
+   * ```
+   */
+  static async getSmartStudentRecommendations(
+    tutorId: string,
+    query: SmartRecommendationQuery = {}
+  ): Promise<ApiResponse<SmartStudentRecommendationResponse>> {
+    const params = new URLSearchParams();
+
+    // Add query parameters
+    if (query.limit !== undefined) {
+      params.append('limit', Math.min(Math.max(query.limit, 1), 50).toString());
+    }
+
+    if (query.minScore !== undefined) {
+      params.append('minScore', Math.min(Math.max(query.minScore, 0), 1).toString());
+    }
+
+    if (query.includeExplanations !== undefined) {
+      params.append('includeExplanations', query.includeExplanations.toString());
+    }
+
+    const queryString = params.toString();
+    const url = `/ai/tutors/${tutorId}/smart-student-posts${queryString ? `?${queryString}` : ''}`;
+
+    return axiosClient.get<SmartStudentRecommendationResponse>(url);
+  }
+
+  /**
+   * Generate AI explanation for why a student post matches a tutor post
+   * Uses Gemini AI to create human-readable match reasons based on vector similarity
+   * 
+   * @param tutorPostId - Tutor post ID
+   * @param studentPostId - Student post ID
+   * @param matchScore - Match score (0-1)
+   * @returns AI-generated explanation
+   */
+  static async generateMatchExplanation(
+    tutorPostId: string,
+    studentPostId: string,
+    matchScore: number
+  ): Promise<ApiResponse<{ explanation: string; matchScore: number }>> {
+    return axiosClient.post('/ai/explain-match', {
+      tutorPostId,
+      studentPostId,
+      matchScore,
+    });
   }
 }
 

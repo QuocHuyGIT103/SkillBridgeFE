@@ -60,6 +60,7 @@ import AdminPostReviewPage from "./pages/admin/posts/AdminPostReviewPage";
 import PostDetailPage from "./pages/student/PostDetailPage";
 import StudentSmartSearchPage from "./pages/student/StudentSmartSearchPage";
 import AISmartRecommendationsPage from "./pages/student/AISmartRecommendationsPage";
+import TutorAISmartRecommendationsPage from "./pages/tutor/TutorAISmartRecommendationsPage";
 import ContactRequestDetail from "./components/contactRequest/ContactRequestDetail";
 import TutorContactRequestsPage from "./pages/tutor/TutorContactRequestsPage";
 import StudentClassesPage from "./pages/student/StudentClassesPage";
@@ -247,6 +248,10 @@ function App() {
               }
             >
               <Route path="dashboard" element={<TutorDashboardOverview />} />
+              <Route
+                path="ai-recommendations"
+                element={<TutorAISmartRecommendationsPage />}
+              />
               <Route path="profile" element={<TutorProfilePage />} />
               <Route
                 path="profile/personal"

@@ -16,7 +16,11 @@ const CreateTeachRequestPage: React.FC = () => {
   const { createTeachRequestFromTutor, isCreating } = useContactRequestStore();
   const { activeSubjects, getActiveSubjects } = useSubjectStore();
 
-  const [tutorPostId, setTutorPostId] = useState<string>(location?.state?.selectedTutorPostId || "");
+  // Get tutorPostId from location state (from AI recommendations)
+  const tutorPostIdFromState = location?.state?.tutorPostId || location?.state?.selectedTutorPostId || "";
+  const isFromAIRecommendations = location?.state?.fromAIRecommendations || false;
+  
+  const [tutorPostId, setTutorPostId] = useState<string>(tutorPostIdFromState);
   const [subject, setSubject] = useState<string>("");
   const [message, setMessage] = useState<string>("Xin chào, tôi tin rằng mình phù hợp để dạy bạn. Hãy cùng trao đổi thêm nhé!");
 
@@ -28,6 +32,14 @@ const CreateTeachRequestPage: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentPostId]);
+
+  // Set tutorPostId from state if available
+  useEffect(() => {
+    if (tutorPostIdFromState && !tutorPostId) {
+      setTutorPostId(tutorPostIdFromState);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tutorPostIdFromState]);
 
   // Build subject options using subject IDs as value and names as label
   const subjectOptions = useMemo(() => {
@@ -51,7 +63,10 @@ const CreateTeachRequestPage: React.FC = () => {
         ? mySubjects.filter((ms) => postSubjectNames.includes(ms.name))
         : mySubjects;
 
-    if (!subject && filtered.length) setSubject(filtered[0].id);
+    // Auto-select first subject if available and not already set
+    if (!subject && filtered.length > 0) {
+      setSubject(filtered[0].id);
+    }
     return filtered;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPost, tutorPostId, myPosts, activeSubjects]);
@@ -107,11 +122,19 @@ const CreateTeachRequestPage: React.FC = () => {
           <div className="md:col-span-3">
             <form onSubmit={onSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bài đăng của bạn</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bài đăng của bạn
+                  {isFromAIRecommendations && tutorPostId && (
+                    <span className="ml-2 text-xs text-blue-600 font-normal">(Đã tự động chọn từ gợi ý AI)</span>
+                  )}
+                </label>
                 <select
                   value={tutorPostId}
                   onChange={(e) => setTutorPostId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isFromAIRecommendations && !!tutorPostId}
+                  className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary ${
+                    isFromAIRecommendations && tutorPostId ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
                 >
                   <option value="">{loadingMyPosts ? "Đang tải..." : "— Chọn bài đăng —"}</option>
                   {myPosts?.map((p) => (
@@ -123,11 +146,19 @@ const CreateTeachRequestPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Môn dạy</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Môn dạy
+                  {isFromAIRecommendations && subject && (
+                    <span className="ml-2 text-xs text-blue-600 font-normal">(Đã tự động chọn môn phù hợp)</span>
+                  )}
+                </label>
                 <select
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isFromAIRecommendations && !!subject && subjectOptions.length === 1}
+                  className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary ${
+                    isFromAIRecommendations && subject && subjectOptions.length === 1 ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
                 >
                   <option value="">{loadingMyPosts ? "Đang tải..." : "— Chọn môn dạy —"}</option>
                   {subjectOptions.map((opt) => (
