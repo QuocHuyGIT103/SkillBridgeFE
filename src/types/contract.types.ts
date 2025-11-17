@@ -62,15 +62,6 @@ export interface Contract {
     requestedChanges?: string;
   };
 
-  // Payment terms
-  paymentTerms: {
-    paymentMethod: "FULL_PAYMENT" | "INSTALLMENTS";
-    installmentPlan?: {
-      numberOfInstallments: number;
-      firstPaymentPercentage: number;
-    };
-  };
-
   // Metadata
   contractVersion: number;
   previousContractId?: string;
@@ -144,13 +135,6 @@ export interface CreateContractInput {
     meetingLink?: string;
     meetingId?: string;
     password?: string;
-  };
-  paymentTerms?: {
-    paymentMethod: "FULL_PAYMENT" | "INSTALLMENTS";
-    installmentPlan?: {
-      numberOfInstallments: number;
-      firstPaymentPercentage: number;
-    };
   };
 }
 

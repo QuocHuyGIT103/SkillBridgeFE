@@ -379,47 +379,6 @@ const ContractPreviewModal: React.FC<ContractPreviewModalProps> = ({
                 </span>
               </div>
             </div>
-
-            {contractData.paymentTerms && (
-              <div className="mt-4 pt-4 border-t border-green-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-green-800">
-                    Phương thức thanh toán:
-                  </span>
-                  <span className="text-sm font-medium text-green-900">
-                    {getPaymentMethodDisplayName(
-                      contractData.paymentTerms.paymentMethod
-                    )}
-                  </span>
-                </div>
-
-                {contractData.paymentTerms.paymentMethod === "INSTALLMENTS" &&
-                  contractData.paymentTerms.installmentPlan && (
-                    <div className="mt-2 text-sm text-green-800">
-                      <div className="flex items-center justify-between">
-                        <span>Số đợt thanh toán:</span>
-                        <span className="font-medium text-green-900">
-                          {
-                            contractData.paymentTerms.installmentPlan
-                              .numberOfInstallments
-                          }{" "}
-                          đợt
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span>Đợt đầu tiên:</span>
-                        <span className="font-medium text-green-900">
-                          {
-                            contractData.paymentTerms.installmentPlan
-                              .firstPaymentPercentage
-                          }
-                          %
-                        </span>
-                      </div>
-                    </div>
-                  )}
-              </div>
-            )}
           </div>
 
           {/* Info Box */}

@@ -352,11 +352,6 @@ const ContractCard: React.FC<ContractCardProps> = ({
             <p className="text-lg font-bold text-blue-600 mt-1">
               {formatCurrency(contract.totalAmount)}
             </p>
-            <p className="text-xs text-gray-600 mt-1">
-              {contract.paymentTerms?.paymentMethod === "INSTALLMENTS"
-                ? "Trả góp"
-                : "Thanh toán toàn bộ"}
-            </p>
           </div>
         </div>
 

@@ -56,13 +56,6 @@ interface FormData {
     meetingId?: string;
     password?: string;
   };
-  paymentTerms?: {
-    paymentMethod: "FULL_PAYMENT" | "INSTALLMENTS";
-    installmentPlan?: {
-      numberOfInstallments: number;
-      firstPaymentPercentage: number;
-    };
-  };
 }
 
 const WEEKDAYS = [
