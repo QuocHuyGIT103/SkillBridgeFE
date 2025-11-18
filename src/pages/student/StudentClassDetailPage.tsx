@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useClassStore } from '../../store/class.store';
 import ClassStatusBadge from '../../components/common/ClassStatusBadge';
@@ -17,11 +17,13 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'; // Icon ngôi sao (đầy)
+import RatingModal from '../../components/modals/RatingModal';
 
 const StudentClassDetailPage: React.FC = () => {
   const { classId } = useParams<{ classId: string }>();
   const navigate = useNavigate();
   const { fetchClassById, currentClass, loading } = useClassStore();
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   useEffect(() => {
     if (classId) {
@@ -61,7 +63,7 @@ const StudentClassDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         {/* Header: Title + Back Button */}
         <div className="mb-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -90,10 +92,10 @@ const StudentClassDetailPage: React.FC = () => {
 
             {/* Divider */}
             <div className="border-t border-gray-200 mt-6 pt-6">
-              
+
               {/* Info Grid (Class & Tutor) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
+
                 {/* LEFT COLUMN: Class Info */}
                 <div className="space-y-8">
                   {/* Basic Info */}
@@ -198,8 +200,8 @@ const StudentClassDetailPage: React.FC = () => {
                     <div className="bg-green-50 rounded-lg p-4">
                       <div className="flex items-center gap-3 mb-3">
                         {currentClass.tutorId?.avatar_url ? (
-                          <img 
-                            src={currentClass.tutorId.avatar_url} 
+                          <img
+                            src={currentClass.tutorId.avatar_url}
                             alt={currentClass.tutorId.full_name}
                             className="w-12 h-12 rounded-full object-cover"
                           />
@@ -238,7 +240,7 @@ const StudentClassDetailPage: React.FC = () => {
                           <img src="https://img.icons8.com/color/48/000000/google-meet.png" alt="Google Meet" className="w-8 h-8" />
                           <span className="font-semibold text-blue-900">Google Meet</span>
                         </div>
-                        
+
                         <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded p-3">
                           <p className="text-sm text-yellow-800 font-medium mb-2">
                             💡 Hướng dẫn tham gia lớp học:
@@ -306,7 +308,7 @@ const StudentClassDetailPage: React.FC = () => {
                       <div className="flex items-center mb-2">
                         {/* Thay thế SVG bằng Heroicons */}
                         {[...Array(5)].map((_, i) => (
-                          i < (currentClass.studentReview?.rating || 0) 
+                          i < (currentClass.studentReview?.rating || 0)
                             ? <StarIconSolid key={i} className="w-5 h-5 text-yellow-400" />
                             : <StarIcon key={i} className="w-5 h-5 text-gray-300" />
                         ))}
@@ -322,7 +324,7 @@ const StudentClassDetailPage: React.FC = () => {
                       <p className="text-gray-600 mb-4">Bạn chưa đánh giá lớp học này.</p>
                       <button
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        onClick={() => navigate(`/student/classes/${classId}/review`)}
+                        onClick={() => setShowRatingModal(true)}
                       >
                         <PencilSquareIcon className="h-5 w-5" />
                         Đánh giá ngay
@@ -334,6 +336,17 @@ const StudentClassDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Rating Modal */}
+        {classId && (
+          <RatingModal
+            classId={classId}
+            classTitle={currentClass.title}
+            tutorName={currentClass.tutorId?.full_name}
+            open={showRatingModal}
+            onClose={() => setShowRatingModal(false)}
+          />
+        )}
       </div>
     </div>
   );

@@ -16,6 +16,7 @@ import TutorProfilePage from "./pages/tutor/TutorProfilePage";
 import TutorPersonalProfilePage from "./pages/tutor/TutorPersonalProfilePage";
 import TutorEducationPage from "./pages/tutor/TutorEducationPage";
 import TutorSchedulePage from "./pages/tutor/TutorSchedulePage";
+import TutorAssignmentsPage from "./pages/tutor/TutorAssignmentsPage";
 
 import CreateTutorPostPage from "./pages/tutor/CreateTutorPostPage";
 import EditTutorPostPage from "./pages/tutor/EditTutorPostPage";
@@ -264,6 +265,7 @@ function App() {
               <Route path="profile/*" element={<TutorProfilePage />} />
               <Route path="schedule" element={<TutorSchedulePage />} />
               <Route path="schedule/*" element={<TutorSchedulePage />} />
+              <Route path="assignments" element={<TutorAssignmentsPage />} />
 
               {/* ✅ Thêm Contact Requests routes cho Tutor */}
               <Route

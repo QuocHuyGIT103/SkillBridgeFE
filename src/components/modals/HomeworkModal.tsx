@@ -136,20 +136,23 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       );
 
       toast.success(response.message || 'Giao bài tập thành công!');
-      
+
       // Refresh parent data to get updated session info
       await onSuccess();
-      
-      // Reset form
+
+      // Reset form state (for lần mở tiếp theo)
       setAssignmentData({
         title: '',
         description: '',
         deadline: '',
         fileUrl: '',
       });
-      
-      // Switch to view tab after data refresh
+
+      // Đảm bảo lần mở tiếp theo sẽ vào tab xem bài tập
       setActiveTab('view');
+
+      // Đóng modal và quay lại trang lịch/bài tập
+      onClose();
     } catch (error: any) {
       console.error('Assign homework failed:', error);
       toast.error(error.response?.data?.message || 'Giao bài tập thất bại');
@@ -177,18 +180,21 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       );
 
       toast.success(response.message || 'Nộp bài tập thành công!');
-      
+
       // Refresh parent data to get updated submission info
       await onSuccess();
-      
-      // Reset form
+
+      // Reset form state (cho lần mở tiếp theo)
       setSubmissionData({
         fileUrl: '',
         notes: '',
       });
-      
-      // Switch to view tab after data refresh
+
+      // Đảm bảo lần mở tiếp theo sẽ vào tab xem bài tập
       setActiveTab('view');
+
+      // Đóng modal và quay lại trang lịch/bài tập
+      onClose();
     } catch (error: any) {
       console.error('Submit homework failed:', error);
       toast.error(error.response?.data?.message || 'Nộp bài tập thất bại');
@@ -216,18 +222,21 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       );
 
       toast.success(response.message || 'Chấm điểm thành công!');
-      
+
       // Refresh parent data to get updated grade info
       await onSuccess();
-      
-      // Reset form
+
+      // Reset form state (cho lần mở tiếp theo)
       setGradeData({
         score: 0,
         feedback: '',
       });
-      
-      // Switch to view tab after data refresh
+
+      // Đảm bảo lần mở tiếp theo sẽ vào tab xem bài tập
       setActiveTab('view');
+
+      // Đóng modal và quay lại trang lịch/bài tập
+      onClose();
     } catch (error: any) {
       console.error('Grade homework failed:', error);
       toast.error(error.response?.data?.message || 'Chấm điểm thất bại');
@@ -312,11 +321,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 text-sm font-medium rounded-t-lg transition-colors flex items-center space-x-2 ${
-                  activeTab === tab.id
-                    ? 'bg-white text-purple-600 border-t-2 border-purple-600'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-3 text-sm font-medium rounded-t-lg transition-colors flex items-center space-x-2 ${activeTab === tab.id
+                  ? 'bg-white text-purple-600 border-t-2 border-purple-600'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
               >
                 <tab.icon className="w-4 h-4" />
                 <span>{tab.label}</span>
@@ -373,7 +381,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                           <div className="flex items-center text-gray-600">
                             <ClockIcon className="w-4 h-4 mr-1" />
                             <span>
-                              Hạn nộp: {session.homework.assignment?.deadline 
+                              Hạn nộp: {session.homework.assignment?.deadline
                                 ? format(new Date(session.homework.assignment.deadline), 'dd/MM/yyyy HH:mm', { locale: vi })
                                 : 'N/A'}
                             </span>

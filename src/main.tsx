@@ -8,9 +8,9 @@ import ErrorBoundary from './components/ErrorBoundary.tsx'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <HeroUIProvider>
-        <App />
-      </HeroUIProvider>
+    <HeroUIProvider>
+      <App />
+    </HeroUIProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

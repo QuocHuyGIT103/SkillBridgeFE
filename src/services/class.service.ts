@@ -55,7 +55,7 @@ export const classService = {
     return response.data;
   },
   
-  addReview: async (classId: string, reviewData: { rating: number, review: string }): Promise<void> => {
-    await axiosClient.post(`/classes/${classId}/review`, reviewData);
+  addReview: async (classId: string, reviewData: { rating: number; review: string }): Promise<void> => {
+    await axiosClient.post(`/classes/${classId}/student-review`, reviewData);
   }
 };
