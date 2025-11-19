@@ -77,7 +77,11 @@ const AISmartRecommendationsPage: React.FC = () => {
       const response = await AIService.getSmartRecommendations(postId, query);
       
       if (response.success && response.data) {
-        setRecommendations(response.data.recommendations);
+        // Sort recommendations by matchScore descending
+        const sortedRecommendations = [...response.data.recommendations].sort(
+          (a, b) => b.matchScore - a.matchScore
+        );
+        setRecommendations(sortedRecommendations);
         
         if (response.data.recommendations.length === 0) {
           toast('Không tìm thấy gia sư phù hợp', {
@@ -298,17 +302,33 @@ const AISmartRecommendationsPage: React.FC = () => {
         {recommendations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence>
-              {recommendations.map((rec, index) => (
-                <motion.div
-                  key={rec.tutorId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <SmartRecommendationCard recommendation={rec} rank={index + 1} />
-                </motion.div>
-              ))}
+              {(() => {
+                // Calculate max score once
+                const maxScore = recommendations.length > 0 
+                  ? Math.max(...recommendations.map(r => r.matchScore))
+                  : 0;
+                
+                return recommendations.map((rec, index) => {
+                  const isTopMatch = rec.matchScore === maxScore;
+                  
+                  return (
+                    <motion.div
+                      key={rec.tutorId}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="h-full"
+                    >
+                      <SmartRecommendationCard 
+                        recommendation={rec} 
+                        rank={index + 1}
+                        isTopMatch={isTopMatch}
+                      />
+                    </motion.div>
+                  );
+                });
+              })()}
             </AnimatePresence>
           </div>
         ) : (

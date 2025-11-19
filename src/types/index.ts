@@ -102,3 +102,4 @@ export type {
 } from "./student.types";
 export * from './post.types';
 export * from  './contactRequest.types'
+export * from './classResources';

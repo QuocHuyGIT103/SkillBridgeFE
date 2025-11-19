@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     XMarkIcon,
@@ -13,6 +13,9 @@ interface RatingModalProps {
     tutorName?: string;
     open: boolean;
     onClose: () => void;
+    initialRating?: number;
+    initialComment?: string;
+    onSubmitted?: () => void;
 }
 
 const RatingModal: React.FC<RatingModalProps> = ({
@@ -21,12 +24,28 @@ const RatingModal: React.FC<RatingModalProps> = ({
     tutorName,
     open,
     onClose,
+    initialRating,
+    initialComment,
+    onSubmitted,
 }) => {
     const { addReview } = useClassStore();
-    const [rating, setRating] = useState<number>(0);
+    const [rating, setRating] = useState<number>(initialRating || 0);
     const [hoverRating, setHoverRating] = useState<number>(0);
-    const [comment, setComment] = useState<string>('');
+    const [comment, setComment] = useState<string>(initialComment || '');
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (!open) {
+            setRating(0);
+            setHoverRating(0);
+            setComment('');
+            return;
+        }
+
+        setRating(initialRating || 0);
+        setHoverRating(0);
+        setComment(initialComment || '');
+    }, [open, initialRating, initialComment]);
 
     const handleSubmit = async () => {
         if (!rating) {
@@ -42,6 +61,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
             setRating(0);
             setHoverRating(0);
             setComment('');
+            onSubmitted?.();
         } finally {
             setSubmitting(false);
         }
@@ -68,7 +88,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
                         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                             <div>
                                 <h2 className="text-lg font-semibold text-gray-900">
-                                    Đánh giá lớp học
+                                    {initialRating ? 'Cập nhật đánh giá' : 'Đánh giá lớp học'}
                                 </h2>
                                 {classTitle && (
                                     <p className="text-xs text-gray-500 mt-1">
@@ -154,7 +174,13 @@ const RatingModal: React.FC<RatingModalProps> = ({
                                 {submitting && (
                                     <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-b-transparent border-white" />
                                 )}
-                                <span>{submitting ? 'Đang gửi...' : 'Gửi đánh giá'}</span>
+                                <span>
+                                    {submitting
+                                        ? 'Đang gửi...'
+                                        : initialRating
+                                            ? 'Cập nhật đánh giá'
+                                            : 'Gửi đánh giá'}
+                                </span>
                             </button>
                         </div>
                     </motion.div>

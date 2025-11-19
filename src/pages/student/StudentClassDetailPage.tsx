@@ -24,6 +24,7 @@ const StudentClassDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { fetchClassById, currentClass, loading } = useClassStore();
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [reviewDraft, setReviewDraft] = useState<{ rating?: number; comment?: string } | null>(null);
 
   useEffect(() => {
     if (classId) {
@@ -58,6 +59,25 @@ const StudentClassDetailPage: React.FC = () => {
       </div>
     );
   }
+
+  const handleOpenReviewModal = () => {
+    setReviewDraft(null);
+    setShowRatingModal(true);
+  };
+
+  const handleEditReview = () => {
+    if (!currentClass?.studentReview) return;
+    setReviewDraft({
+      rating: currentClass.studentReview.rating,
+      comment: currentClass.studentReview.comment || '',
+    });
+    setShowRatingModal(true);
+  };
+
+  const handleCloseRatingModal = () => {
+    setShowRatingModal(false);
+    setReviewDraft(null);
+  };
 
   // --- Main Detail Page ---
   return (
@@ -305,18 +325,30 @@ const StudentClassDetailPage: React.FC = () => {
                   </h3>
                   {currentClass.studentReview ? (
                     <div>
-                      <div className="flex items-center mb-2">
-                        {/* Thay thế SVG bằng Heroicons */}
-                        {[...Array(5)].map((_, i) => (
-                          i < (currentClass.studentReview?.rating || 0)
-                            ? <StarIconSolid key={i} className="w-5 h-5 text-yellow-400" />
-                            : <StarIcon key={i} className="w-5 h-5 text-gray-300" />
-                        ))}
-                        <span className="ml-2 text-sm font-medium text-gray-600">
-                          {currentClass.studentReview.rating}/5
-                        </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            i < (currentClass.studentReview?.rating || 0)
+                              ? <StarIconSolid key={i} className="w-5 h-5 text-yellow-400" />
+                              : <StarIcon key={i} className="w-5 h-5 text-gray-300" />
+                          ))}
+                          <span className="ml-2 text-sm font-medium text-gray-600">
+                            {currentClass.studentReview.rating}/5
+                          </span>
+                        </div>
+                        <button
+                          onClick={handleEditReview}
+                          className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                        >
+                          <PencilSquareIcon className="w-4 h-4" />
+                          Chỉnh sửa
+                        </button>
                       </div>
-                      <p className="text-gray-800 italic">"{currentClass.studentReview.comment}"</p>
+                      {currentClass.studentReview.comment && (
+                        <p className="text-gray-800 italic">
+                          "{currentClass.studentReview.comment}"
+                        </p>
+                      )}
                     </div>
                   ) : (
                     // Dùng nền xám nhẹ ở đây để tạo Call-to-Action
@@ -324,7 +356,7 @@ const StudentClassDetailPage: React.FC = () => {
                       <p className="text-gray-600 mb-4">Bạn chưa đánh giá lớp học này.</p>
                       <button
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        onClick={() => setShowRatingModal(true)}
+                        onClick={handleOpenReviewModal}
                       >
                         <PencilSquareIcon className="h-5 w-5" />
                         Đánh giá ngay
@@ -344,7 +376,9 @@ const StudentClassDetailPage: React.FC = () => {
             classTitle={currentClass.title}
             tutorName={currentClass.tutorId?.full_name}
             open={showRatingModal}
-            onClose={() => setShowRatingModal(false)}
+            initialRating={reviewDraft?.rating}
+            initialComment={reviewDraft?.comment}
+            onClose={handleCloseRatingModal}
           />
         )}
       </div>

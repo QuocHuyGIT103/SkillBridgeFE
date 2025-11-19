@@ -22,9 +22,11 @@ export interface TutorPostSearchQuery {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: "createdAt" | "pricePerSession" | "viewCount" | "compatibility";
+  sortBy?: "createdAt" | "pricePerSession" | "viewCount" | "compatibility" | "rating";
   sortOrder?: "asc" | "desc";
   featured?: boolean;
+  minRating?: number;
+  minReviews?: number;
 }
 
 const StudentTutorSearchPage: React.FC = () => {
@@ -71,6 +73,12 @@ const StudentTutorSearchPage: React.FC = () => {
       sortBy: (searchParams.get("sortBy") as any) || "createdAt",
       sortOrder: (searchParams.get("sortOrder") as any) || "desc",
       featured: searchParams.get("featured") === "true",
+      minRating: searchParams.get("minRating")
+        ? Number(searchParams.get("minRating"))
+        : undefined,
+      minReviews: searchParams.get("minReviews")
+        ? Number(searchParams.get("minReviews"))
+        : undefined,
     };
 
     return urlFilters;
@@ -130,6 +138,8 @@ const StudentTutorSearchPage: React.FC = () => {
           district: query.district,
           ward: query.ward,
           search: query.search,
+          minRating: query.minRating,
+          minReviews: query.minReviews,
         };
 
         await smartSearchTutors(postId, smartQuery);
@@ -192,6 +202,8 @@ const StudentTutorSearchPage: React.FC = () => {
       limit: 12,
       sortBy: "createdAt",
       sortOrder: "desc",
+      minRating: undefined,
+      minReviews: undefined,
     };
 
     setCurrentFilters(resetFilters);
@@ -309,10 +321,43 @@ const StudentTutorSearchPage: React.FC = () => {
   const currentLoading = isSmartSearchMode ? smartSearchLoading : searchLoading;
   const currentError = tutorPostError || postStoreError;
 
+  const getTotalCount = () => {
+    if (!currentPagination) return undefined;
+    if ("totalItems" in currentPagination && typeof currentPagination.totalItems === "number") {
+      return currentPagination.totalItems;
+    }
+    if ("total" in currentPagination && typeof currentPagination.total === "number") {
+      return currentPagination.total;
+    }
+    return undefined;
+  };
+
   const getTotalText = () => {
-    if (!currentPagination) return "Đang tải...";
-    const total = currentPagination.totalItems || currentPagination.total || 0;
+    const total = getTotalCount();
+    if (typeof total !== "number") return "Đang tải...";
     return `Tìm thấy ${total.toLocaleString()} gia sư`;
+  };
+
+  const getCurrentPageNumber = () => {
+    if (!currentPagination) return 1;
+    if ("currentPage" in currentPagination && typeof currentPagination.currentPage === "number") {
+      return currentPagination.currentPage;
+    }
+    if ("page" in currentPagination && typeof currentPagination.page === "number") {
+      return currentPagination.page;
+    }
+    return 1;
+  };
+
+  const getTotalPagesNumber = () => {
+    if (!currentPagination) return 1;
+    if ("totalPages" in currentPagination && typeof currentPagination.totalPages === "number") {
+      return currentPagination.totalPages;
+    }
+    if ("pages" in currentPagination && typeof currentPagination.pages === "number") {
+      return currentPagination.pages;
+    }
+    return 1;
   };
 
   return (
@@ -356,11 +401,10 @@ const StudentTutorSearchPage: React.FC = () => {
               {hasSearched && (
                 <div className="flex items-center gap-3 bg-white/60 px-3 py-2 rounded-full border border-gray-200/50">
                   <div
-                    className={`w-2 h-2 rounded-full ${
-                      currentLoading
-                        ? "bg-gradient-to-r from-yellow-400 to-orange-400 animate-pulse shadow-yellow-200 shadow-md"
-                        : "bg-gradient-to-r from-green-400 to-emerald-400 shadow-green-200 shadow-md"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${currentLoading
+                      ? "bg-gradient-to-r from-yellow-400 to-orange-400 animate-pulse shadow-yellow-200 shadow-md"
+                      : "bg-gradient-to-r from-green-400 to-emerald-400 shadow-green-200 shadow-md"
+                      }`}
                   ></div>
                   <span className="text-xs font-medium text-gray-600">
                     {currentLoading ? "Đang cập nhật..." : "Kết quả mới nhất"}
@@ -436,7 +480,7 @@ const StudentTutorSearchPage: React.FC = () => {
                   isLoading={currentLoading}
                   disabled={false}
                   isSmartSearchMode={isSmartSearchMode}
-                  resultCount={currentPagination?.totalItems || currentPagination?.total}
+                  resultCount={getTotalCount()}
                 />
               </motion.div>
             </div>
@@ -582,8 +626,7 @@ const StudentTutorSearchPage: React.FC = () => {
                   {currentPagination && (
                     <div className="text-center bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-white/50">
                       <span className="text-sm text-gray-600 font-medium">
-                        Trang {currentPagination.currentPage || currentPagination.page || 1} /{" "}
-                        {currentPagination.totalPages || currentPagination.pages || 1}
+                        Trang {getCurrentPageNumber()} / {getTotalPagesNumber()}
                       </span>
                     </div>
                   )}

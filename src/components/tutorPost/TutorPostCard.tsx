@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -11,10 +11,13 @@ import {
   EyeIcon,
   PhoneIcon,
 } from "@heroicons/react/24/outline";
+import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
+import TutorReviewsModal from "./TutorReviewsModal";
 
 interface TutorPostCardProps {
   post: {
     _id?: string;
+    s_id?: string;
     id?: string;
     title: string;
     description: string;
@@ -46,6 +49,12 @@ interface TutorPostCardProps {
         video_intro_link?: string;
         status?: string;
       };
+      rating?: {
+        average?: number;
+        count?: number;
+        badges?: string[];
+        lastReviewAt?: string | null;
+      };
     };
     address?: any;
     viewCount: number;
@@ -64,10 +73,10 @@ interface TutorPostCardProps {
   onClick?: () => void;
 }
 
-const TutorPostCard: React.FC<TutorPostCardProps> = ({ 
-  post, 
+const TutorPostCard: React.FC<TutorPostCardProps> = ({
+  post,
   showCompatibility = false,
-  onClick 
+  onClick
 }) => {
   // Guard clause to prevent rendering if post or tutorId is undefined
   if (!post || !post.tutorId) {
@@ -90,7 +99,7 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
       </div>
     );
   }
-  
+
   const navigate = useNavigate();
 
   // Utility functions
@@ -139,23 +148,23 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
   const getTeachingModeConfig = (mode: string) => {
     switch (mode) {
       case "ONLINE":
-        return { 
-          color: "bg-green-100 text-green-800 border-green-200", 
+        return {
+          color: "bg-green-100 text-green-800 border-green-200",
           icon: "💻"
         };
       case "OFFLINE":
-        return { 
-          color: "bg-blue-100 text-blue-800 border-blue-200", 
+        return {
+          color: "bg-blue-100 text-blue-800 border-blue-200",
           icon: "🏠"
         };
       case "BOTH":
-        return { 
-          color: "bg-purple-100 text-purple-800 border-purple-200", 
+        return {
+          color: "bg-purple-100 text-purple-800 border-purple-200",
           icon: "🔄"
         };
       default:
-        return { 
-          color: "bg-gray-100 text-gray-800 border-gray-200", 
+        return {
+          color: "bg-gray-100 text-gray-800 border-gray-200",
           icon: "📍"
         };
     }
@@ -195,6 +204,25 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
     return "Ít phù hợp";
   };
 
+  const getBadgeConfig = (badge?: string) => {
+    if (!badge) return null;
+
+    switch (badge) {
+      case "TOP_RATED":
+        return {
+          label: "Top Rated",
+          className: "bg-yellow-100 text-yellow-800 border-yellow-200",
+        };
+      case "HIGHLY_RATED":
+        return {
+          label: "Được yêu thích",
+          className: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        };
+      default:
+        return null;
+    }
+  };
+
   const handleViewDetails = () => {
     if (onClick) {
       onClick();
@@ -203,7 +231,17 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
     }
   };
 
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const modeConfig = getTeachingModeConfig(post.teachingMode);
+  const ratingAverage = post.tutorId.rating?.average || 0;
+  const ratingCount = post.tutorId.rating?.count || 0;
+  const showRating = ratingCount > 0;
+  const badgeConfig = getBadgeConfig(post.tutorId.rating?.badges?.[0]);
+  const tutorUserId =
+    post.tutorId._id ||
+    (post.tutorId as any).id ||
+    (post as any).tutorUserId ||
+    undefined;
 
   return (
     <motion.div
@@ -277,8 +315,8 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
                     {post.tutorId.gender === "male"
                       ? "Nam"
                       : post.tutorId.gender === "female"
-                      ? "Nữ"
-                      : "Khác"}
+                        ? "Nữ"
+                        : "Khác"}
                   </span>
                 )}
               </div>
@@ -286,6 +324,28 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
                 <MapPinIcon className="w-3 h-3 mr-1 flex-shrink-0" />
                 <span className="truncate">{getLocationText()}</span>
               </div>
+              {showRating && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!tutorUserId) {
+                      return;
+                    }
+                    setIsReviewModalOpen(true);
+                  }}
+                  disabled={!tutorUserId}
+                  className={`flex items-center text-xs font-semibold text-yellow-700 hover:text-yellow-800 ${!tutorUserId ? "cursor-not-allowed opacity-60" : ""
+                    }`}
+                  title="Xem các đánh giá của học viên"
+                >
+                  <StarIconSolid className="w-4 h-4 text-yellow-400 mr-1" />
+                  <span>{ratingAverage.toFixed(1)}</span>
+                  <span className="ml-1 text-gray-500">
+                    ({ratingCount.toLocaleString("vi-VN")})
+                  </span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -297,6 +357,23 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
             </div>
           </div>
         </div>
+
+        {badgeConfig && (
+          <div className="mb-3 flex items-center">
+            <span
+              className={`inline-flex items-center px-3 py-1 rounded-full border text-xs font-semibold ${badgeConfig.className}`}
+            >
+              {badgeConfig.label}
+            </span>
+          </div>
+        )}
+
+        <TutorReviewsModal
+          tutorId={tutorUserId}
+          tutorName={post.tutorId.full_name}
+          open={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+        />
 
         {/* Title - Fixed Height */}
         <div className="mb-3 flex-shrink-0">
@@ -373,8 +450,8 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
         <div className="flex-shrink-0">
           <button
             onClick={(e) => {
-                e.stopPropagation(); // Ngăn sự kiện chạy 2 lần
-                handleViewDetails();
+              e.stopPropagation(); // Ngăn sự kiện chạy 2 lần
+              handleViewDetails();
             }}
             className={`
               w-full px-4 py-3 rounded-xl transition-all duration-200 font-semibold text-sm
@@ -384,11 +461,11 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
               }
             `}
           >
-            {showCompatibility && post.compatibility && post.compatibility >= 90 
-              ? '🎯 Liên hệ ngay' 
+            {showCompatibility && post.compatibility && post.compatibility >= 90
+              ? '🎯 Liên hệ ngay'
               : showCompatibility && post.compatibility && post.compatibility >= 80
-              ? '✨ Xem chi tiết'
-              : 'Xem chi tiết'
+                ? '✨ Xem chi tiết'
+                : 'Xem chi tiết'
             }
           </button>
         </div>

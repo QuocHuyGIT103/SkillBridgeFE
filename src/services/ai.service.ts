@@ -29,6 +29,12 @@ export interface TutorInfo {
   avatar?: string;
   headline?: string;
   introduction?: string;
+  rating?: {
+    average: number;
+    count: number;
+    badges?: string[];
+    lastReviewAt?: string | null;
+  };
 }
 
 export interface TutorPostInfo {

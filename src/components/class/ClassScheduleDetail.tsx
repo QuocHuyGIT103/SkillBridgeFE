@@ -6,7 +6,6 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   MinusCircleIcon,
-  VideoCameraIcon,
   MapPinIcon,
   DocumentTextIcon,
   TrashIcon,
@@ -19,6 +18,7 @@ import CancelSessionModal from '../modals/CancelSessionModal';
 import { attendanceService } from '../../services/attendance.service';
 import type { WeeklySession } from '../../types/attendance';
 import toast from 'react-hot-toast';
+import ClassResourcesSection from './ClassResourcesSection';
 
 interface ClassScheduleDetailProps {
   classId: string;
@@ -53,7 +53,13 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
     );
   }
 
-  const { class: classData, sessions, stats } = currentSchedule;
+  const {
+    class: classData,
+    sessions,
+    stats,
+    materials = [],
+    assignments = [],
+  } = currentSchedule;
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -152,6 +158,15 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
   const handleCloseHomework = () => {
     setShowHomeworkModal(false);
     setSelectedSession(null);
+  };
+
+  const handleOpenSessionAssignmentFromList = (sessionNumber: number) => {
+    const targetSession = sessions.find((session: any) => session.sessionNumber === sessionNumber);
+    if (!targetSession) {
+      toast.error('Không tìm thấy buổi học này trong lịch');
+      return;
+    }
+    handleOpenHomework(targetSession);
   };
 
   const handleHomeworkSuccess = async () => {
@@ -266,32 +281,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
           </div>
         </div>
 
-        {/* Location/Meeting Info */}
-        {classData.learningMode === 'ONLINE' && classData.onlineInfo && (
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <div className="flex items-start space-x-3">
-              <VideoCameraIcon className="w-5 h-5 text-blue-600 mt-1" />
-              <div className="flex-1">
-                <p className="font-medium text-gray-900 mb-2">Google Meet - Học trực tuyến</p>
-                <div className="space-y-2 text-sm">
-                  <a
-                    href={classData.onlineInfo.meetingLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    <VideoCameraIcon className="w-4 h-4 mr-2" />
-                    Tham gia lớp học
-                  </a>
-                  <p className="text-gray-600 mt-2">
-                    💡 Click để mở Google Meet và tham gia phòng học
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* Location Info */}
         {classData.learningMode === 'OFFLINE' && classData.location && (
           <div className="bg-green-50 rounded-lg p-4 border border-green-200">
             <div className="flex items-start space-x-3">
@@ -303,6 +293,16 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
             </div>
           </div>
         )}
+
+        {/* Materials & Assignments */}
+        <ClassResourcesSection
+          classId={classId}
+          userRole={userRole}
+          classData={classData}
+          materials={materials}
+          assignments={assignments}
+          onOpenSessionHomework={handleOpenSessionAssignmentFromList}
+        />
 
         {/* Sessions List */}
         <div>

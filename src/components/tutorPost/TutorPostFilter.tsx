@@ -92,6 +92,7 @@ const SORT_OPTIONS = [
   { value: "pricePerSession", label: "Giá cao", order: "desc", icon: "💎" },
   { value: "viewCount", label: "Phổ biến", order: "desc", icon: "👁️" },
   { value: "contactCount", label: "Hot", order: "desc", icon: "📞" },
+  { value: "rating", label: "Đánh giá cao", order: "desc", icon: "⭐" },
 ];
 
 const PRICE_PRESETS = [
@@ -99,6 +100,13 @@ const PRICE_PRESETS = [
   { label: "300K-500K", min: 300000, max: 500000 },
   { label: "500K-1M", min: 500000, max: 1000000 },
   { label: "Trên 1M", min: 1000000, max: undefined },
+];
+
+const RATING_PRESETS = [
+  { label: "⭐ 5.0", value: 5 },
+  { label: "⭐ 4.8+", value: 4.8 },
+  { label: "⭐ 4.5+", value: 4.5 },
+  { label: "⭐ 4.0+", value: 4 },
 ];
 
 const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
@@ -125,6 +133,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
     price: boolean;
     location: boolean;
     sort: boolean;
+    quality: boolean;
   }>({
     subjects: false,
     studentLevel: false,
@@ -132,6 +141,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
     price: false,
     location: false,
     sort: false,
+    quality: false,
   });
 
   // Store hooks
@@ -203,6 +213,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
       price: false,
       location: false,
       sort: false,
+      quality: false,
     });
   };
 
@@ -295,9 +306,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
   );
 
   const getCurrentSortValue = () => {
-    return `${localFilters.sortBy || "createdAt"}_${
-      localFilters.sortOrder || "desc"
-    }`;
+    return `${localFilters.sortBy || "createdAt"}_${localFilters.sortOrder || "desc"
+      }`;
   };
 
   const hasActiveFilters = () => {
@@ -309,7 +319,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
       localFilters.priceMax ||
       localFilters.province ||
       localFilters.district ||
-      localFilters.search
+      localFilters.search ||
+      localFilters.minRating ||
+      localFilters.minReviews
     );
   };
 
@@ -321,6 +333,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
     if (localFilters.priceMin || localFilters.priceMax) count++;
     if (localFilters.province) count++;
     if (localFilters.search) count++;
+    if (localFilters.minRating || localFilters.minReviews) count++;
     return count;
   };
 
@@ -363,6 +376,17 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
         }
         return "Khu vực";
 
+      case "quality": {
+        const parts: string[] = [];
+        if (localFilters.minRating) {
+          parts.push(`${localFilters.minRating.toFixed(1)}★+`);
+        }
+        if (localFilters.minReviews) {
+          parts.push(`${localFilters.minReviews}+ đánh giá`);
+        }
+        return parts.length ? parts.join(" • ") : "Chất lượng";
+      }
+
       case "sort":
         const currentSort = SORT_OPTIONS.find(
           (opt) => `${opt.value}_${opt.order}` === getCurrentSortValue()
@@ -380,9 +404,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-visible relative ${className} ${
-        disabled ? "opacity-50 pointer-events-none" : ""
-      }`}
+      className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-visible relative ${className} ${disabled ? "opacity-50 pointer-events-none" : ""
+        }`}
       style={{ zIndex: 10 }}
     >
       {/* HEADER */}
@@ -477,11 +500,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
             <button
               onClick={() => toggleDropdown("subjects")}
               // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                localFilters.subjects?.length
+              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.subjects?.length
                   ? "border-blue-300 bg-blue-50 text-blue-700"
                   : "border-gray-200"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <AcademicCapIcon className="w-4 h-4 flex-shrink-0" />
@@ -490,9 +512,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  openDropdowns.subjects ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${openDropdowns.subjects ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -528,11 +549,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
             <button
               onClick={() => toggleDropdown("studentLevel")}
               // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                localFilters.studentLevel?.length
+              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.studentLevel?.length
                   ? "border-green-300 bg-green-50 text-green-700"
                   : "border-gray-200"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="text-base">🎓</span>
@@ -541,9 +561,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  openDropdowns.studentLevel ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${openDropdowns.studentLevel ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -564,11 +583,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                       return (
                         <label
                           key={level.value}
-                          className={`flex items-center p-2 rounded cursor-pointer transition-colors ${
-                            isSelected
+                          className={`flex items-center p-2 rounded cursor-pointer transition-colors ${isSelected
                               ? "bg-green-50 border border-green-200"
                               : "hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -579,8 +597,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                               const newLevels = e.target.checked
                                 ? [...currentLevels, level.value]
                                 : currentLevels.filter(
-                                    (l) => l !== level.value
-                                  );
+                                  (l) => l !== level.value
+                                );
                               updateFilter(
                                 "studentLevel",
                                 newLevels.length > 0 ? newLevels : undefined
@@ -604,11 +622,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
             <button
               onClick={() => toggleDropdown("teachingMode")}
               // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                localFilters.teachingMode
+              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.teachingMode
                   ? "border-purple-300 bg-purple-50 text-purple-700"
                   : "border-gray-200"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <ComputerDesktopIcon className="w-4 h-4 flex-shrink-0" />
@@ -617,9 +634,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  openDropdowns.teachingMode ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${openDropdowns.teachingMode ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -646,11 +662,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                             );
                             closeAllDropdowns();
                           }}
-                          className={`w-full p-2.5 rounded text-left transition-colors flex items-center gap-3 ${
-                            isSelected
+                          className={`w-full p-2.5 rounded text-left transition-colors flex items-center gap-3 ${isSelected
                               ? "bg-purple-50 border border-purple-200 text-purple-700"
                               : "hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           <span className="text-xl">{mode.icon}</span>
                           <div>
@@ -676,11 +691,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
             <button
               onClick={() => toggleDropdown("price")}
               // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                localFilters.priceMin || localFilters.priceMax
+              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.priceMin || localFilters.priceMax
                   ? "border-green-300 bg-green-50 text-green-700"
                   : "border-gray-200"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <CurrencyDollarIcon className="w-4 h-4 flex-shrink-0" />
@@ -689,9 +703,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  openDropdowns.price ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${openDropdowns.price ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -746,16 +759,135 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
             </AnimatePresence>
           </div>
 
+          {/* Quality Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => toggleDropdown("quality")}
+              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.minRating || localFilters.minReviews
+                  ? "border-yellow-300 bg-yellow-50 text-yellow-700"
+                  : "border-gray-200"
+                }`}
+            >
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="text-base">⭐</span>
+                <span className="truncate">
+                  {getFilterDisplayText("quality")}
+                </span>
+              </div>
+              <ChevronDownIcon
+                className={`w-4 h-4 transition-transform ${openDropdowns.quality ? "rotate-180" : ""
+                  }`}
+              />
+            </button>
+
+            <AnimatePresence>
+              {openDropdowns.quality && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80"
+                  style={{ zIndex: 9999 }}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-base text-gray-600 mb-2">
+                        Ưu tiên gia sư được đánh giá cao:
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {RATING_PRESETS.map((preset) => {
+                          const isSelected =
+                            Number(localFilters.minRating?.toFixed(1)) === preset.value;
+                          return (
+                            <button
+                              key={preset.value}
+                              onClick={() => {
+                                updateFilter(
+                                  "minRating",
+                                  isSelected ? undefined : preset.value
+                                );
+                                closeAllDropdowns();
+                              }}
+                              className={`px-3 py-2 rounded-lg text-base border transition-colors ${isSelected
+                                  ? "border-yellow-500 bg-yellow-50 text-yellow-800"
+                                  : "border-gray-200 hover:bg-gray-50"
+                                }`}
+                            >
+                              {preset.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button
+                        onClick={() => updateFilter("minRating", undefined)}
+                        className="mt-2 text-sm text-gray-500 underline"
+                      >
+                        Xóa lọc số sao
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-base font-medium text-gray-700 mb-1">
+                        Số lượt đánh giá tối thiểu
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="number"
+                          min={0}
+                          value={
+                            localFilters.minReviews !== undefined
+                              ? localFilters.minReviews
+                              : ""
+                          }
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            updateFilter(
+                              "minReviews",
+                              value === "" ? undefined : Math.max(0, Number(value))
+                            );
+                          }}
+                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-base focus:ring-1 focus:ring-blue-500"
+                          placeholder="Ví dụ 5"
+                        />
+                        <span className="text-sm text-gray-500 whitespace-nowrap">
+                          lượt
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => {
+                          updateFilter("minRating", undefined);
+                          updateFilter("minReviews", undefined);
+                          closeAllDropdowns();
+                        }}
+                        className="text-sm text-gray-500 underline"
+                      >
+                        Xóa tất cả
+                      </button>
+                      <button
+                        onClick={() => closeAllDropdowns()}
+                        className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-semibold"
+                      >
+                        Áp dụng
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Location Dropdown */}
           <div className="relative">
             <button
               onClick={() => toggleDropdown("location")}
               // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                localFilters.province
+              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.province
                   ? "border-red-300 bg-red-50 text-red-700"
                   : "border-gray-200"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <MapPinIcon className="w-4 h-4 flex-shrink-0" />
@@ -764,9 +896,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  openDropdowns.location ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${openDropdowns.location ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -839,9 +970,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 <span className="truncate">{getFilterDisplayText("sort")}</span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  openDropdowns.sort ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${openDropdowns.sort ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -865,11 +995,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                           onClick={() =>
                             handleSortChange(`${option.value}_${option.order}`)
                           }
-                          className={`w-full p-2.5 rounded text-left transition-colors flex items-center gap-3 ${
-                            isSelected
+                          className={`w-full p-2.5 rounded text-left transition-colors flex items-center gap-3 ${isSelected
                               ? "bg-indigo-50 text-indigo-700"
                               : "hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           {/* ✅ TĂNG CỠ CHỮ */}
                           <span className="text-base">{option.icon}</span>
