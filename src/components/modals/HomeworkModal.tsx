@@ -34,19 +34,32 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const assignments = session.homework.assignments || [];
+  const pendingSubmissionAssignments = assignments.filter(assignment => !assignment.submission);
+  const pendingGradeAssignments = assignments.filter(
+    assignment => assignment.submission && !assignment.grade
+  );
+
   const [activeTab, setActiveTab] = useState<TabType>(() => {
-    // Auto select appropriate tab
     if (userRole === 'TUTOR') {
       if (!session.homework.hasAssignment) return 'assign';
-      if (session.homework.hasSubmission && !session.homework.hasGrade) return 'grade';
-      return 'view';
-    } else {
-      if (!session.homework.hasSubmission && session.homework.hasAssignment) return 'submit';
+      if (pendingGradeAssignments.length > 0) return 'grade';
       return 'view';
     }
+    if (session.homework.hasAssignment && pendingSubmissionAssignments.length > 0) return 'submit';
+    return 'view';
   });
 
   const [loading, setLoading] = useState(false);
+  const [selectedSubmitAssignmentId, setSelectedSubmitAssignmentId] = useState(
+    pendingSubmissionAssignments[0]?.id || assignments[0]?.id || ''
+  );
+  const [selectedGradeAssignmentId, setSelectedGradeAssignmentId] = useState(
+    pendingGradeAssignments[0]?.id
+    || assignments.find(assignment => assignment.submission)?.id
+    || assignments[0]?.id
+    || ''
+  );
 
   // Assignment Form State
   const [assignmentData, setAssignmentData] = useState({
@@ -163,6 +176,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
 
   // Handle Submit Homework
   const handleSubmitHomework = async () => {
+    if (!selectedSubmitAssignmentId) {
+      toast.error('Vui lòng chọn bài tập cần nộp');
+      return;
+    }
     if (!submissionData.fileUrl) {
       toast.error('Vui lòng tải lên file bài làm');
       return;
@@ -174,6 +191,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
         session.classId,
         session.sessionNumber,
         {
+          assignmentId: selectedSubmitAssignmentId,
           fileUrl: submissionData.fileUrl,
           notes: submissionData.notes || undefined,
         }
@@ -205,6 +223,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
 
   // Handle Grade Homework
   const handleGradeHomework = async () => {
+    if (!selectedGradeAssignmentId) {
+      toast.error('Vui lòng chọn bài tập cần chấm');
+      return;
+    }
     if (gradeData.score < 0 || gradeData.score > 10) {
       toast.error('Điểm số phải từ 0 đến 10');
       return;
@@ -216,6 +238,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
         session.classId,
         session.sessionNumber,
         {
+          assignmentId: selectedGradeAssignmentId,
           score: gradeData.score,
           feedback: gradeData.feedback || undefined,
         }
@@ -251,14 +274,14 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       return [
         { id: 'view', label: 'Xem chi tiết', icon: DocumentTextIcon },
         { id: 'assign', label: 'Giao bài tập', icon: CloudArrowUpIcon },
-        ...(session.homework.hasSubmission
+        ...(pendingGradeAssignments.length > 0
           ? [{ id: 'grade' as TabType, label: 'Chấm điểm', icon: StarIcon }]
           : []),
       ];
     } else {
       return [
         { id: 'view', label: 'Xem bài tập', icon: DocumentTextIcon },
-        ...(session.homework.hasAssignment && !session.homework.hasGrade
+        ...(session.homework.hasAssignment && pendingSubmissionAssignments.length > 0
           ? [{ id: 'submit' as TabType, label: 'Nộp bài', icon: CloudArrowUpIcon }]
           : []),
       ];
@@ -266,6 +289,20 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   };
 
   const tabs = getTabs();
+  const canSubmitAssignments = tabs.some((tab) => tab.id === 'submit');
+  const canGradeAssignments = tabs.some((tab) => tab.id === 'grade');
+
+  const handleOpenSubmitTab = (assignmentId?: string) => {
+    if (!assignmentId || !canSubmitAssignments) return;
+    setSelectedSubmitAssignmentId(assignmentId);
+    setActiveTab('submit');
+  };
+
+  const handleOpenGradeTab = (assignmentId?: string) => {
+    if (!assignmentId || !canGradeAssignments) return;
+    setSelectedGradeAssignmentId(assignmentId);
+    setActiveTab('grade');
+  };
 
   return (
     <motion.div
@@ -359,110 +396,204 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     )}
                   </div>
                 ) : (
-                  <>
-                    {/* Assignment Details */}
-                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                      <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-                        <AcademicCapIcon className="w-5 h-5 mr-2 text-purple-600" />
-                        Bài tập được giao
-                      </h3>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="font-medium text-gray-700">Tiêu đề:</span>
-                          <p className="text-gray-900 mt-1">{session.homework.assignment?.title}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-700">Mô tả:</span>
-                          <p className="text-gray-900 mt-1 whitespace-pre-line">
-                            {session.homework.assignment?.description}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-4 pt-2">
-                          <div className="flex items-center text-gray-600">
-                            <ClockIcon className="w-4 h-4 mr-1" />
-                            <span>
-                              Hạn nộp: {session.homework.assignment?.deadline
-                                ? format(new Date(session.homework.assignment.deadline), 'dd/MM/yyyy HH:mm', { locale: vi })
-                                : 'N/A'}
-                            </span>
-                          </div>
-                          {session.homework.assignment?.fileUrl && (
-                            <a
-                              href={session.homework.assignment.fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center text-purple-600 hover:text-purple-700"
-                            >
-                              <PaperClipIcon className="w-4 h-4 mr-1" />
-                              Tài liệu đính kèm
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Submission Status */}
-                    {session.homework.hasSubmission && (
-                      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-                          <UserCircleIcon className="w-5 h-5 mr-2 text-green-600" />
-                          Bài nộp của học viên
-                        </h3>
-                        <div className="space-y-2 text-sm">
-                          <a
-                            href={session.homework.submission?.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center text-green-600 hover:text-green-700"
-                          >
-                            <PaperClipIcon className="w-4 h-4 mr-1" />
-                            Xem bài làm
-                          </a>
-                          {session.homework.submission?.notes && (
+                  <div className="space-y-4">
+                    {assignments.map((assignment, index) => {
+                      const deadlineLabel = assignment.deadline
+                        ? format(new Date(assignment.deadline), 'dd/MM/yyyy HH:mm', { locale: vi })
+                        : 'N/A';
+                      return (
+                        <div
+                          key={assignment.id || `assignment-${index}`}
+                          className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                             <div>
-                              <span className="font-medium text-gray-700">Ghi chú:</span>
-                              <p className="text-gray-900 mt-1">{session.homework.submission.notes}</p>
-                            </div>
-                          )}
-                          <div className="flex items-center text-gray-600 pt-2">
-                            <ClockIcon className="w-4 h-4 mr-1" />
-                            <span>
-                              Nộp lúc: {session.homework.submission?.submittedAt
-                                ? format(new Date(session.homework.submission.submittedAt), 'dd/MM/yyyy HH:mm', { locale: vi })
-                                : 'N/A'}
-                            </span>
-                          </div>
-                          {session.homework.isLate && (
-                            <span className="inline-block px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
-                              ⏰ Nộp trễ
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Grade */}
-                    {session.homework.hasGrade && (
-                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                        <div className="space-y-2 text-sm">
-                          <div>
-                            <span className="font-medium text-gray-700">Điểm số:</span>
-                            <p className="text-2xl font-bold text-blue-600 mt-1">
-                              {session.homework.grade?.score}/10
-                            </p>
-                          </div>
-                          {session.homework.grade?.feedback && (
-                            <div>
-                              <span className="font-medium text-gray-700">Nhận xét:</span>
-                              <p className="text-gray-900 mt-1 whitespace-pre-line">
-                                {session.homework.grade.feedback}
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                Bài tập #{index + 1}
                               </p>
+                              <h3 className="text-lg font-semibold text-gray-900 mt-1">
+                                {assignment.title}
+                              </h3>
                             </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {assignment.isLegacy && (
+                                <span className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide rounded-full bg-gray-100 text-gray-600">
+                                  Legacy
+                                </span>
+                              )}
+                              <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                assignment.status === 'graded'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : assignment.status === 'submitted'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {assignment.status === 'graded'
+                                  ? 'Đã chấm'
+                                  : assignment.status === 'submitted'
+                                    ? 'Học viên đã nộp'
+                                    : 'Chưa nộp'}
+                              </span>
+                              {assignment.isLate && (
+                                <span className="px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700">
+                                  ⏰ Nộp trễ
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {assignment.description && (
+                            <p className="text-sm text-gray-700 mt-3 whitespace-pre-line">
+                              {assignment.description}
+                            </p>
                           )}
+
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mt-4">
+                            <div className="flex items-center">
+                              <ClockIcon className="w-4 h-4 mr-1" />
+                              <span>Hạn nộp: {deadlineLabel}</span>
+                            </div>
+                            {assignment.fileUrl && (
+                              <a
+                                href={assignment.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center text-purple-600 hover:text-purple-700"
+                              >
+                                <PaperClipIcon className="w-4 h-4 mr-1" />
+                                Tài liệu đính kèm
+                              </a>
+                            )}
+                          </div>
+
+                          <div className="mt-4 flex flex-wrap items-center gap-3">
+                            {userRole === 'STUDENT' && (
+                              assignment.submission ? (
+                                <>
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                    ✓ Bạn đã nộp bài này
+                                  </span>
+                                  <a
+                                    href={assignment.submission.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center px-3 py-2 rounded-lg border border-emerald-200 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                  >
+                                    <DocumentTextIcon className="w-4 h-4 mr-1" />
+                                    Xem bài nộp
+                                  </a>
+                                </>
+                              ) : canSubmitAssignments ? (
+                                <button
+                                  onClick={() => handleOpenSubmitTab(assignment.id)}
+                                  className="inline-flex items-center px-3 py-2 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition-colors"
+                                >
+                                  <CloudArrowUpIcon className="w-4 h-4 mr-1" />
+                                  Nộp bài này
+                                </button>
+                              ) : (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-100">
+                                  Chưa nộp
+                                </span>
+                              )
+                            )}
+
+                            {userRole === 'TUTOR' && (
+                              assignment.submission ? (
+                                <>
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-100">
+                                    Học viên đã nộp
+                                  </span>
+                                  <a
+                                    href={assignment.submission.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center px-3 py-2 rounded-lg border border-green-200 text-xs font-semibold text-green-700 hover:bg-green-50 transition-colors"
+                                  >
+                                    <DocumentTextIcon className="w-4 h-4 mr-1" />
+                                    Xem bài nộp
+                                  </a>
+                                  {!assignment.grade && canGradeAssignments && (
+                                    <button
+                                      onClick={() => handleOpenGradeTab(assignment.id)}
+                                      className="inline-flex items-center px-3 py-2 rounded-lg border border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+                                    >
+                                      <StarIcon className="w-4 h-4 mr-1" />
+                                      Chấm bài này
+                                    </button>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                                  Học viên chưa nộp
+                                </span>
+                              )
+                            )}
+                          </div>
+
+                          <div className="mt-4 space-y-3">
+                            {assignment.submission ? (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+                                <div className="flex items-center text-green-700 font-medium">
+                                  <UserCircleIcon className="w-5 h-5 mr-2" />
+                                  Bài nộp của học viên
+                                </div>
+                                <div className="mt-2 space-y-2">
+                                  <a
+                                    href={assignment.submission.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center text-green-600 hover:text-green-700"
+                                  >
+                                    <PaperClipIcon className="w-4 h-4 mr-1" />
+                                    Xem bài làm
+                                  </a>
+                                  {assignment.submission.notes && (
+                                    <div>
+                                      <span className="font-medium text-gray-700">Ghi chú:</span>
+                                      <p className="text-gray-900 mt-1">{assignment.submission.notes}</p>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center text-gray-600">
+                                    <ClockIcon className="w-4 h-4 mr-1" />
+                                    <span>
+                                      Nộp lúc:{' '}
+                                      {assignment.submission.submittedAt
+                                        ? format(new Date(assignment.submission.submittedAt), 'dd/MM/yyyy HH:mm', { locale: vi })
+                                        : 'N/A'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                                <p>Chưa có bài nộp</p>
+                              </div>
+                            )}
+
+                            {assignment.grade && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+                                <div className="flex items-center text-blue-700 font-medium">
+                                  <AcademicCapIcon className="w-5 h-5 mr-2" />
+                                  Điểm số
+                                </div>
+                                <div className="mt-2">
+                                  <p className="text-2xl font-bold text-blue-600">
+                                    {assignment.grade.score}/10
+                                  </p>
+                                  {assignment.grade.feedback && (
+                                    <p className="text-gray-800 mt-2 whitespace-pre-line">
+                                      {assignment.grade.feedback}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </>
+                      );
+                    })}
+                  </div>
                 )}
               </motion.div>
             )}
@@ -597,6 +728,23 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Chọn bài tập cần nộp <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={selectedSubmitAssignmentId}
+                    onChange={(e) => setSelectedSubmitAssignmentId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    {pendingSubmissionAssignments.map((assignment, index) => (
+                      <option key={assignment.id || `pending-${index}`} value={assignment.id}>
+                        {assignment.title || `Bài tập ${index + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     File bài làm <span className="text-red-500">*</span>
                   </label>
                   <div className="flex items-center space-x-3">
@@ -650,7 +798,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   </button>
                   <button
                     onClick={handleSubmitHomework}
-                    disabled={loading || uploadingFile || !submissionData.fileUrl}
+                    disabled={loading || uploadingFile || !submissionData.fileUrl || !selectedSubmitAssignmentId}
                     className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
                   >
                     {loading ? (
@@ -678,6 +826,23 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                 exit={{ opacity: 0, x: 20 }}
                 className="space-y-4"
               >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Chọn bài tập cần chấm <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={selectedGradeAssignmentId}
+                    onChange={(e) => setSelectedGradeAssignmentId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    {pendingGradeAssignments.map((assignment, index) => (
+                      <option key={assignment.id || `grade-${index}`} value={assignment.id}>
+                        {assignment.title || `Bài tập ${index + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Điểm số (0-10) <span className="text-red-500">*</span>
@@ -717,7 +882,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   </button>
                   <button
                     onClick={handleGradeHomework}
-                    disabled={loading}
+                    disabled={loading || !selectedGradeAssignmentId}
                     className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
                   >
                     {loading ? (

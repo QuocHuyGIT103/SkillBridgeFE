@@ -7,14 +7,6 @@ export interface SessionAttendance {
   studentAttendedAt?: Date | string;
 }
 
-export interface HomeworkAssignment {
-  title: string;
-  description: string;
-  fileUrl?: string;
-  deadline: Date | string;
-  assignedAt: Date | string;
-}
-
 export interface HomeworkSubmission {
   fileUrl: string;
   notes?: string;
@@ -27,10 +19,31 @@ export interface HomeworkGrade {
   gradedAt: Date | string;
 }
 
-export interface SessionHomework {
-  assignment?: HomeworkAssignment;
+export type SessionAssignmentStatus = 'pending' | 'submitted' | 'graded';
+
+export interface SessionAssignment {
+  id: string;
+  title: string;
+  description?: string;
+  fileUrl?: string;
+  deadline?: Date | string;
+  assignedAt?: Date | string;
   submission?: HomeworkSubmission;
   grade?: HomeworkGrade;
+  status: SessionAssignmentStatus;
+  isLate: boolean;
+  isLegacy?: boolean;
+}
+
+export interface SessionHomework {
+  hasAssignment: boolean;
+  hasSubmission: boolean;
+  hasGrade: boolean;
+  totalAssignments: number;
+  totalSubmitted: number;
+  totalGraded: number;
+  isLate: boolean;
+  assignments: SessionAssignment[];
 }
 
 export interface CancellationRequest {
@@ -57,15 +70,7 @@ export interface WeeklySession {
   address?: string;
   };
   attendance: SessionAttendance;
-  homework: {
-    hasAssignment: boolean;
-    hasSubmission: boolean;
-    hasGrade: boolean;
-    isLate: boolean;
-    assignment?: HomeworkAssignment;
-    submission?: HomeworkSubmission;
-    grade?: HomeworkGrade;
-  };
+  homework: SessionHomework;
   cancellationRequest?: CancellationRequest;
   canAttend: boolean; // Có thể điểm danh (trong khung giờ)
   canJoin: boolean;   // Có thể vào Google Meet (cả 2 đã điểm danh)
@@ -100,11 +105,13 @@ export interface AssignHomeworkRequest {
 }
 
 export interface SubmitHomeworkRequest {
+  assignmentId: string;
   fileUrl: string;
   notes?: string;
 }
 
 export interface GradeHomeworkRequest {
+  assignmentId: string;
   score: number;
   feedback?: string;
 }

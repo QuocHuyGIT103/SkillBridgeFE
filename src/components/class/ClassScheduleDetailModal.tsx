@@ -63,7 +63,6 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
     sessions,
     stats,
     materials = [],
-    assignments = [],
   } = currentSchedule;
 
   const getStatusIcon = (status: string) => {
@@ -131,17 +130,7 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
         tutorAttended: false,
         studentAttended: false,
       },
-      homework: {
-        hasAssignment: !!session.homework?.assignment,
-        hasSubmission: !!session.homework?.submission,
-        hasGrade: !!session.homework?.grade,
-        isLate: session.homework?.submission && session.homework?.assignment
-          ? new Date(session.homework.submission.submittedAt) > new Date(session.homework.assignment.deadline)
-          : false,
-        assignment: session.homework?.assignment,
-        submission: session.homework?.submission,
-        grade: session.homework?.grade,
-      },
+      homework: session.homework,
       canAttend: false,
       canJoin: session.attendance?.tutorAttended && session.attendance?.studentAttended,
       tutor: {
@@ -163,15 +152,6 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
   const handleCloseHomework = () => {
     setShowHomeworkModal(false);
     setSelectedSession(null);
-  };
-
-  const handleOpenSessionAssignmentFromList = (sessionNumber: number) => {
-    const targetSession = sessions.find((session: any) => session.sessionNumber === sessionNumber);
-    if (!targetSession) {
-      toast.error('Không tìm thấy buổi học này trong lịch');
-      return;
-    }
-    handleOpenHomework(targetSession);
   };
 
   const handleHomeworkSuccess = async () => {
@@ -319,14 +299,11 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
           )}
 
           {/* Materials & Assignments */}
-          <ClassResourcesSection
-            classId={classId}
-            userRole={userRole}
-            classData={classData}
-            materials={materials}
-            assignments={assignments}
-            onOpenSessionHomework={handleOpenSessionAssignmentFromList}
-          />
+            <ClassResourcesSection
+              classId={classId}
+              userRole={userRole}
+              materials={materials}
+            />
 
           {/* Sessions List */}
           <div>
@@ -336,7 +313,30 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
             </h3>
 
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {sessions.map((session: any) => (
+              {sessions.map((session: any) => {
+                const homeworkSummary = session.homework || {};
+                const assignmentList = Array.isArray(homeworkSummary.assignments)
+                  ? homeworkSummary.assignments
+                  : [];
+                const totalAssignments =
+                  homeworkSummary.totalAssignments ??
+                  assignmentList.length;
+                const totalSubmitted =
+                  homeworkSummary.totalSubmitted ??
+                  assignmentList.filter((assignment: any) => !!assignment.submission).length;
+                const totalGraded =
+                  homeworkSummary.totalGraded ??
+                  assignmentList.filter((assignment: any) => !!assignment.grade).length;
+                const hasSessionAssignments =
+                  totalAssignments > 0 ||
+                  homeworkSummary.hasAssignment ||
+                  assignmentList.length > 0;
+                const hasLateAssignment =
+                  typeof homeworkSummary.isLate === 'boolean'
+                    ? homeworkSummary.isLate
+                    : assignmentList.some((assignment: any) => assignment.isLate);
+
+                return (
                 <motion.div
                   key={session.sessionNumber}
                   initial={{ opacity: 0, y: 10 }}
@@ -372,21 +372,24 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
                   </div>
 
                   {/* Homework Badges */}
-                  {session.homework && (session.homework.assignment || session.homework.submission || session.homework.grade) && (
+                  {totalAssignments > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {session.homework.assignment && (
-                        <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
-                          📝 Có bài tập
-                        </span>
-                      )}
-                      {session.homework.submission && (
+                      <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
+                        📝 {totalAssignments} bài tập
+                      </span>
+                      {totalSubmitted > 0 && (
                         <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
-                          ✅ Đã nộp
+                          ✅ Đã nộp {totalSubmitted}/{totalAssignments}
                         </span>
                       )}
-                      {session.homework.grade && (
+                      {totalGraded > 0 && (
                         <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
-                          ⭐ Điểm: {session.homework.grade.score}/10
+                          ⭐ Đã chấm {totalGraded}
+                        </span>
+                      )}
+                      {hasLateAssignment && (
+                        <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
+                          ⏰ Có bài nộp trễ
                         </span>
                       )}
                     </div>
@@ -404,10 +407,10 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
                           <DocumentTextIcon className="w-4 h-4" />
                           <span>
                             {userRole === 'TUTOR'
-                              ? session.homework?.assignment
+                              ? hasSessionAssignments
                                 ? 'Quản lý bài tập'
                                 : 'Giao bài tập'
-                              : session.homework?.assignment
+                              : hasSessionAssignments
                                 ? 'Xem bài tập'
                                 : 'Chưa có bài tập'}
                           </span>
@@ -461,7 +464,8 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
                               ✗ Từ chối
                             </button>
                           </div>
-                        )}
+                );
+              })}
                       </div>
                     )}
                   </div>
