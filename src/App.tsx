@@ -67,6 +67,12 @@ import TutorContactRequestsPage from "./pages/tutor/TutorContactRequestsPage";
 import StudentClassesPage from "./pages/student/StudentClassesPage";
 import StudentClassDetailPage from "./pages/student/StudentClassDetailPage";
 import StudentClassSchedulePage from "./pages/student/StudentClassSchedulePage";
+import StudentPaymentPage from "./pages/student/StudentPaymentPage";
+import StudentPaymentHistoryPage from "./pages/student/StudentPaymentHistoryPage";
+import PaymentSuccessPage from "./pages/student/PaymentSuccessPage";
+import PaymentFailurePage from "./pages/student/PaymentFailurePage";
+import StudentFinanceOverviewPage from "./pages/student/StudentFinanceOverviewPage";
+import StudentFinancePaymentPage from "./pages/student/StudentFinancePaymentPage";
 import TutorClassesPage from "./pages/tutor/TutorClassesPage";
 import TutorClassDetailPage from "./pages/tutor/TutorClassDetailPage";
 import TutorClassSchedulePage from "./pages/tutor/TutorClassSchedulePage";
@@ -219,6 +225,28 @@ function App() {
                 path="classes/:classId/schedule"
                 element={<StudentClassSchedulePage />}
               />
+              <Route
+                path="classes/:classId/payment"
+                element={<StudentPaymentPage />}
+              />
+
+              {/* Finance Management Routes */}
+              <Route
+                path="finance/overview"
+                element={<StudentFinanceOverviewPage />}
+              />
+              <Route
+                path="finance/payment"
+                element={<StudentFinancePaymentPage />}
+              />
+
+              {/* Payment Routes */}
+              <Route
+                path="payments/history"
+                element={<StudentPaymentHistoryPage />}
+              />
+              <Route path="payment/success" element={<PaymentSuccessPage />} />
+              <Route path="payment/failure" element={<PaymentFailurePage />} />
               <Route path="assignments" element={<StudentAssignmentsPage />} />
               <Route
                 path="ratings"

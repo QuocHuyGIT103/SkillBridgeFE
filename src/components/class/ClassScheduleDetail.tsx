@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarDaysIcon,
   ClockIcon,
@@ -10,29 +11,35 @@ import {
   MapPinIcon,
   DocumentTextIcon,
   TrashIcon,
-} from '@heroicons/react/24/outline';
-import { useClassStore } from '../../store/class.store';
-import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import HomeworkModal from '../modals/HomeworkModal';
-import CancelSessionModal from '../modals/CancelSessionModal';
-import { attendanceService } from '../../services/attendance.service';
-import type { WeeklySession } from '../../types/attendance';
-import toast from 'react-hot-toast';
+} from "@heroicons/react/24/outline";
+import { useClassStore } from "../../store/class.store";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import HomeworkModal from "../modals/HomeworkModal";
+import CancelSessionModal from "../modals/CancelSessionModal";
+import { attendanceService } from "../../services/attendance.service";
+import type { WeeklySession } from "../../types/attendance";
+import toast from "react-hot-toast";
 
 interface ClassScheduleDetailProps {
   classId: string;
-  userRole: 'TUTOR' | 'STUDENT';
+  userRole: "TUTOR" | "STUDENT";
 }
 
 const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
   classId,
   userRole,
 }) => {
-  const { currentSchedule, loading, fetchClassSchedule, clearCurrentSchedule } = useClassStore();
-  const [selectedSession, setSelectedSession] = useState<WeeklySession | null>(null);
+  const navigate = useNavigate();
+  const { currentSchedule, loading, fetchClassSchedule, clearCurrentSchedule } =
+    useClassStore();
+  const [selectedSession, setSelectedSession] = useState<WeeklySession | null>(
+    null
+  );
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
-  const [cancellingSession, setCancellingSession] = useState<number | null>(null);
+  const [cancellingSession, setCancellingSession] = useState<number | null>(
+    null
+  );
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [sessionToCancel, setSessionToCancel] = useState<any>(null);
 
@@ -57,11 +64,11 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'COMPLETED':
+      case "COMPLETED":
         return <CheckCircleIcon className="w-5 h-5 text-green-600" />;
-      case 'CANCELLED':
+      case "CANCELLED":
         return <XCircleIcon className="w-5 h-5 text-red-600" />;
-      case 'MISSED':
+      case "MISSED":
         return <MinusCircleIcon className="w-5 h-5 text-orange-600" />;
       default:
         return <ClockIcon className="w-5 h-5 text-blue-600" />;
@@ -70,32 +77,40 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
-      case 'MISSED':
-        return 'bg-orange-100 text-orange-800';
+      case "COMPLETED":
+        return "bg-green-100 text-green-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      case "MISSED":
+        return "bg-orange-100 text-orange-800";
       default:
-        return 'bg-blue-100 text-blue-800';
+        return "bg-blue-100 text-blue-800";
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'COMPLETED':
-        return 'Đã hoàn thành';
-      case 'CANCELLED':
-        return 'Đã hủy';
-      case 'MISSED':
-        return 'Vắng mặt';
+      case "COMPLETED":
+        return "Đã hoàn thành";
+      case "CANCELLED":
+        return "Đã hủy";
+      case "MISSED":
+        return "Vắng mặt";
       default:
-        return 'Đã lên lịch';
+        return "Đã lên lịch";
     }
   };
 
   const getDayName = (dayOfWeek: number) => {
-    const days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    const days = [
+      "Chủ nhật",
+      "Thứ 2",
+      "Thứ 3",
+      "Thứ 4",
+      "Thứ 5",
+      "Thứ 6",
+      "Thứ 7",
+    ];
     return days[dayOfWeek];
   };
 
@@ -112,10 +127,12 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
       status: session.status,
       learningMode: classData.learningMode,
       meetingLink: classData.onlineInfo?.meetingLink,
-      location: classData.location ? {
-        type: 'address',
-        details: classData.location.address
-      } : undefined,
+      location: classData.location
+        ? {
+            type: "address",
+            details: classData.location.address,
+          }
+        : undefined,
       attendance: session.attendance || {
         tutorAttended: false,
         studentAttended: false,
@@ -124,15 +141,19 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
         hasAssignment: !!session.homework?.assignment,
         hasSubmission: !!session.homework?.submission,
         hasGrade: !!session.homework?.grade,
-        isLate: session.homework?.submission && session.homework?.assignment
-          ? new Date(session.homework.submission.submittedAt) > new Date(session.homework.assignment.deadline)
-          : false,
+        isLate:
+          session.homework?.submission && session.homework?.assignment
+            ? new Date(session.homework.submission.submittedAt) >
+              new Date(session.homework.assignment.deadline)
+            : false,
         assignment: session.homework?.assignment,
         submission: session.homework?.submission,
         grade: session.homework?.grade,
       },
       canAttend: false,
-      canJoin: session.attendance?.tutorAttended && session.attendance?.studentAttended,
+      canJoin:
+        session.attendance?.tutorAttended &&
+        session.attendance?.studentAttended,
       tutor: {
         _id: classData.tutorId.id,
         full_name: classData.tutorId.full_name,
@@ -168,14 +189,20 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
 
     setCancellingSession(sessionToCancel.sessionNumber);
     try {
-      await attendanceService.requestCancelSession(classId, sessionToCancel.sessionNumber, reason);
-      toast.success('Yêu cầu huỷ buổi học đã được gửi. Đang chờ phê duyệt.');
+      await attendanceService.requestCancelSession(
+        classId,
+        sessionToCancel.sessionNumber,
+        reason
+      );
+      toast.success("Yêu cầu huỷ buổi học đã được gửi. Đang chờ phê duyệt.");
       setShowCancelModal(false);
       setSessionToCancel(null);
       await fetchClassSchedule(classId); // Refresh
     } catch (error: any) {
-      console.error('Request cancel session failed:', error);
-      toast.error(error.response?.data?.message || 'Gửi yêu cầu huỷ buổi học thất bại');
+      console.error("Request cancel session failed:", error);
+      toast.error(
+        error.response?.data?.message || "Gửi yêu cầu huỷ buổi học thất bại"
+      );
     } finally {
       setCancellingSession(null);
     }
@@ -183,11 +210,12 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
 
   const handleRespondToCancellation = async (
     sessionNumber: number,
-    action: 'APPROVE' | 'REJECT'
+    action: "APPROVE" | "REJECT"
   ) => {
-    const message = action === 'APPROVE'
-      ? 'Bạn có chắc chắn muốn chấp nhận huỷ buổi học này?'
-      : 'Bạn có chắc chắn muốn từ chối yêu cầu huỷ buổi học?';
+    const message =
+      action === "APPROVE"
+        ? "Bạn có chắc chắn muốn chấp nhận huỷ buổi học này?"
+        : "Bạn có chắc chắn muốn từ chối yêu cầu huỷ buổi học?";
 
     if (!window.confirm(message)) {
       return;
@@ -195,16 +223,22 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
 
     setCancellingSession(sessionNumber);
     try {
-      await attendanceService.respondToCancellationRequest(classId, sessionNumber, action);
+      await attendanceService.respondToCancellationRequest(
+        classId,
+        sessionNumber,
+        action
+      );
       toast.success(
-        action === 'APPROVE'
-          ? 'Đã chấp nhận huỷ buổi học'
-          : 'Đã từ chối yêu cầu huỷ buổi học'
+        action === "APPROVE"
+          ? "Đã chấp nhận huỷ buổi học"
+          : "Đã từ chối yêu cầu huỷ buổi học"
       );
       await fetchClassSchedule(classId); // Refresh
     } catch (error: any) {
-      console.error('Respond to cancellation failed:', error);
-      toast.error(error.response?.data?.message || 'Phản hồi yêu cầu huỷ thất bại');
+      console.error("Respond to cancellation failed:", error);
+      toast.error(
+        error.response?.data?.message || "Phản hồi yêu cầu huỷ thất bại"
+      );
     } finally {
       setCancellingSession(null);
     }
@@ -215,9 +249,12 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{classData.title}</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {classData.title}
+          </h2>
           <p className="text-sm text-gray-600 mt-1">
-            {classData.subject.name} • {classData.learningMode === 'ONLINE' ? 'Trực tuyến' : 'Trực tiếp'}
+            {classData.subject.name} •{" "}
+            {classData.learningMode === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}
           </p>
         </div>
       </div>
@@ -226,17 +263,19 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { label: 'Tổng buổi', value: stats.total, color: 'blue' },
-            { label: 'Đã hoàn thành', value: stats.completed, color: 'green' },
-            { label: 'Đã lên lịch', value: stats.scheduled, color: 'blue' },
-            { label: 'Đã hủy', value: stats.cancelled, color: 'red' },
-            { label: 'Vắng mặt', value: stats.missed, color: 'orange' },
+            { label: "Tổng buổi", value: stats.total, color: "blue" },
+            { label: "Đã hoàn thành", value: stats.completed, color: "green" },
+            { label: "Đã lên lịch", value: stats.scheduled, color: "blue" },
+            { label: "Đã hủy", value: stats.cancelled, color: "red" },
+            { label: "Vắng mặt", value: stats.missed, color: "orange" },
           ].map((stat) => (
             <div
               key={stat.label}
               className={`p-4 rounded-lg bg-${stat.color}-50 border border-${stat.color}-200`}
             >
-              <p className={`text-2xl font-bold text-${stat.color}-600`}>{stat.value}</p>
+              <p className={`text-2xl font-bold text-${stat.color}-600`}>
+                {stat.value}
+              </p>
               <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
             </div>
           ))}
@@ -248,7 +287,9 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
             <div>
               <p className="text-sm text-gray-600 mb-1">📅 Ngày học</p>
               <p className="font-medium text-gray-900">
-                {classData.schedule.dayOfWeek.map(d => getDayName(d)).join(', ')}
+                {classData.schedule.dayOfWeek
+                  .map((d) => getDayName(d))
+                  .join(", ")}
               </p>
             </div>
             <div>
@@ -267,12 +308,14 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
         </div>
 
         {/* Location/Meeting Info */}
-        {classData.learningMode === 'ONLINE' && classData.onlineInfo && (
+        {classData.learningMode === "ONLINE" && classData.onlineInfo && (
           <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
             <div className="flex items-start space-x-3">
               <VideoCameraIcon className="w-5 h-5 text-blue-600 mt-1" />
               <div className="flex-1">
-                <p className="font-medium text-gray-900 mb-2">Google Meet - Học trực tuyến</p>
+                <p className="font-medium text-gray-900 mb-2">
+                  Google Meet - Học trực tuyến
+                </p>
                 <div className="space-y-2 text-sm">
                   <a
                     href={classData.onlineInfo.meetingLink}
@@ -292,13 +335,15 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
           </div>
         )}
 
-        {classData.learningMode === 'OFFLINE' && classData.location && (
+        {classData.learningMode === "OFFLINE" && classData.location && (
           <div className="bg-green-50 rounded-lg p-4 border border-green-200">
             <div className="flex items-start space-x-3">
               <MapPinIcon className="w-5 h-5 text-green-600 mt-1" />
               <div>
                 <p className="font-medium text-gray-900 mb-1">Địa điểm học</p>
-                <p className="text-sm text-gray-700">{classData.location.address}</p>
+                <p className="text-sm text-gray-700">
+                  {classData.location.address}
+                </p>
               </div>
             </div>
           </div>
@@ -327,15 +372,24 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                         Buổi {session.sessionNumber}/{stats.total}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {format(new Date(session.scheduledDate), 'EEEE, dd/MM/yyyy', { locale: vi })}
-                        {' • '}
-                        {classData.schedule.startTime} - {classData.schedule.endTime}
+                        {format(
+                          new Date(session.scheduledDate),
+                          "EEEE, dd/MM/yyyy",
+                          { locale: vi }
+                        )}
+                        {" • "}
+                        {classData.schedule.startTime} -{" "}
+                        {classData.schedule.endTime}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                        session.status
+                      )}`}
+                    >
                       {getStatusText(session.status)}
                     </span>
 
@@ -348,21 +402,40 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                 </div>
 
                 {/* Homework Badges */}
-                {session.homework && (session.homework.assignment || session.homework.submission || session.homework.grade) && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {session.homework.assignment && (
-                      <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
-                        📝 Có bài tập
+                {session.homework &&
+                  (session.homework.assignment ||
+                    session.homework.submission ||
+                    session.homework.grade) && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {session.homework.assignment && (
+                        <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
+                          📝 Có bài tập
+                        </span>
+                      )}
+                      {session.homework.submission && (
+                        <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                          ✅ Đã nộp
+                        </span>
+                      )}
+                      {session.homework.grade && (
+                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                          ⭐ Điểm: {session.homework.grade.score}/10
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                {/* Payment Status Badge */}
+                {session.paymentRequired && (
+                  <div className="mb-3">
+                    {session.paymentStatus === "UNPAID" && (
+                      <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full inline-flex items-center gap-1">
+                        💳 Chưa thanh toán
                       </span>
                     )}
-                    {session.homework.submission && (
-                      <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
-                        ✅ Đã nộp
-                      </span>
-                    )}
-                    {session.homework.grade && (
-                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
-                        ⭐ Điểm: {session.homework.grade.score}/10
+                    {session.paymentStatus === "PAID" && (
+                      <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full inline-flex items-center gap-1">
+                        ✅ Đã thanh toán
                       </span>
                     )}
                   </div>
@@ -370,28 +443,44 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
 
                 {/* Action Buttons */}
                 <div className="flex items-center space-x-2 pt-3 border-t border-gray-100">
-                  {/* Homework Button - Show after both attended or completed */}
-                  {(session.status === 'COMPLETED' ||
-                    (session.attendance?.tutorAttended && session.attendance?.studentAttended)) && (
+                  {/* 🔴 PRIORITY 1: Payment Button for unpaid sessions */}
+                  {session.paymentRequired &&
+                    session.paymentStatus === "UNPAID" &&
+                    userRole === "STUDENT" && (
                       <button
-                        onClick={() => handleOpenHomework(session)}
-                        className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                        onClick={() =>
+                          navigate(`/student/classes/${classData._id}/payment`)
+                        }
+                        className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
                       >
-                        <DocumentTextIcon className="w-4 h-4" />
-                        <span>
-                          {userRole === 'TUTOR'
-                            ? session.homework?.assignment
-                              ? 'Quản lý bài tập'
-                              : 'Giao bài tập'
-                            : session.homework?.assignment
-                              ? 'Xem bài tập'
-                              : 'Chưa có bài tập'}
-                        </span>
+                        <span>💳</span>
+                        <span>Thanh toán ngay</span>
                       </button>
                     )}
 
+                  {/* Homework Button - Show after both attended or completed */}
+                  {(session.status === "COMPLETED" ||
+                    (session.attendance?.tutorAttended &&
+                      session.attendance?.studentAttended)) && (
+                    <button
+                      onClick={() => handleOpenHomework(session)}
+                      className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <DocumentTextIcon className="w-4 h-4" />
+                      <span>
+                        {userRole === "TUTOR"
+                          ? session.homework?.assignment
+                            ? "Quản lý bài tập"
+                            : "Giao bài tập"
+                          : session.homework?.assignment
+                          ? "Xem bài tập"
+                          : "Chưa có bài tập"}
+                      </span>
+                    </button>
+                  )}
+
                   {/* Cancel Request Button - For scheduled sessions */}
-                  {session.status === 'SCHEDULED' && (
+                  {session.status === "SCHEDULED" && (
                     <button
                       onClick={() => handleRequestCancelSession(session)}
                       disabled={cancellingSession === session.sessionNumber}
@@ -412,52 +501,76 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                   )}
 
                   {/* Pending Cancellation - Show approval/reject buttons */}
-                  {session.status === 'PENDING_CANCELLATION' && session.cancellationRequest && (
-                    <div className="flex-1">
-                      {session.cancellationRequest.requestedBy === userRole ? (
-                        // User who requested cancellation
-                        <div className="text-sm text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
-                          ⏳ Đang chờ phê duyệt yêu cầu huỷ buổi học
-                        </div>
-                      ) : (
-                        // Other party - show approve/reject buttons
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleRespondToCancellation(session.sessionNumber, 'APPROVE')}
-                            disabled={cancellingSession === session.sessionNumber}
-                            className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
-                          >
-                            ✓ Chấp nhận
-                          </button>
-                          <button
-                            onClick={() => handleRespondToCancellation(session.sessionNumber, 'REJECT')}
-                            disabled={cancellingSession === session.sessionNumber}
-                            className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
-                          >
-                            ✗ Từ chối
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {session.status === "PENDING_CANCELLATION" &&
+                    session.cancellationRequest && (
+                      <div className="flex-1">
+                        {session.cancellationRequest.requestedBy ===
+                        userRole ? (
+                          // User who requested cancellation
+                          <div className="text-sm text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
+                            ⏳ Đang chờ phê duyệt yêu cầu huỷ buổi học
+                          </div>
+                        ) : (
+                          // Other party - show approve/reject buttons
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() =>
+                                handleRespondToCancellation(
+                                  session.sessionNumber,
+                                  "APPROVE"
+                                )
+                              }
+                              disabled={
+                                cancellingSession === session.sessionNumber
+                              }
+                              className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                            >
+                              ✓ Chấp nhận
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleRespondToCancellation(
+                                  session.sessionNumber,
+                                  "REJECT"
+                                )
+                              }
+                              disabled={
+                                cancellingSession === session.sessionNumber
+                              }
+                              className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                            >
+                              ✗ Từ chối
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                 </div>
 
                 {/* Cancellation Request Info */}
-                {session.status === 'PENDING_CANCELLATION' && session.cancellationRequest && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 bg-orange-50 p-3 rounded-lg">
-                    <p className="text-sm font-medium text-orange-900 mb-1">
-                      Lý do huỷ buổi học:
-                    </p>
-                    <p className="text-sm text-orange-800">
-                      {session.cancellationRequest.reason}
-                    </p>
-                    <p className="text-xs text-orange-600 mt-2">
-                      Yêu cầu bởi: {session.cancellationRequest.requestedBy === 'TUTOR' ? 'Gia sư' : 'Học viên'}
-                      {' • '}
-                      {format(new Date(session.cancellationRequest.requestedAt), 'dd/MM/yyyy HH:mm', { locale: vi })}
-                    </p>
-                  </div>
-                )}
+                {session.status === "PENDING_CANCELLATION" &&
+                  session.cancellationRequest && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 bg-orange-50 p-3 rounded-lg">
+                      <p className="text-sm font-medium text-orange-900 mb-1">
+                        Lý do huỷ buổi học:
+                      </p>
+                      <p className="text-sm text-orange-800">
+                        {session.cancellationRequest.reason}
+                      </p>
+                      <p className="text-xs text-orange-600 mt-2">
+                        Yêu cầu bởi:{" "}
+                        {session.cancellationRequest.requestedBy === "TUTOR"
+                          ? "Gia sư"
+                          : "Học viên"}
+                        {" • "}
+                        {format(
+                          new Date(session.cancellationRequest.requestedAt),
+                          "dd/MM/yyyy HH:mm",
+                          { locale: vi }
+                        )}
+                      </p>
+                    </div>
+                  )}
 
                 {session.notes && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
@@ -496,10 +609,20 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
           onConfirm={handleConfirmCancel}
           sessionInfo={{
             sessionNumber: sessionToCancel.sessionNumber,
-            date: format(new Date(sessionToCancel.scheduledDate), 'EEEE, dd/MM/yyyy', { locale: vi }),
-            time: `${format(new Date(sessionToCancel.scheduledDate), 'HH:mm')} - ${format(
-              new Date(new Date(sessionToCancel.scheduledDate).getTime() + sessionToCancel.duration * 60000),
-              'HH:mm'
+            date: format(
+              new Date(sessionToCancel.scheduledDate),
+              "EEEE, dd/MM/yyyy",
+              { locale: vi }
+            ),
+            time: `${format(
+              new Date(sessionToCancel.scheduledDate),
+              "HH:mm"
+            )} - ${format(
+              new Date(
+                new Date(sessionToCancel.scheduledDate).getTime() +
+                  sessionToCancel.duration * 60000
+              ),
+              "HH:mm"
             )}`,
           }}
           isLoading={cancellingSession === sessionToCancel.sessionNumber}
@@ -510,4 +633,3 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
 };
 
 export default ClassScheduleDetail;
-

@@ -171,8 +171,7 @@ const StudentSchedulePage: React.FC = () => {
             <motion.div
               key={cls._id}
               whileHover={{ scale: 1.02 }}
-              onClick={() => navigate(`/student/classes/${cls._id}/schedule`)}
-              className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all"
+              className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-lg p-4 hover:shadow-lg transition-all"
             >
               {/* Class Header */}
               <div className="flex items-start justify-between mb-3">
@@ -184,13 +183,31 @@ const StudentSchedulePage: React.FC = () => {
                     Buổi {cls.completedSessions}/{cls.totalSessions}
                   </p>
                 </div>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(
-                    cls.status
-                  )}`}
-                >
-                  {getStatusText(cls.status)}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(
+                      cls.status
+                    )}`}
+                  >
+                    {getStatusText(cls.status)}
+                  </span>
+                  {/* Payment Status Badge */}
+                  {cls.paymentStatus === "PENDING" && (
+                    <span className="text-xs px-2 py-1 bg-red-100 text-red-800 rounded-full font-medium">
+                      Chưa thanh toán
+                    </span>
+                  )}
+                  {cls.paymentStatus === "PARTIAL" && (
+                    <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full font-medium">
+                      Thanh toán 1 phần
+                    </span>
+                  )}
+                  {cls.paymentStatus === "COMPLETED" && (
+                    <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium">
+                      Đã thanh toán
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Tutor Info */}
@@ -243,7 +260,7 @@ const StudentSchedulePage: React.FC = () => {
 
               {/* Progress Bar */}
               <div className="mt-3 pt-3 border-t border-blue-200">
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                   <div
                     className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-300"
                     style={{
@@ -252,6 +269,31 @@ const StudentSchedulePage: React.FC = () => {
                       }%`,
                     }}
                   ></div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      navigate(`/student/classes/${cls._id}/schedule`)
+                    }
+                    className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+                  >
+                    Xem lịch học
+                  </button>
+
+                  {/* Payment Button for unpaid classes */}
+                  {(cls.paymentStatus === "PENDING" ||
+                    cls.paymentStatus === "PARTIAL") && (
+                    <button
+                      onClick={() =>
+                        navigate(`/student/classes/${cls._id}/payment`)
+                      }
+                      className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors"
+                    >
+                      💳 Thanh toán
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>

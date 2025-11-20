@@ -32,8 +32,8 @@ export interface LearningClass {
   sessionDuration: number;
   totalSessions: number;
   completedSessions: number;
-  learningMode: 'ONLINE' | 'OFFLINE';
-  status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'PAUSED';
+  learningMode: "ONLINE" | "OFFLINE";
+  status: "ACTIVE" | "COMPLETED" | "CANCELLED" | "PAUSED";
   tutorId: {
     full_name: string;
     email: string;
@@ -54,15 +54,18 @@ export interface LearningClass {
     sessionNumber: number;
     scheduledDate: string;
     duration: number;
-    status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'MISSED';
+    status: "SCHEDULED" | "COMPLETED" | "CANCELLED" | "MISSED";
     actualStartTime?: string;
     actualEndTime?: string;
     notes?: string;
     homework?: string;
+    // ✅ Payment fields
+    paymentStatus?: "PAID" | "UNPAID" | "PARTIAL";
+    paymentRequired?: boolean;
   }>;
   totalAmount: number;
   paidAmount: number;
-  paymentStatus: 'PENDING' | 'PARTIAL' | 'COMPLETED';
+  paymentStatus: "PENDING" | "PARTIAL" | "COMPLETED";
   studentReview?: {
     rating: number;
     comment?: string;

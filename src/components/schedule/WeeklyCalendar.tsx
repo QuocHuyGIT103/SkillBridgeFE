@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -11,14 +11,15 @@ import {
   CheckCircleIcon,
   UserGroupIcon,
   DocumentTextIcon,
-} from '@heroicons/react/24/outline';
-import { attendanceService } from '../../services/attendance.service';
-import type { WeeklySession } from '../../types/attendance';
-import { toast } from 'react-hot-toast';
-import HomeworkModal from '../modals/HomeworkModal';
+  BanknotesIcon,
+} from "@heroicons/react/24/outline";
+import { attendanceService } from "../../services/attendance.service";
+import type { WeeklySession } from "../../types/attendance";
+import { toast } from "react-hot-toast";
+import HomeworkModal from "../modals/HomeworkModal";
 
 interface WeeklyCalendarProps {
-  userRole: 'TUTOR' | 'STUDENT';
+  userRole: "TUTOR" | "STUDENT";
 }
 
 const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
@@ -28,7 +29,9 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState<Date | null>(null);
   const [weekEnd, setWeekEnd] = useState<Date | null>(null);
-  const [selectedSession, setSelectedSession] = useState<WeeklySession | null>(null);
+  const [selectedSession, setSelectedSession] = useState<WeeklySession | null>(
+    null
+  );
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
 
   useEffect(() => {
@@ -38,15 +41,15 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
   const fetchWeeklySchedule = async () => {
     setLoading(true);
     try {
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const dateStr = currentDate.toISOString().split("T")[0];
       const response = await attendanceService.getWeeklySchedule(dateStr);
 
       setSessions(response.data.sessions);
       setWeekStart(new Date(response.data.weekStart));
       setWeekEnd(new Date(response.data.weekEnd));
     } catch (error: any) {
-      console.error('Failed to fetch weekly schedule:', error);
-      toast.error('Không thể tải lịch học tuần');
+      console.error("Failed to fetch weekly schedule:", error);
+      toast.error("Không thể tải lịch học tuần");
     } finally {
       setLoading(false);
     }
@@ -54,20 +57,23 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
 
   const handleAttendance = async (classId: string, sessionNumber: number) => {
     try {
-      const response = await attendanceService.markAttendance(classId, sessionNumber);
-      toast.success(response.message || 'Điểm danh thành công');
+      const response = await attendanceService.markAttendance(
+        classId,
+        sessionNumber
+      );
+      toast.success(response.message || "Điểm danh thành công");
 
       // Refresh schedule
       fetchWeeklySchedule();
 
       if (response.data.bothAttended) {
-        toast.success('Cả 2 đã điểm danh! Có thể vào lớp học.', {
+        toast.success("Cả 2 đã điểm danh! Có thể vào lớp học.", {
           duration: 5000,
-          icon: '🎉',
+          icon: "🎉",
         });
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Điểm danh thất bại');
+      toast.error(error.response?.data?.message || "Điểm danh thất bại");
     }
   };
 
@@ -102,30 +108,41 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
   };
 
   const getDayName = (dayOfWeek: number) => {
-    const days = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    const days = [
+      "Chủ Nhật",
+      "Thứ 2",
+      "Thứ 3",
+      "Thứ 4",
+      "Thứ 5",
+      "Thứ 6",
+      "Thứ 7",
+    ];
     return days[dayOfWeek];
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+    });
   };
 
   const getSessionsForDay = (dayOfWeek: number) => {
-    return sessions.filter(s => s.dayOfWeek === dayOfWeek);
+    return sessions.filter((s) => s.dayOfWeek === dayOfWeek);
   };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'SCHEDULED':
-        return 'bg-blue-100 text-blue-800';
-      case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
-      case 'MISSED':
-        return 'bg-gray-100 text-gray-800';
+      case "SCHEDULED":
+        return "bg-blue-100 text-blue-800";
+      case "COMPLETED":
+        return "bg-green-100 text-green-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      case "MISSED":
+        return "bg-gray-100 text-gray-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -143,7 +160,9 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Lịch học theo tuần</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Lịch học theo tuần
+            </h2>
             {weekStart && weekEnd && (
               <p className="text-sm text-gray-600 mt-1">
                 {formatDate(weekStart)} - {formatDate(weekEnd)}
@@ -216,14 +235,24 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: dayOfWeek * 0.05 }}
-              className={`bg-white rounded-xl shadow-sm border ${isToday ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-100'
-                }`}
+              className={`bg-white rounded-xl shadow-sm border ${
+                isToday
+                  ? "border-blue-300 ring-2 ring-blue-100"
+                  : "border-gray-100"
+              }`}
             >
               {/* Day Header */}
-              <div className={`p-4 border-b ${isToday ? 'bg-blue-50' : 'bg-gray-50'}`}>
+              <div
+                className={`p-4 border-b ${
+                  isToday ? "bg-blue-50" : "bg-gray-50"
+                }`}
+              >
                 <div className="text-center">
-                  <div className={`text-sm font-semibold ${isToday ? 'text-blue-600' : 'text-gray-900'
-                    }`}>
+                  <div
+                    className={`text-sm font-semibold ${
+                      isToday ? "text-blue-600" : "text-gray-900"
+                    }`}
+                  >
                     {getDayName(dayOfWeek)}
                   </div>
                   {isToday && (
@@ -255,10 +284,14 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                           <div className="flex-1 min-w-0">
                             <h4
                               onClick={() => {
-                                if (userRole === 'STUDENT') {
-                                  navigate(`/student/classes/${session.classId}/schedule`);
+                                if (userRole === "STUDENT") {
+                                  navigate(
+                                    `/student/classes/${session.classId}/schedule`
+                                  );
                                 } else {
-                                  navigate(`/tutor/classes/${session.classId}/schedule`);
+                                  navigate(
+                                    `/tutor/classes/${session.classId}/schedule`
+                                  );
                                 }
                               }}
                               className="text-sm font-semibold text-gray-900 truncate cursor-pointer hover:text-blue-600 transition-colors"
@@ -271,8 +304,11 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                               {session.timeSlot}
                             </div>
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBadgeColor(session.status)
-                            }`}>
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBadgeColor(
+                              session.status
+                            )}`}
+                          >
                             Buổi {session.sessionNumber}
                           </span>
                         </div>
@@ -280,14 +316,28 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                         {/* Attendance Status */}
                         <div className="flex items-center space-x-2 mb-2">
                           <div className="flex items-center space-x-1">
-                            <div className={`w-2 h-2 rounded-full ${session.attendance.tutorAttended ? 'bg-green-500' : 'bg-gray-300'
-                              }`} />
-                            <span className="text-xs text-gray-600">Gia sư</span>
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                session.attendance.tutorAttended
+                                  ? "bg-green-500"
+                                  : "bg-gray-300"
+                              }`}
+                            />
+                            <span className="text-xs text-gray-600">
+                              Gia sư
+                            </span>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <div className={`w-2 h-2 rounded-full ${session.attendance.studentAttended ? 'bg-green-500' : 'bg-gray-300'
-                              }`} />
-                            <span className="text-xs text-gray-600">Học viên</span>
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                session.attendance.studentAttended
+                                  ? "bg-green-500"
+                                  : "bg-gray-300"
+                              }`}
+                            />
+                            <span className="text-xs text-gray-600">
+                              Học viên
+                            </span>
                           </div>
                         </div>
 
@@ -295,26 +345,66 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
 
                         {/* Action Buttons */}
                         <div className="space-y-1.5">
-                          {/* Show Attendance Button if user hasn't attended yet */}
-                          {!session.attendance[userRole === 'TUTOR' ? 'tutorAttended' : 'studentAttended'] && (
-                            <button
-                              onClick={() => handleAttendance(session.classId, session.sessionNumber)}
-                              disabled={!session.canAttend}
-                              className={`w-full px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1 ${session.canAttend
-                                ? 'bg-green-600 hover:bg-green-700 cursor-pointer'
-                                : 'bg-gray-400 cursor-not-allowed'
+                          {/* 🔴 PRIORITY 1: Payment Button - Show if session is unpaid */}
+                          {session.paymentRequired &&
+                            session.paymentStatus === "UNPAID" &&
+                            userRole === "STUDENT" && (
+                              <button
+                                onClick={() =>
+                                  navigate(
+                                    `/student/classes/${session.classId}/payment`
+                                  )
+                                }
+                                className="w-full px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
+                              >
+                                <BanknotesIcon className="w-4 h-4" />
+                                <span>Chưa thanh toán</span>
+                              </button>
+                            )}
+
+                          {/* Show Attendance Button only if paid (or payment not required) and user hasn't attended yet */}
+                          {(!session.paymentRequired ||
+                            session.paymentStatus === "PAID") &&
+                            !session.attendance[
+                              userRole === "TUTOR"
+                                ? "tutorAttended"
+                                : "studentAttended"
+                            ] && (
+                              <button
+                                onClick={() =>
+                                  handleAttendance(
+                                    session.classId,
+                                    session.sessionNumber
+                                  )
+                                }
+                                disabled={!session.canAttend}
+                                className={`w-full px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1 ${
+                                  session.canAttend
+                                    ? "bg-green-600 hover:bg-green-700 cursor-pointer"
+                                    : "bg-gray-400 cursor-not-allowed"
                                 }`}
-                            >
-                              <CheckCircleIcon className="w-4 h-4" />
-                              {(() => {
-                                const now = new Date();
-                                const start = new Date(session.scheduledDate);
-                                const end = new Date(start.getTime() + (session.duration || 0) * 60000);
-                                const isPast = now > end;
-                                return <span>{session.canAttend ? 'Điểm danh' : (isPast ? 'Đã quá giờ' : 'Chưa đến giờ')}</span>;
-                              })()}
-                            </button>
-                          )}
+                              >
+                                <CheckCircleIcon className="w-4 h-4" />
+                                {(() => {
+                                  const now = new Date();
+                                  const start = new Date(session.scheduledDate);
+                                  const end = new Date(
+                                    start.getTime() +
+                                      (session.duration || 0) * 60000
+                                  );
+                                  const isPast = now > end;
+                                  return (
+                                    <span>
+                                      {session.canAttend
+                                        ? "Điểm danh"
+                                        : isPast
+                                        ? "Đã quá giờ"
+                                        : "Chưa đến giờ"}
+                                    </span>
+                                  );
+                                })()}
+                              </button>
+                            )}
 
                           {/* Show Join Button if both attended */}
                           {session.canJoin && session.meetingLink && (
@@ -330,28 +420,37 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                           )}
 
                           {/* Waiting State - User attended but other hasn't */}
-                          {session.attendance[userRole === 'TUTOR' ? 'tutorAttended' : 'studentAttended'] && !session.canJoin && (
-                            <div className="w-full px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
-                              <UserGroupIcon className="w-4 h-4" />
-                              <span>Chờ {userRole === 'TUTOR' ? 'học viên' : 'gia sư'}</span>
-                            </div>
-                          )}
+                          {session.attendance[
+                            userRole === "TUTOR"
+                              ? "tutorAttended"
+                              : "studentAttended"
+                          ] &&
+                            !session.canJoin && (
+                              <div className="w-full px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
+                                <UserGroupIcon className="w-4 h-4" />
+                                <span>
+                                  Chờ{" "}
+                                  {userRole === "TUTOR" ? "học viên" : "gia sư"}
+                                </span>
+                              </div>
+                            )}
 
                           {/* Homework Button - Show after session is completed or both attended */}
-                          {(session.status === 'COMPLETED' || session.canJoin) && (
+                          {(session.status === "COMPLETED" ||
+                            session.canJoin) && (
                             <button
                               onClick={() => handleOpenHomework(session)}
                               className="w-full px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
                             >
                               <DocumentTextIcon className="w-4 h-4" />
                               <span>
-                                {userRole === 'TUTOR'
+                                {userRole === "TUTOR"
                                   ? session.homework.hasAssignment
-                                    ? 'Quản lý bài tập'
-                                    : 'Giao bài tập'
+                                    ? "Quản lý bài tập"
+                                    : "Giao bài tập"
                                   : session.homework.hasAssignment
-                                    ? 'Xem bài tập'
-                                    : 'Chưa có bài tập'}
+                                  ? "Xem bài tập"
+                                  : "Chưa có bài tập"}
                               </span>
                             </button>
                           )}
@@ -359,18 +458,21 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
 
                         {/* Location/Meeting Info */}
                         <div className="mt-2 pt-2 border-t border-blue-200">
-                          {session.learningMode === 'ONLINE' ? (
+                          {session.learningMode === "ONLINE" ? (
                             <div className="flex items-center text-xs text-gray-600">
                               <VideoCameraIcon className="w-3 h-3 mr-1" />
                               <span>
-                                Trực tuyến{!session.meetingLink ? ' • Chưa có link' : ''}
+                                Trực tuyến
+                                {!session.meetingLink ? " • Chưa có link" : ""}
                               </span>
                             </div>
                           ) : session.location ? (
                             <div className="flex items-center text-xs text-gray-600">
                               <MapPinIcon className="w-3 h-3 mr-1" />
                               <span className="truncate">
-                                {session.location.details || (session as any).location?.address || 'Trực tiếp'}
+                                {session.location.details ||
+                                  (session as any).location?.address ||
+                                  "Trực tiếp"}
                               </span>
                             </div>
                           ) : null}
@@ -389,24 +491,30 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{sessions.length}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {sessions.length}
+            </div>
             <div className="text-sm text-gray-600 mt-1">Tổng buổi học</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
-              {sessions.filter(s => s.status === 'COMPLETED').length}
+              {sessions.filter((s) => s.status === "COMPLETED").length}
             </div>
             <div className="text-sm text-gray-600 mt-1">Đã hoàn thành</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-600">
-              {sessions.filter(s => s.status === 'SCHEDULED').length}
+              {sessions.filter((s) => s.status === "SCHEDULED").length}
             </div>
             <div className="text-sm text-gray-600 mt-1">Sắp diễn ra</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">
-              {sessions.filter(s => s.homework.assignment && s.homework.assignment.title).length}
+              {
+                sessions.filter(
+                  (s) => s.homework.assignment && s.homework.assignment.title
+                ).length
+              }
             </div>
             <div className="text-sm text-gray-600 mt-1">Có bài tập</div>
           </div>

@@ -17,6 +17,8 @@ import {
   ChevronRightIcon,
   ChevronDownIcon,
   UserIcon, // ✅ Thêm UserIcon
+  BanknotesIcon, // ✅ Thêm BanknotesIcon cho payment
+  ChartBarIcon, // ✅ Thêm ChartBarIcon cho statistics
 } from "@heroicons/react/24/outline";
 import {
   HomeIcon as HomeSolidIcon,
@@ -29,6 +31,8 @@ import {
   SparklesIcon as SparklesSolidIcon,
   CogIcon as CogSolidIcon,
   UserIcon as UserSolidIcon, // ✅ Thêm UserSolidIcon
+  BanknotesIcon as BanknotesSolidIcon, // ✅ Thêm BanknotesSolidIcon
+  ChartBarIcon as ChartBarSolidIcon, // ✅ Thêm ChartBarSolidIcon
 } from "@heroicons/react/24/solid";
 
 interface StudentNavigationItem {
@@ -119,6 +123,33 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       label: "Lớp học của tôi",
       icon: "academic",
       path: "/student/classes",
+    },
+    // ✅ Quản lý tài chính với submenu
+    {
+      id: "finance",
+      label: "Quản lý tài chính",
+      icon: "banknotes",
+      path: "/student/finance",
+      children: [
+        {
+          id: "finance-overview",
+          label: "Tổng quan tài chính",
+          icon: "chart",
+          path: "/student/finance/overview",
+        },
+        {
+          id: "finance-payment",
+          label: "Thanh toán học phí",
+          icon: "banknotes",
+          path: "/student/finance/payment",
+        },
+        {
+          id: "finance-history",
+          label: "Lịch sử giao dịch",
+          icon: "document",
+          path: "/student/payments/history",
+        },
+      ],
     },
     {
       id: "assignments",
@@ -241,6 +272,20 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
           <UserSolidIcon className={className} />
         ) : (
           <UserIcon className={className} />
+        );
+      // ✅ Thêm banknotes icon
+      case "banknotes":
+        return isActive ? (
+          <BanknotesSolidIcon className={className} />
+        ) : (
+          <BanknotesIcon className={className} />
+        );
+      // ✅ Thêm chart icon
+      case "chart":
+        return isActive ? (
+          <ChartBarSolidIcon className={className} />
+        ) : (
+          <ChartBarIcon className={className} />
         );
       default:
         return <HomeIcon className={className} />;
