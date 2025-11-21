@@ -13,37 +13,67 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Check if Firebase config is valid
+const isFirebaseConfigValid = () => {
+  return !!(
+    firebaseConfig.apiKey &&
+    firebaseConfig.projectId &&
+    firebaseConfig.appId
+  );
+};
 
-// Initialize Firebase Storage (force correct bucket if env misconfigured)
-const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
-const storageBucketEnv = (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined)?.trim();
+// Initialize Firebase with error handling
+let app: any = null;
+let storage: any = null;
+let auth: any = null;
+let messaging: any = null;
 
-function toGsUrl(bucket?: string): string | undefined {
-  if (!bucket) return undefined;
-  // Strip gs:// or https:// prefix and any path, keep host only
-  const normalized = bucket
-    .replace(/^gs:\/\//i, '')
-    .replace(/^https?:\/\/([^/]+).*/i, '$1')
-    .trim();
-  return `gs://${normalized}`;
+try {
+  if (isFirebaseConfigValid()) {
+    // Initialize Firebase
+    app = initializeApp(firebaseConfig);
+
+    // Initialize Firebase Storage (force correct bucket if env misconfigured)
+    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
+    const storageBucketEnv = (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined)?.trim();
+
+    function toGsUrl(bucket?: string): string | undefined {
+      if (!bucket) return undefined;
+      // Strip gs:// or https:// prefix and any path, keep host only
+      const normalized = bucket
+        .replace(/^gs:\/\//i, '')
+        .replace(/^https?:\/\/([^/]+).*/i, '$1')
+        .trim();
+      return `gs://${normalized}`;
+    }
+
+    const envBucketLooksValid = storageBucketEnv && /appspot\.com$/i.test(storageBucketEnv);
+    const bucketUrl = envBucketLooksValid
+      ? toGsUrl(storageBucketEnv)
+      : projectId
+      ? `gs://${projectId}.appspot.com`
+      : undefined;
+
+    storage = bucketUrl ? getStorage(app, bucketUrl) : getStorage(app);
+
+    // Initialize Firebase Auth (used for Storage rules that require auth)
+    auth = getAuth(app);
+
+    // Initialize Firebase Cloud Messaging (only if in browser)
+    if (typeof window !== 'undefined') {
+      try {
+        messaging = getMessaging(app);
+      } catch (error) {
+        console.warn("Firebase Messaging initialization failed (may not be supported in this environment):", error);
+      }
+    }
+  } else {
+    console.warn("Firebase config is incomplete. Firebase features will be disabled.");
+  }
+} catch (error) {
+  console.error("Firebase initialization error:", error);
+  // Continue without Firebase - app should still work
 }
-
-const envBucketLooksValid = storageBucketEnv && /appspot\.com$/i.test(storageBucketEnv);
-const bucketUrl = envBucketLooksValid
-  ? toGsUrl(storageBucketEnv)
-  : projectId
-  ? `gs://${projectId}.appspot.com`
-  : undefined;
-
-const storage = bucketUrl ? getStorage(app, bucketUrl) : getStorage(app);
-
-// Initialize Firebase Auth (used for Storage rules that require auth)
-const auth = getAuth(app);
-
-// Initialize Firebase Cloud Messaging
-const messaging = getMessaging(app);
 
 // VAPID key for web push - Replace with your actual VAPID key
 const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
@@ -101,6 +131,9 @@ class FirebaseService {
 
   // Ensure we have a Firebase auth user (anonymous sign-in for dev/test)
   private async ensureSignedIn(): Promise<void> {
+    if (!auth) {
+      return; // Firebase not initialized
+    }
     try {
       if (!auth.currentUser) {
         if (!this.signingIn) {
@@ -124,6 +157,12 @@ class FirebaseService {
     destPath: string,
     onProgress?: (progress: number) => void
   ): Promise<{ url: string; name: string; type: string; size: number }> {
+    // If Firebase is not initialized, use backend upload directly
+    if (!storage) {
+      console.warn("Firebase Storage not available, using backend upload");
+      return await this.uploadViaBackend(file, destPath, onProgress);
+    }
+
     // Make file name ASCII-safe to avoid edge cases with special characters
     const safeName = `${Date.now()}-${file.name}`
       .normalize("NFD")
@@ -218,6 +257,10 @@ class FirebaseService {
   }
 
   async getRegistrationToken(): Promise<string | null> {
+    if (!messaging) {
+      console.warn("Firebase Messaging not available");
+      return null;
+    }
     try {
       const hasPermission = await this.requestPermission();
       if (!hasPermission) {
@@ -243,10 +286,18 @@ class FirebaseService {
   }
 
   setupForegroundMessageHandler(callback: (payload: any) => void): void {
-    onMessage(messaging, (payload) => {
-      console.log("Message received in foreground:", payload);
-      callback(payload);
-    });
+    if (!messaging) {
+      console.warn("Firebase Messaging not available");
+      return;
+    }
+    try {
+      onMessage(messaging, (payload) => {
+        console.log("Message received in foreground:", payload);
+        callback(payload);
+      });
+    } catch (error) {
+      console.error("Error setting up message handler:", error);
+    }
   }
 
   async sendTokenToServer(token: string): Promise<void> {

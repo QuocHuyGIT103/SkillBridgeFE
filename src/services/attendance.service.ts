@@ -74,6 +74,22 @@ export const attendanceService = {
   },
 
   /**
+   * Lấy tất cả assignments của student
+   */
+  getStudentAssignments: async () => {
+    const response = await axiosClient.get('/classes/assignments/student');
+    return response;
+  },
+
+  /**
+   * Lấy tất cả assignments của tutor
+   */
+  getTutorAssignments: async () => {
+    const response = await axiosClient.get('/classes/assignments/tutor');
+    return response;
+  },
+
+  /**
    * Gửi yêu cầu huỷ buổi học (Both tutor and student)
    */
   requestCancelSession: async (

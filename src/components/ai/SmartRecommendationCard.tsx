@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   SparklesIcon,
@@ -9,21 +9,25 @@ import {
   CheckCircleIcon,
   StarIcon,
 } from '@heroicons/react/24/outline';
-import { SparklesIcon as SparklesSolidIcon } from '@heroicons/react/24/solid';
+import { SparklesIcon as SparklesSolidIcon, StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import type { SmartRecommendation } from '../../services/ai.service';
+import TutorReviewsModal from '../tutorPost/TutorReviewsModal';
 
 interface SmartRecommendationCardProps {
   recommendation: SmartRecommendation;
   rank?: number;
   onClick?: () => void;
+  isTopMatch?: boolean; // Indicates if this is the card with the highest match score
 }
 
 const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
   recommendation,
   rank,
   onClick,
+  isTopMatch = false,
 }) => {
   const navigate = useNavigate();
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const handleCardClick = () => {
     if (onClick) {
@@ -84,12 +88,19 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
   };
 
   const { tutor, tutorPost, matchScore, explanation, matchDetails } = recommendation;
+  const ratingAverage = tutor.rating?.average || 0;
+  const ratingCount = tutor.rating?.count || 0;
+  const showRating = ratingCount > 0;
 
   return (
     <div
       onClick={handleCardClick}
-      className="group relative bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 
-                 hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden"
+      className={`group relative bg-white rounded-xl border-2 transition-all duration-300 cursor-pointer overflow-hidden
+                 flex flex-col h-full
+                 ${isTopMatch 
+                   ? 'border-purple-400 shadow-lg hover:shadow-2xl hover:border-purple-500 ring-2 ring-purple-200' 
+                   : 'border-gray-200 hover:border-blue-400 hover:shadow-xl'
+                 }`}
     >
       {/* Rank Badge (if provided) */}
       {rank && rank <= 3 && (
@@ -116,26 +127,35 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
         </div>
       </div>
 
-      <div className="p-6 pt-16">
-        {/* Match Score */}
-        <div className="mb-4">
+      {/* Highlight Banner for Top Match */}
+      {isTopMatch && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500" />
+      )}
+
+      <div className="p-6 pt-16 flex flex-col flex-grow">
+        {/* Match Score - Enhanced for Top Match */}
+        <div className={`mb-4 ${isTopMatch ? 'pb-3 border-b border-gray-100' : ''}`}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Độ phù hợp</span>
+            <span className={`text-sm font-medium ${isTopMatch ? 'text-gray-700 font-semibold' : 'text-gray-600'}`}>
+              Độ phù hợp
+            </span>
             <span
-              className={`px-3 py-1 rounded-full text-sm font-bold border-2 ${getMatchScoreColor(
-                matchScore
-              )}`}
+              className={`px-3 py-1.5 rounded-full text-sm font-bold border-2 ${
+                isTopMatch
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-600 shadow-md'
+                  : getMatchScoreColor(matchScore)
+              }`}
             >
-              {matchScore}% • {getMatchScoreLabel(matchScore)}
+              {Math.round(matchScore)}% • {getMatchScoreLabel(matchScore)}
             </span>
           </div>
           
-          {/* Match Score Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+          {/* Match Score Bar - Enhanced */}
+          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
             <div
               className={`h-full transition-all duration-500 rounded-full ${
-                matchScore >= 80
-                  ? 'bg-gradient-to-r from-green-400 to-green-600'
+                isTopMatch
+                  ? 'bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 shadow-lg'
                   : matchScore >= 60
                   ? 'bg-gradient-to-r from-blue-400 to-blue-600'
                   : matchScore >= 40
@@ -147,41 +167,88 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
           </div>
         </div>
 
-        {/* Tutor Info */}
+        {/* Tutor Info - Enhanced for Top Match */}
         <div className="flex items-start space-x-4 mb-4">
-          <img
-            src={tutor.avatar || 'https://via.placeholder.com/80'}
-            alt={tutor.name}
-            className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 
-                       group-hover:border-blue-400 transition-colors"
-          />
+          <div className="relative">
+            <img
+              src={tutor.avatar || 'https://via.placeholder.com/80'}
+              alt={tutor.name}
+              className={`w-16 h-16 rounded-full object-cover border-2 transition-colors ${
+                isTopMatch
+                  ? 'border-purple-400 group-hover:border-purple-500 shadow-md'
+                  : 'border-gray-200 group-hover:border-blue-400'
+              }`}
+            />
+            {isTopMatch && (
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center bg-purple-500">
+                <CheckCircleIcon className="w-3 h-3 text-white" />
+              </div>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-blue-600 
-                          transition-colors">
+            <h3 className={`text-lg font-bold truncate transition-colors ${
+              isTopMatch 
+                ? 'text-gray-900 group-hover:text-purple-600' 
+                : 'text-gray-900 group-hover:text-blue-600'
+            }`}>
               {tutor.name}
             </h3>
             {tutor.headline && (
-              <p className="text-sm text-gray-600 line-clamp-1">{tutor.headline}</p>
+              <p className={`text-sm line-clamp-1 ${isTopMatch ? 'text-gray-700 font-medium' : 'text-gray-600'}`}>
+                {tutor.headline}
+              </p>
+            )}
+            {showRating && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsReviewModalOpen(true);
+                }}
+                className={`mt-2 flex items-center gap-1 text-xs font-semibold hover:text-yellow-800 ${
+                  isTopMatch ? 'text-yellow-700' : 'text-yellow-600'
+                }`}
+              >
+                <StarIconSolid className="w-4 h-4 text-yellow-400" />
+                <span>{ratingAverage.toFixed(1)}</span>
+                <span className="text-gray-500">
+                  ({ratingCount.toLocaleString('vi-VN')})
+                </span>
+              </button>
             )}
           </div>
         </div>
 
-        {/* AI Explanation */}
+        {/* AI Explanation - Enhanced for Top Match */}
         {explanation && (
-          <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+          <div className={`mb-4 p-4 rounded-lg border ${
+            isTopMatch
+              ? 'bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 border-purple-300 shadow-sm'
+              : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200'
+          }`}>
             <div className="flex items-start space-x-2">
-              <SparklesIcon className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+              <SparklesIcon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                isTopMatch ? 'text-purple-600' : 'text-purple-600'
+              }`} />
               <div className="flex-1">
-                <p className="text-sm font-medium text-purple-900 mb-1">Lý do AI gợi ý:</p>
-                <p className="text-sm text-purple-800 leading-relaxed">{explanation}</p>
+                <p className="text-sm font-medium mb-1 text-purple-900">
+                  Lý do AI gợi ý:
+                </p>
+                <p className="text-sm leading-relaxed text-purple-800">
+                  {explanation}
+                </p>
               </div>
             </div>
           </div>
         )}
 
         {/* Tutor Post Info */}
-        <div className="space-y-3 mb-4">
-          <h4 className="font-semibold text-gray-900 line-clamp-2">{tutorPost.title}</h4>
+        <div className="space-y-3 mb-4 flex-grow">
+          <h4 className={`font-semibold line-clamp-2 ${
+            isTopMatch ? 'text-gray-900 text-base' : 'text-gray-900'
+          }`}>
+            {tutorPost.title}
+          </h4>
 
           {/* Subjects */}
           <div className="flex flex-wrap gap-2">
@@ -227,52 +294,77 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
           </div>
         </div>
 
-        {/* Match Details */}
-        <div className="border-t pt-4">
-          <p className="text-xs font-medium text-gray-600 mb-2">Chi tiết khớp:</p>
+        {/* Match Details - Enhanced for Top Match */}
+        <div className={`border-t pt-4 mt-auto ${isTopMatch ? 'border-gray-200' : 'border-gray-100'}`}>
+          <p className={`text-xs font-medium mb-2 ${
+            isTopMatch ? 'text-gray-700 font-semibold' : 'text-gray-600'
+          }`}>
+            Chi tiết khớp:
+          </p>
           <div className="flex flex-wrap gap-2">
             {matchDetails.subjectMatch && (
-              <span className="flex items-center space-x-1 px-2 py-1 bg-green-50 text-green-700 
-                              text-xs rounded-full border border-green-200">
-                <CheckCircleIcon className="w-3 h-3" />
+              <span className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border ${
+                isTopMatch
+                  ? 'bg-green-100 text-green-800 border-green-300 font-medium'
+                  : 'bg-green-50 text-green-700 border-green-200'
+              }`}>
+                <CheckCircleIcon className="w-3.5 h-3.5" />
                 <span>Môn học</span>
               </span>
             )}
             {matchDetails.levelMatch && (
-              <span className="flex items-center space-x-1 px-2 py-1 bg-green-50 text-green-700 
-                              text-xs rounded-full border border-green-200">
-                <CheckCircleIcon className="w-3 h-3" />
+              <span className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border ${
+                isTopMatch
+                  ? 'bg-green-100 text-green-800 border-green-300 font-medium'
+                  : 'bg-green-50 text-green-700 border-green-200'
+              }`}>
+                <CheckCircleIcon className="w-3.5 h-3.5" />
                 <span>Cấp độ</span>
               </span>
             )}
             {matchDetails.priceMatch && (
-              <span className="flex items-center space-x-1 px-2 py-1 bg-green-50 text-green-700 
-                              text-xs rounded-full border border-green-200">
-                <CheckCircleIcon className="w-3 h-3" />
+              <span className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border ${
+                isTopMatch
+                  ? 'bg-green-100 text-green-800 border-green-300 font-medium'
+                  : 'bg-green-50 text-green-700 border-green-200'
+              }`}>
+                <CheckCircleIcon className="w-3.5 h-3.5" />
                 <span>Giá</span>
               </span>
             )}
             {matchDetails.semanticScore > 0 && (
-              <span className="flex items-center space-x-1 px-2 py-1 bg-purple-50 text-purple-700 
-                              text-xs rounded-full border border-purple-200">
-                <StarIcon className="w-3 h-3" />
+              <span className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border ${
+                isTopMatch
+                  ? 'bg-purple-100 text-purple-800 border-purple-300 font-medium'
+                  : 'bg-purple-50 text-purple-700 border-purple-200'
+              }`}>
+                <StarIcon className="w-3.5 h-3.5" />
                 <span>AI: {Math.round(matchDetails.semanticScore * 100)}%</span>
               </span>
             )}
           </div>
         </div>
 
-        {/* View Button */}
+        {/* View Button - Enhanced for Top Match */}
         <div className="mt-4">
           <button
-            className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 
-                      text-white font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 
-                      transition-all duration-200 shadow-md hover:shadow-lg"
+            className={`w-full px-4 py-2.5 text-white font-medium rounded-lg 
+                      transition-all duration-200 shadow-md hover:shadow-lg ${
+                        isTopMatch
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                          : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                      }`}
           >
-            Xem chi tiết gia sư
+            {isTopMatch ? '✨ Xem chi tiết gia sư' : 'Xem chi tiết gia sư'}
           </button>
         </div>
       </div>
+      <TutorReviewsModal
+        tutorId={recommendation.tutorId}
+        tutorName={tutor.name}
+        open={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+      />
     </div>
   );
 };

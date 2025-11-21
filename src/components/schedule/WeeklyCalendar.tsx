@@ -510,11 +510,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">
-              {
-                sessions.filter(
-                  (s) => s.homework.assignment && s.homework.assignment.title
-                ).length
-              }
+              {sessions.filter((s) => s.homework.totalAssignments > 0).length}
             </div>
             <div className="text-sm text-gray-600 mt-1">Có bài tập</div>
           </div>

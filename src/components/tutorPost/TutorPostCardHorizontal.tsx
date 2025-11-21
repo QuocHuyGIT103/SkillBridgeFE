@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,6 +10,8 @@ import {
   EyeIcon,
   PhoneIcon,
 } from "@heroicons/react/24/outline";
+import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
+import TutorReviewsModal from "./TutorReviewsModal";
 
 interface TutorPostCardHorizontalProps {
   post: {
@@ -44,6 +46,12 @@ interface TutorPostCardHorizontalProps {
         student_levels?: string;
         video_intro_link?: string;
         status?: string;
+      };
+      rating?: {
+        average?: number;
+        count?: number;
+        badges?: string[];
+        lastReviewAt?: string | null;
       };
     };
     address?: any;
@@ -215,10 +223,20 @@ const TutorPostCardHorizontal: React.FC<TutorPostCardHorizontalProps> = ({
     }
   };
 
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const modeConfig = getTeachingModeConfig(post.teachingMode);
+  const ratingAverage = post.tutorId?.rating?.average || 0;
+  const ratingCount = post.tutorId?.rating?.count || 0;
+  const showRating = ratingCount > 0;
+  const tutorUserId =
+    post.tutorId?._id ||
+    (post.tutorId as any)?.id ||
+    (post as any)?.tutorUserId ||
+    undefined;
 
   return (
-    <motion.div
+    <>
+      <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -294,6 +312,28 @@ const TutorPostCardHorizontal: React.FC<TutorPostCardHorizontalProps> = ({
             <MapPinIcon className="w-3.5 h-3.5" />
             <span className="truncate">{getLocationText()}</span>
           </div>
+
+          {/* Rating */}
+          {showRating && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!tutorUserId) return;
+                setIsReviewModalOpen(true);
+              }}
+              disabled={!tutorUserId}
+              className={`flex items-center text-xs font-semibold text-yellow-700 hover:text-yellow-800 gap-1 ${
+                !tutorUserId ? "cursor-not-allowed opacity-60" : ""
+              }`}
+            >
+              <StarIconSolid className="w-4 h-4 text-yellow-400" />
+              <span>{ratingAverage.toFixed(1)}</span>
+              <span className="text-gray-500">
+                ({ratingCount.toLocaleString("vi-VN")})
+              </span>
+            </button>
+          )}
 
           {/* ✅ Title */}
           <h2 className="text-base font-semibold text-gray-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
@@ -421,7 +461,14 @@ const TutorPostCardHorizontal: React.FC<TutorPostCardHorizontalProps> = ({
           </div>
         </motion.div>
       )}
-    </motion.div>
+      </motion.div>
+      <TutorReviewsModal
+        tutorId={tutorUserId}
+        tutorName={post.tutorId.full_name}
+        open={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+      />
+    </>
   );
 };
 

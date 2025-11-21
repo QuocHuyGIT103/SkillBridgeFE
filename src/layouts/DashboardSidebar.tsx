@@ -115,7 +115,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         },
         {
           id: "posts-student",
-          label: "Tìm học viên thông minh",
+          label: "Tìm học viên",
           path: "/tutor/posts/student",
         },
         {
@@ -140,6 +140,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           id: "academics-classes",
           label: "Quản lý lớp học",
           path: "/tutor/classes",
+        },
+        {
+          id: "academics-assignments",
+          label: "Quản lý bài tập",
+          path: "/tutor/assignments",
         },
         {
           id: "academics-curriculum",

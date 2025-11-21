@@ -16,6 +16,7 @@ import TutorProfilePage from "./pages/tutor/TutorProfilePage";
 import TutorPersonalProfilePage from "./pages/tutor/TutorPersonalProfilePage";
 import TutorEducationPage from "./pages/tutor/TutorEducationPage";
 import TutorSchedulePage from "./pages/tutor/TutorSchedulePage";
+import TutorAssignmentsPage from "./pages/tutor/TutorAssignmentsPage";
 
 import CreateTutorPostPage from "./pages/tutor/CreateTutorPostPage";
 import EditTutorPostPage from "./pages/tutor/EditTutorPostPage";
@@ -62,6 +63,7 @@ import AdminPostReviewPage from "./pages/admin/posts/AdminPostReviewPage";
 import PostDetailPage from "./pages/student/PostDetailPage";
 import StudentSmartSearchPage from "./pages/student/StudentSmartSearchPage";
 import AISmartRecommendationsPage from "./pages/student/AISmartRecommendationsPage";
+import TutorAISmartRecommendationsPage from "./pages/tutor/TutorAISmartRecommendationsPage";
 import ContactRequestDetail from "./components/contactRequest/ContactRequestDetail";
 import TutorContactRequestsPage from "./pages/tutor/TutorContactRequestsPage";
 import StudentClassesPage from "./pages/student/StudentClassesPage";
@@ -284,6 +286,10 @@ function App() {
               }
             >
               <Route path="dashboard" element={<TutorDashboardOverview />} />
+              <Route
+                path="ai-recommendations"
+                element={<TutorAISmartRecommendationsPage />}
+              />
               <Route path="profile" element={<TutorProfilePage />} />
               <Route
                 path="profile/personal"
@@ -296,6 +302,7 @@ function App() {
               <Route path="profile/*" element={<TutorProfilePage />} />
               <Route path="schedule" element={<TutorSchedulePage />} />
               <Route path="schedule/*" element={<TutorSchedulePage />} />
+              <Route path="assignments" element={<TutorAssignmentsPage />} />
 
               {/* ✅ Thêm Contact Requests routes cho Tutor */}
               <Route

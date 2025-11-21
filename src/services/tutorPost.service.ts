@@ -80,6 +80,12 @@ export interface TutorInfo {
   education?: EducationInfo[];
   certificates?: CertificateInfo[];
   achievements?: AchievementInfo[];
+  rating?: {
+    average: number;
+    count: number;
+    badges?: string[];
+    lastReviewAt?: string | null;
+  };
 }
 
 export interface TutorPost {
@@ -151,8 +157,10 @@ export interface TutorPostSearchQuery {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: "createdAt" | "pricePerSession" | "viewCount" | "compatibility";
+  sortBy?: "createdAt" | "pricePerSession" | "viewCount" | "compatibility" | "rating";
   sortOrder?: "asc" | "desc";
+  minRating?: number;
+  minReviews?: number;
 }
 
 export interface TutorEligibilityRequirement {
@@ -174,12 +182,12 @@ export interface TutorEligibilityResponse {
 // ✅ Enhanced service with missing methods
 const TutorPostService = {
   // ==================== Public APIs (No authentication required) ====================
-  
+
   // ✅ Existing searchTutorPosts method...
   searchTutorPosts: async (query?: TutorPostSearchQuery) => {
     try {
       console.log('🔍 Service - Searching tutors with query:', query);
-      
+
       const params = new URLSearchParams();
 
       // Build query parameters more carefully
@@ -239,11 +247,19 @@ const TutorPostService = {
         params.append("sortOrder", query.sortOrder);
       }
 
+      if (query?.minRating !== undefined) {
+        params.append("minRating", query.minRating.toString());
+      }
+
+      if (query?.minReviews !== undefined) {
+        params.append("minReviews", query.minReviews.toString());
+      }
+
       const url = `/tutor-posts/search${params.toString() ? `?${params.toString()}` : ''}`;
       console.log('🌐 Making request to:', url);
 
       const response = await axiosClient.get<TutorPostsResponse>(url);
-      
+
       console.log('✅ Search response received:', {
         success: response.success,
         postsCount: response.data?.posts?.length || 0,
@@ -261,7 +277,7 @@ const TutorPostService = {
   getTutorPostById: async (postId: string) => {
     try {
       console.log('📄 Service - Getting tutor post by ID:', postId);
-      
+
       if (!postId || !postId.trim()) {
         throw new Error('Post ID is required');
       }
@@ -269,7 +285,7 @@ const TutorPostService = {
       const response = await axiosClient.get<{ tutorPost: TutorPost }>(
         `/tutor-posts/${encodeURIComponent(postId.trim())}`
       );
-      
+
       console.log('✅ Tutor post received:', {
         success: response.success,
         postId: response.data?.tutorPost?._id || response.data?.tutorPost?.id
@@ -286,7 +302,7 @@ const TutorPostService = {
   incrementContactCount: async (postId: string) => {
     try {
       console.log('📞 Service - Incrementing contact count for post:', postId);
-      
+
       if (!postId || !postId.trim()) {
         throw new Error('Post ID is required');
       }
@@ -294,7 +310,7 @@ const TutorPostService = {
       const response = await axiosClient.post<any>(
         `/tutor-posts/${encodeURIComponent(postId.trim())}/contact`
       );
-      
+
       console.log('✅ Contact count incremented successfully');
 
       return response;
@@ -308,15 +324,15 @@ const TutorPostService = {
   getFilterOptions: async () => {
     try {
       console.log('🔧 Service - Getting filter options');
-      
+
       // ✅ FIXED: Sửa URL path đúng với backend route
       const response = await axiosClient.get('/tutor-posts/filters');
-      
+
       console.log('✅ Filter options received:', response);
       return response;
     } catch (error: any) {
       console.error('❌ Get filter options service error:', error);
-      
+
       // ✅ FIXED: Return fallback data instead of throwing
       return {
         success: false,
@@ -335,7 +351,7 @@ const TutorPostService = {
   getDistrictsByProvince: async (provinceCode: string) => {
     try {
       console.log('📍 Service - Getting districts for province:', provinceCode);
-      
+
       if (!provinceCode || !provinceCode.trim()) {
         return {
           success: true,
@@ -345,7 +361,7 @@ const TutorPostService = {
 
       // ✅ FIXED: Sử dụng address service thay vì tutor-posts
       const response = await axiosClient.get(`/address/districts?province=${encodeURIComponent(provinceCode.trim())}`);
-      
+
       console.log('✅ Districts received:', response.data?.length || 0);
       return {
         success: true,
@@ -365,7 +381,7 @@ const TutorPostService = {
   getWardsByDistrict: async (districtCode: string) => {
     try {
       console.log('📍 Service - Getting wards for district:', districtCode);
-      
+
       if (!districtCode || !districtCode.trim()) {
         return {
           success: true,
@@ -375,7 +391,7 @@ const TutorPostService = {
 
       // ✅ FIXED: Sử dụng address service thay vì tutor-posts
       const response = await axiosClient.get(`/address/wards?district=${encodeURIComponent(districtCode.trim())}`);
-      
+
       console.log('✅ Wards received:', response.data?.length || 0);
       return {
         success: true,
@@ -392,17 +408,17 @@ const TutorPostService = {
   },
 
   // ==================== Tutor APIs (Authentication required) ====================
-  
+
   // ✅ Existing methods...
   createTutorPost: async (data: CreateTutorPostRequest) => {
     try {
       console.log('✏️ Service - Creating tutor post:', { title: data.title });
-      
+
       const response = await axiosClient.post<{ tutorPost: TutorPost }>(
         "/tutor-posts",
         data
       );
-      
+
       console.log('✅ Tutor post created successfully:', response.data?.tutorPost?._id);
       return response;
     } catch (error: any) {
@@ -414,7 +430,7 @@ const TutorPostService = {
   getMyTutorPosts: async (page?: number, limit?: number) => {
     try {
       console.log('📋 Service - Getting my tutor posts:', { page, limit });
-      
+
       const params = new URLSearchParams();
       if (page && page > 0) params.append("page", page.toString());
       if (limit && limit > 0) params.append("limit", Math.min(limit, 50).toString());
@@ -422,7 +438,7 @@ const TutorPostService = {
       const response = await axiosClient.get<TutorPostsResponse>(
         `/tutor-posts?${params.toString()}`
       );
-      
+
       console.log('✅ My tutor posts received:', response.data?.posts?.length || 0);
       return response;
     } catch (error: any) {
@@ -434,7 +450,7 @@ const TutorPostService = {
   updateTutorPost: async (postId: string, data: UpdateTutorPostRequest) => {
     try {
       console.log('✏️ Service - Updating tutor post:', postId);
-      
+
       if (!postId || !postId.trim()) {
         throw new Error('Post ID is required');
       }
@@ -443,7 +459,7 @@ const TutorPostService = {
         `/tutor-posts/${encodeURIComponent(postId.trim())}`,
         data
       );
-      
+
       console.log('✅ Tutor post updated successfully');
       return response;
     } catch (error: any) {
@@ -455,7 +471,7 @@ const TutorPostService = {
   activatePost: async (postId: string) => {
     try {
       console.log('✅ Service - Activating post:', postId);
-      
+
       if (!postId || !postId.trim()) {
         throw new Error('Post ID is required');
       }
@@ -463,7 +479,7 @@ const TutorPostService = {
       const response = await axiosClient.post<{ tutorPost: TutorPost }>(
         `/tutor-posts/${encodeURIComponent(postId.trim())}/activate`
       );
-      
+
       console.log('✅ Post activated successfully');
       return response;
     } catch (error: any) {
@@ -475,7 +491,7 @@ const TutorPostService = {
   deactivatePost: async (postId: string) => {
     try {
       console.log('❌ Service - Deactivating post:', postId);
-      
+
       if (!postId || !postId.trim()) {
         throw new Error('Post ID is required');
       }
@@ -483,7 +499,7 @@ const TutorPostService = {
       const response = await axiosClient.post<{ tutorPost: TutorPost }>(
         `/tutor-posts/${encodeURIComponent(postId.trim())}/deactivate`
       );
-      
+
       console.log('✅ Post deactivated successfully');
       return response;
     } catch (error: any) {
@@ -495,7 +511,7 @@ const TutorPostService = {
   deleteTutorPost: async (postId: string) => {
     try {
       console.log('🗑️ Service - Deleting tutor post:', postId);
-      
+
       if (!postId || !postId.trim()) {
         throw new Error('Post ID is required');
       }
@@ -503,7 +519,7 @@ const TutorPostService = {
       const response = await axiosClient.delete(
         `/tutor-posts/${encodeURIComponent(postId.trim())}`
       );
-      
+
       console.log('✅ Tutor post deleted successfully');
       return response;
     } catch (error: any) {
@@ -516,16 +532,16 @@ const TutorPostService = {
   checkTutorEligibility: async () => {
     try {
       console.log('🔍 Service - Checking tutor eligibility');
-      
+
       const response = await axiosClient.get<TutorEligibilityResponse>(
         "/tutor-posts/check-eligibility"
       );
-      
+
       console.log('✅ Eligibility check completed:', {
         isEligible: response.data?.isEligible,
         requirementsCount: response.data?.requirements?.length || 0
       });
-      
+
       return response;
     } catch (error: any) {
       console.error('❌ Check tutor eligibility service error:', error);
@@ -534,14 +550,14 @@ const TutorPostService = {
   },
 
   // ==================== Debug Methods ====================
-  
+
   // ✅ BONUS: Debug method for development
   debugTutorPosts: async () => {
     try {
       console.log('🐛 Service - Debug tutor posts');
-      
+
       const response = await axiosClient.get<any>('/tutor-posts/debug');
-      
+
       console.log('✅ Debug info received:', response.data);
       return response;
     } catch (error: any) {
@@ -551,7 +567,7 @@ const TutorPostService = {
   },
 
   // ==================== Utility Methods ====================
-  
+
   // ✅ BONUS: Validate search query
   validateSearchQuery: (query?: TutorPostSearchQuery): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
@@ -626,8 +642,8 @@ const TutorPostService = {
 
     // Add single parameters
     const singleParams: (keyof TutorPostSearchQuery)[] = [
-      'teachingMode', 'priceMin', 'priceMax', 'province', 'district', 
-      'search', 'page', 'limit', 'sortBy', 'sortOrder'
+      'teachingMode', 'priceMin', 'priceMax', 'province', 'district',
+      'search', 'page', 'limit', 'sortBy', 'sortOrder', 'minRating', 'minReviews'
     ];
 
     singleParams.forEach(key => {

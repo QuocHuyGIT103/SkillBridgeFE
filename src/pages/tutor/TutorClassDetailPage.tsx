@@ -14,7 +14,9 @@ import {
   MapPinIcon,
   CalendarDaysIcon,
   ClockIcon,
+  StarIcon,
 } from '@heroicons/react/24/outline';
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
 const TutorClassDetailPage: React.FC = () => {
   const { classId } = useParams<{ classId: string }>();
@@ -30,11 +32,12 @@ const TutorClassDetailPage: React.FC = () => {
 
   const handleStatusUpdate = async (status: string) => {
     if (!classId) return;
-    
+
     setIsUpdating(true);
     try {
       await updateClassStatus(classId, status);
-      toast.success(`Trạng thái lớp học đã được cập nhật thành ${status === 'COMPLETED' ? 'hoàn thành' : 'đã hủy'}`);
+      const label = status === 'CANCELLED' ? 'đã hủy' : status === 'PAUSED' ? 'tạm dừng' : 'đã cập nhật';
+      toast.success(`Trạng thái lớp học đã được cập nhật thành ${label}`);
     } catch (error) {
       console.error('Failed to update class status:', error);
       toast.error('Cập nhật trạng thái thất bại'); // Thêm toast error
@@ -103,14 +106,6 @@ const TutorClassDetailPage: React.FC = () => {
               
               {currentClass.status === 'ACTIVE' && (
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-4 sm:mt-0 flex-shrink-0">
-                  <button
-                    onClick={() => handleStatusUpdate('COMPLETED')}
-                    disabled={isUpdating}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
-                  >
-                    <CheckCircleIcon className="h-5 w-5" />
-                    Hoàn thành
-                  </button>
                   <button
                     onClick={() => handleStatusUpdate('CANCELLED')}
                     disabled={isUpdating}
@@ -328,6 +323,38 @@ const TutorClassDetailPage: React.FC = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Student Review Section for Tutor */}
+              {currentClass.status === 'COMPLETED' && currentClass.studentReview && (
+                <div className="mt-8 border-t border-gray-200 pt-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 inline-flex items-center gap-2">
+                    <StarIcon className="h-6 w-6 text-yellow-500" />
+                    Đánh giá từ học viên
+                  </h3>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-center mb-2">
+                      {[...Array(5)].map((_, i) => (
+                        i < (currentClass.studentReview?.rating || 0)
+                          ? <StarIconSolid key={i} className="w-5 h-5 text-yellow-400" />
+                          : <StarIcon key={i} className="w-5 h-5 text-gray-300" />
+                      ))}
+                      <span className="ml-2 text-sm font-medium text-gray-700">
+                        {currentClass.studentReview.rating}/5
+                      </span>
+                    </div>
+                    {currentClass.studentReview.comment && (
+                      <p className="text-gray-800 italic">
+                        "{currentClass.studentReview.comment}"
+                      </p>
+                    )}
+                    {!currentClass.studentReview.comment && (
+                      <p className="text-gray-600 text-sm">
+                        Học viên chỉ gửi đánh giá số sao, không có nhận xét bằng chữ.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
             </div>
           </div>

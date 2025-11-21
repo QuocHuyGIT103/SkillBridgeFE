@@ -7,7 +7,6 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   MinusCircleIcon,
-  VideoCameraIcon,
   MapPinIcon,
   DocumentTextIcon,
   TrashIcon,
@@ -20,6 +19,7 @@ import CancelSessionModal from "../modals/CancelSessionModal";
 import { attendanceService } from "../../services/attendance.service";
 import type { WeeklySession } from "../../types/attendance";
 import toast from "react-hot-toast";
+import ClassResourcesSection from "./ClassResourcesSection";
 
 interface ClassScheduleDetailProps {
   classId: string;
@@ -60,7 +60,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
     );
   }
 
-  const { class: classData, sessions, stats } = currentSchedule;
+  const { class: classData, sessions, stats, materials = [] } = currentSchedule;
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -137,19 +137,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
         tutorAttended: false,
         studentAttended: false,
       },
-      homework: {
-        hasAssignment: !!session.homework?.assignment,
-        hasSubmission: !!session.homework?.submission,
-        hasGrade: !!session.homework?.grade,
-        isLate:
-          session.homework?.submission && session.homework?.assignment
-            ? new Date(session.homework.submission.submittedAt) >
-              new Date(session.homework.assignment.deadline)
-            : false,
-        assignment: session.homework?.assignment,
-        submission: session.homework?.submission,
-        grade: session.homework?.grade,
-      },
+      homework: session.homework,
       canAttend: false,
       canJoin:
         session.attendance?.tutorAttended &&
@@ -307,34 +295,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
           </div>
         </div>
 
-        {/* Location/Meeting Info */}
-        {classData.learningMode === "ONLINE" && classData.onlineInfo && (
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <div className="flex items-start space-x-3">
-              <VideoCameraIcon className="w-5 h-5 text-blue-600 mt-1" />
-              <div className="flex-1">
-                <p className="font-medium text-gray-900 mb-2">
-                  Google Meet - Học trực tuyến
-                </p>
-                <div className="space-y-2 text-sm">
-                  <a
-                    href={classData.onlineInfo.meetingLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    <VideoCameraIcon className="w-4 h-4 mr-2" />
-                    Tham gia lớp học
-                  </a>
-                  <p className="text-gray-600 mt-2">
-                    💡 Click để mở Google Meet và tham gia phòng học
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* Location Info */}
         {classData.learningMode === "OFFLINE" && classData.location && (
           <div className="bg-green-50 rounded-lg p-4 border border-green-200">
             <div className="flex items-start space-x-3">
@@ -349,6 +310,13 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
           </div>
         )}
 
+        {/* Materials & Assignments */}
+        <ClassResourcesSection
+          classId={classId}
+          userRole={userRole}
+          materials={materials}
+        />
+
         {/* Sessions List */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -357,231 +325,250 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
           </h3>
 
           <div className="space-y-3">
-            {sessions.map((session: any) => (
-              <motion.div
-                key={session.sessionNumber}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-4">
-                    {getStatusIcon(session.status)}
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        Buổi {session.sessionNumber}/{stats.total}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {format(
-                          new Date(session.scheduledDate),
-                          "EEEE, dd/MM/yyyy",
-                          { locale: vi }
-                        )}
-                        {" • "}
-                        {classData.schedule.startTime} -{" "}
-                        {classData.schedule.endTime}
-                      </p>
+            {sessions.map((session: any) => {
+              const homeworkSummary = session.homework || {};
+              const assignmentList = Array.isArray(homeworkSummary.assignments)
+                ? homeworkSummary.assignments
+                : [];
+              const totalAssignments =
+                homeworkSummary.totalAssignments ?? assignmentList.length;
+              const totalSubmitted =
+                homeworkSummary.totalSubmitted ??
+                assignmentList.filter(
+                  (assignment: any) => !!assignment.submission
+                ).length;
+              const totalGraded =
+                homeworkSummary.totalGraded ??
+                assignmentList.filter((assignment: any) => !!assignment.grade)
+                  .length;
+              const hasSessionAssignments =
+                totalAssignments > 0 ||
+                homeworkSummary.hasAssignment ||
+                assignmentList.length > 0;
+              const hasLateAssignment =
+                typeof homeworkSummary.isLate === "boolean"
+                  ? homeworkSummary.isLate
+                  : assignmentList.some((assignment: any) => assignment.isLate);
+              return (
+                <motion.div
+                  key={session.sessionNumber}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-4">
+                      {getStatusIcon(session.status)}
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          Buổi {session.sessionNumber}/{stats.total}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {format(
+                            new Date(session.scheduledDate),
+                            "EEEE, dd/MM/yyyy",
+                            { locale: vi }
+                          )}
+                          {" • "}
+                          {classData.schedule.startTime} -{" "}
+                          {classData.schedule.endTime}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          session.status
+                        )}`}
+                      >
+                        {getStatusText(session.status)}
+                      </span>
+
+                      {session.isUpcoming && (
+                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                          Sắp tới
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                        session.status
-                      )}`}
-                    >
-                      {getStatusText(session.status)}
-                    </span>
-
-                    {session.isUpcoming && (
-                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                        Sắp tới
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Homework Badges */}
-                {session.homework &&
-                  (session.homework.assignment ||
-                    session.homework.submission ||
-                    session.homework.grade) && (
+                  {/* Homework Badges */}
+                  {totalAssignments > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {session.homework.assignment && (
-                        <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
-                          📝 Có bài tập
-                        </span>
-                      )}
-                      {session.homework.submission && (
+                      <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
+                        📝 {totalAssignments} bài tập
+                      </span>
+                      {totalSubmitted > 0 && (
                         <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
-                          ✅ Đã nộp
+                          ✅ Đã nộp {totalSubmitted}/{totalAssignments}
                         </span>
                       )}
-                      {session.homework.grade && (
+                      {totalGraded > 0 && (
                         <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
-                          ⭐ Điểm: {session.homework.grade.score}/10
+                          ⭐ Đã chấm {totalGraded}
+                        </span>
+                      )}
+                      {hasLateAssignment && (
+                        <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
+                          ⏰ Có bài nộp trễ
                         </span>
                       )}
                     </div>
                   )}
 
-                {/* Payment Status Badge */}
-                {session.paymentRequired && (
-                  <div className="mb-3">
-                    {session.paymentStatus === "UNPAID" && (
-                      <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full inline-flex items-center gap-1">
-                        💳 Chưa thanh toán
-                      </span>
-                    )}
-                    {session.paymentStatus === "PAID" && (
-                      <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full inline-flex items-center gap-1">
-                        ✅ Đã thanh toán
-                      </span>
-                    )}
-                  </div>
-                )}
+                  {/* Action Buttons */}
+                  <div className="flex items-center space-x-2 pt-3 border-t border-gray-100">
+                    {/* 🔴 PRIORITY 1: Payment Button for unpaid sessions */}
+                    {session.paymentRequired &&
+                      session.paymentStatus === "UNPAID" &&
+                      userRole === "STUDENT" && (
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/student/classes/${classData._id}/payment`
+                            )
+                          }
+                          className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                        >
+                          <DocumentTextIcon className="w-4 h-4" />
+                          <span>
+                            {userRole === "TUTOR"
+                              ? hasSessionAssignments
+                                ? "Quản lý bài tập"
+                                : "Giao bài tập"
+                              : hasSessionAssignments
+                              ? "Xem bài tập"
+                              : "Chưa có bài tập"}
+                          </span>
+                        </button>
+                      )}
 
-                {/* Action Buttons */}
-                <div className="flex items-center space-x-2 pt-3 border-t border-gray-100">
-                  {/* 🔴 PRIORITY 1: Payment Button for unpaid sessions */}
-                  {session.paymentRequired &&
-                    session.paymentStatus === "UNPAID" &&
-                    userRole === "STUDENT" && (
+                    {/* Homework Button - Show after both attended or completed */}
+                    {(session.status === "COMPLETED" ||
+                      (session.attendance?.tutorAttended &&
+                        session.attendance?.studentAttended)) && (
                       <button
-                        onClick={() =>
-                          navigate(`/student/classes/${classData._id}/payment`)
-                        }
-                        className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                        onClick={() => handleOpenHomework(session)}
+                        className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
                       >
-                        <span>💳</span>
-                        <span>Thanh toán ngay</span>
+                        <DocumentTextIcon className="w-4 h-4" />
+                        <span>
+                          {userRole === "TUTOR"
+                            ? session.homework?.assignment
+                              ? "Quản lý bài tập"
+                              : "Giao bài tập"
+                            : session.homework?.assignment
+                            ? "Xem bài tập"
+                            : "Chưa có bài tập"}
+                        </span>
                       </button>
                     )}
 
-                  {/* Homework Button - Show after both attended or completed */}
-                  {(session.status === "COMPLETED" ||
-                    (session.attendance?.tutorAttended &&
-                      session.attendance?.studentAttended)) && (
-                    <button
-                      onClick={() => handleOpenHomework(session)}
-                      className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
-                    >
-                      <DocumentTextIcon className="w-4 h-4" />
-                      <span>
-                        {userRole === "TUTOR"
-                          ? session.homework?.assignment
-                            ? "Quản lý bài tập"
-                            : "Giao bài tập"
-                          : session.homework?.assignment
-                          ? "Xem bài tập"
-                          : "Chưa có bài tập"}
-                      </span>
-                    </button>
-                  )}
+                    {/* Cancel Request Button - For scheduled sessions */}
+                    {session.status === "SCHEDULED" && (
+                      <button
+                        onClick={() => handleRequestCancelSession(session)}
+                        disabled={cancellingSession === session.sessionNumber}
+                        className="px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                      >
+                        {cancellingSession === session.sessionNumber ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>Đang gửi...</span>
+                          </>
+                        ) : (
+                          <>
+                            <TrashIcon className="w-4 h-4" />
+                            <span>Yêu cầu huỷ</span>
+                          </>
+                        )}
+                      </button>
+                    )}
 
-                  {/* Cancel Request Button - For scheduled sessions */}
-                  {session.status === "SCHEDULED" && (
-                    <button
-                      onClick={() => handleRequestCancelSession(session)}
-                      disabled={cancellingSession === session.sessionNumber}
-                      className="px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
-                    >
-                      {cancellingSession === session.sessionNumber ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          <span>Đang gửi...</span>
-                        </>
-                      ) : (
-                        <>
-                          <TrashIcon className="w-4 h-4" />
-                          <span>Yêu cầu huỷ</span>
-                        </>
+                    {/* Pending Cancellation - Show approval/reject buttons */}
+                    {session.status === "PENDING_CANCELLATION" &&
+                      session.cancellationRequest && (
+                        <div className="flex-1">
+                          {session.cancellationRequest.requestedBy ===
+                          userRole ? (
+                            // User who requested cancellation
+                            <div className="text-sm text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
+                              ⏳ Đang chờ phê duyệt yêu cầu huỷ buổi học
+                            </div>
+                          ) : (
+                            // Other party - show approve/reject buttons
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() =>
+                                  handleRespondToCancellation(
+                                    session.sessionNumber,
+                                    "APPROVE"
+                                  )
+                                }
+                                disabled={
+                                  cancellingSession === session.sessionNumber
+                                }
+                                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                              >
+                                ✓ Chấp nhận
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleRespondToCancellation(
+                                    session.sessionNumber,
+                                    "REJECT"
+                                  )
+                                }
+                                disabled={
+                                  cancellingSession === session.sessionNumber
+                                }
+                                className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                              >
+                                ✗ Từ chối
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )}
-                    </button>
-                  )}
+                  </div>
 
-                  {/* Pending Cancellation - Show approval/reject buttons */}
+                  {/* Cancellation Request Info */}
                   {session.status === "PENDING_CANCELLATION" &&
                     session.cancellationRequest && (
-                      <div className="flex-1">
-                        {session.cancellationRequest.requestedBy ===
-                        userRole ? (
-                          // User who requested cancellation
-                          <div className="text-sm text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
-                            ⏳ Đang chờ phê duyệt yêu cầu huỷ buổi học
-                          </div>
-                        ) : (
-                          // Other party - show approve/reject buttons
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() =>
-                                handleRespondToCancellation(
-                                  session.sessionNumber,
-                                  "APPROVE"
-                                )
-                              }
-                              disabled={
-                                cancellingSession === session.sessionNumber
-                              }
-                              className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
-                            >
-                              ✓ Chấp nhận
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleRespondToCancellation(
-                                  session.sessionNumber,
-                                  "REJECT"
-                                )
-                              }
-                              disabled={
-                                cancellingSession === session.sessionNumber
-                              }
-                              className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
-                            >
-                              ✗ Từ chối
-                            </button>
-                          </div>
-                        )}
+                      <div className="mt-3 pt-3 border-t border-gray-100 bg-orange-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-orange-900 mb-1">
+                          Lý do huỷ buổi học:
+                        </p>
+                        <p className="text-sm text-orange-800">
+                          {session.cancellationRequest.reason}
+                        </p>
+                        <p className="text-xs text-orange-600 mt-2">
+                          Yêu cầu bởi:{" "}
+                          {session.cancellationRequest.requestedBy === "TUTOR"
+                            ? "Gia sư"
+                            : "Học viên"}
+                          {" • "}
+                          {format(
+                            new Date(session.cancellationRequest.requestedAt),
+                            "dd/MM/yyyy HH:mm",
+                            { locale: vi }
+                          )}
+                        </p>
                       </div>
                     )}
-                </div>
 
-                {/* Cancellation Request Info */}
-                {session.status === "PENDING_CANCELLATION" &&
-                  session.cancellationRequest && (
-                    <div className="mt-3 pt-3 border-t border-gray-100 bg-orange-50 p-3 rounded-lg">
-                      <p className="text-sm font-medium text-orange-900 mb-1">
-                        Lý do huỷ buổi học:
-                      </p>
-                      <p className="text-sm text-orange-800">
-                        {session.cancellationRequest.reason}
-                      </p>
-                      <p className="text-xs text-orange-600 mt-2">
-                        Yêu cầu bởi:{" "}
-                        {session.cancellationRequest.requestedBy === "TUTOR"
-                          ? "Gia sư"
-                          : "Học viên"}
-                        {" • "}
-                        {format(
-                          new Date(session.cancellationRequest.requestedAt),
-                          "dd/MM/yyyy HH:mm",
-                          { locale: vi }
-                        )}
+                  {session.notes && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Ghi chú: </span>
+                        {session.notes}
                       </p>
                     </div>
                   )}
-
-                {session.notes && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium">Ghi chú: </span>
-                      {session.notes}
-                    </p>
-                  </div>
-                )}
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </div>

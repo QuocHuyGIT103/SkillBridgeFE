@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   PaperAirplaneIcon,
   ChatBubbleLeftRightIcon,
   PhoneIcon,
   EnvelopeIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { useTutorPostStore } from "../../store/tutorPost.store";
 import { useAuthStore } from "../../store/auth.store";
@@ -256,38 +257,49 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-6 flex items-center text-gray-600 hover:text-gray-900"
-        >
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Quay lại
-        </button>
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Quay lại
+          </button>
+          {isOwnPost && (
+            <Link
+              to={`/tutor/ai-recommendations?tutorPostId=${currentPost._id || currentPost.id}`}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 flex items-center space-x-2 shadow-md hover:shadow-lg transition-all"
+            >
+              <SparklesIcon className="w-5 h-5" />
+              <span>Gợi ý học viên thông minh</span>
+            </Link>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
           {/* Main Content */}
           <div className="xl:col-span-4 space-y-8">
             {/* Header */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-              <div className="flex items-start justify-between mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 flex-1 mr-6 leading-tight">
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
+              <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
+                <h1 className="text-3xl font-bold text-gray-900 flex-1 min-w-0 leading-tight">
                   {currentPost.title}
                 </h1>
                 <span
                   className={`
-                  px-4 py-2 rounded-full text-sm font-semibold
+                  px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap
                   ${
                     currentPost.status === "ACTIVE"
                       ? "bg-green-100 text-green-800"
@@ -358,20 +370,22 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
             </div>
 
             {/* Description */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                <div className="w-1 h-8 bg-blue-600 rounded-full mr-3"></div>
                 Mô tả bài học
               </h2>
               <div className="prose prose-gray max-w-none">
-                <p className="whitespace-pre-line text-gray-700 text-lg leading-relaxed">
+                <p className="whitespace-pre-line text-gray-700 text-lg leading-relaxed bg-gray-50 p-6 rounded-lg border border-gray-100">
                   {currentPost.description}
                 </p>
               </div>
             </div>
 
             {/* Tutor Detailed Information */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8">
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
+              <h2 className="text-2xl font-bold text-gray-900 mb-8 flex items-center">
+                <div className="w-1 h-8 bg-blue-600 rounded-full mr-3"></div>
                 Thông tin gia sư
               </h2>
 
@@ -735,7 +749,7 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
           {/* Sidebar */}
           <div className="space-y-8">
             {/* Price & Contact */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sticky top-6">
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 sticky top-6 hover:shadow-lg transition-shadow">
               <div className="text-center mb-8">
                 <div className="text-4xl font-bold text-blue-600 mb-2">
                   {formatPrice(currentPost.pricePerSession)}
@@ -746,16 +760,25 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
               </div>
 
               {isOwnPost ? (
-                <button
-                  onClick={() =>
-                    navigate(
-                      `/tutor/posts/${currentPost._id || currentPost.id}/edit`
-                    )
-                  }
-                  className="w-full px-6 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg"
-                >
-                  Chỉnh sửa bài đăng
-                </button>
+                <div className="space-y-3">
+                  <Link
+                    to={`/tutor/ai-recommendations?tutorPostId=${currentPost._id || currentPost.id}`}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold text-lg shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                  >
+                    <SparklesIcon className="w-5 h-5" />
+                    <span>Gợi ý học viên thông minh</span>
+                  </Link>
+                  <button
+                    onClick={() =>
+                      navigate(
+                        `/tutor/posts/edit/${currentPost._id || currentPost.id}`
+                      )
+                    }
+                    className="w-full px-6 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg"
+                  >
+                    Chỉnh sửa bài đăng
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {/* New Contact Request Button */}
@@ -845,8 +868,9 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
             </div>
 
             {/* Quick Info */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <div className="w-1 h-6 bg-blue-600 rounded-full mr-3"></div>
                 Thông tin nhanh
               </h3>
 
@@ -923,8 +947,11 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
             </div>
 
             {/* Schedule */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Lịch dạy</h3>
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <div className="w-1 h-6 bg-blue-600 rounded-full mr-3"></div>
+                Lịch dạy
+              </h3>
 
               {currentPost.teachingSchedule.length > 0 ? (
                 <div className="space-y-4">
