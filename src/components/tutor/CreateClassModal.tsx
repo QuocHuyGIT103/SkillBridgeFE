@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import {
@@ -12,12 +12,15 @@ import {
 import { useContractStore } from "../../store/contract.store";
 import type { ContactRequest } from "../../types/contactRequest.types";
 import type { CreateContractInput } from "../../types/contract.types";
+import type { ScheduleConflictResult } from "../../types/scheduleConflict.types";
 import { parseScheduleFromString } from "../../utils/scheduleParser";
 import {
   generateContractCode,
   generateContractTerms,
 } from "../../utils/contractGenerator";
+import { scheduleConflictAPI } from "../../api/scheduleConflict.api";
 import ContractPreviewModal from "./ContractPreviewModal";
+import ScheduleConflictAlert from "./ScheduleConflictAlert";
 
 interface ContractDataWithClassInfo extends CreateContractInput {
   classTitle: string;
@@ -80,6 +83,12 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
   const [showPreview, setShowPreview] = useState(false);
   const [preparedContractData, setPreparedContractData] =
     useState<ContractDataWithClassInfo | null>(null);
+
+  // State for schedule conflict checking
+  const [scheduleConflict, setScheduleConflict] =
+    useState<ScheduleConflictResult | null>(null);
+  const [isCheckingSchedule, setIsCheckingSchedule] = useState(false);
+  const [hasCheckedSchedule, setHasCheckedSchedule] = useState(false);
 
   // Check if request was initiated by tutor (tutor sends teaching offer to student's post)
   const isTutorInitiated = request.initiatedBy === "TUTOR";
@@ -360,6 +369,82 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
   const watchStartTime = watch("schedule.startTime");
   const watchEndTime = watch("schedule.endTime");
+  const watchStartDate = watch("startDate");
+
+  // Check schedule conflict whenever schedule changes
+  useEffect(() => {
+    const checkConflict = async () => {
+      // Only check if we have all required data
+      if (
+        !selectedDays.length ||
+        !watchStartTime ||
+        !watchEndTime ||
+        !watchStartDate ||
+        !request.tutor?.id ||
+        !request.student?.id
+      ) {
+        setScheduleConflict(null);
+        setHasCheckedSchedule(false);
+        return;
+      }
+
+      setIsCheckingSchedule(true);
+      try {
+        console.log("🔍 Checking schedule conflict with data:", {
+          tutorId: request.tutor.id,
+          studentId: request.student.id,
+          dayOfWeek: selectedDays,
+          startTime: watchStartTime,
+          endTime: watchEndTime,
+          startDate: watchStartDate,
+        });
+
+        const result = await scheduleConflictAPI.checkConflict({
+          tutorId: request.tutor.id,
+          studentId: request.student.id,
+          dayOfWeek: selectedDays,
+          startTime: watchStartTime,
+          endTime: watchEndTime,
+          startDate: watchStartDate,
+        });
+
+        console.log("✅ Schedule conflict check result:", result);
+        console.log("📊 Conflict details:", {
+          hasConflict: result.hasConflict,
+          tutorConflicts: result.tutorConflicts.length,
+          studentConflicts: result.studentConflicts.length,
+        });
+
+        setScheduleConflict(result);
+        setHasCheckedSchedule(true);
+      } catch (error) {
+        console.error("❌ Failed to check schedule conflict:", error);
+        // Set empty conflict result on error so button can still work
+        setScheduleConflict({
+          tutorConflicts: [],
+          studentConflicts: [],
+          hasConflict: false,
+        });
+        setHasCheckedSchedule(true);
+      } finally {
+        setIsCheckingSchedule(false);
+      }
+    };
+
+    // Debounce the check
+    const timer = setTimeout(() => {
+      checkConflict();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [
+    selectedDays,
+    watchStartTime,
+    watchEndTime,
+    watchStartDate,
+    request.tutor?.id,
+    request.student?.id,
+  ]);
 
   const handleDayToggle = (day: number) => {
     const newDays = selectedDays.includes(day)
@@ -835,6 +920,25 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                   )}
                 </div>
               )}
+
+              {/* Schedule Conflict Check */}
+              {selectedDays.length > 0 &&
+                watchStartTime &&
+                watchEndTime &&
+                watchStartDate &&
+                (isCheckingSchedule || hasCheckedSchedule) && (
+                  <ScheduleConflictAlert
+                    conflict={
+                      scheduleConflict || {
+                        tutorConflicts: [],
+                        studentConflicts: [],
+                        hasConflict: false,
+                      }
+                    }
+                    isChecking={isCheckingSchedule}
+                    hasChecked={hasCheckedSchedule}
+                  />
+                )}
             </div>
 
             {/* Location/Online Info */}
@@ -959,10 +1063,44 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={isCreatingContract || selectedDays.length === 0}
+                disabled={
+                  isCreatingContract ||
+                  isCheckingSchedule ||
+                  selectedDays.length === 0 ||
+                  !hasCheckedSchedule ||
+                  scheduleConflict?.hasConflict === true
+                }
+                onClick={() => {
+                  console.log("🔘 Button clicked with state:", {
+                    isCreatingContract,
+                    isCheckingSchedule,
+                    selectedDaysCount: selectedDays.length,
+                    hasCheckedSchedule,
+                    hasConflict: scheduleConflict?.hasConflict,
+                    shouldDisable:
+                      isCreatingContract ||
+                      isCheckingSchedule ||
+                      selectedDays.length === 0 ||
+                      !hasCheckedSchedule ||
+                      scheduleConflict?.hasConflict === true,
+                  });
+                }}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title={
+                  scheduleConflict?.hasConflict === true
+                    ? "Không thể tạo lớp do trùng lịch học"
+                    : isCheckingSchedule
+                    ? "Đang kiểm tra trùng lịch..."
+                    : !hasCheckedSchedule
+                    ? "Vui lòng chọn đầy đủ thông tin lịch học"
+                    : ""
+                }
               >
-                {isCreatingContract ? "Đang tạo..." : "Tạo lớp học và hợp đồng"}
+                {isCreatingContract
+                  ? "Đang tạo..."
+                  : isCheckingSchedule
+                  ? "Đang kiểm tra..."
+                  : "Tạo lớp học và hợp đồng"}
               </button>
             </div>
           </form>
