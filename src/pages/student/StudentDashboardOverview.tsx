@@ -34,7 +34,7 @@ const StudentDashboardOverview: React.FC = () => {
       id: 2,
       subject: "Tiếng Anh - Grammar",
       tutor: "Cô Sarah Johnson",
-      time: "19:00 - 21:00", 
+      time: "19:00 - 21:00",
       mode: "Offline",
       action: "Chi tiết",
     },
@@ -44,7 +44,7 @@ const StudentDashboardOverview: React.FC = () => {
     {
       id: 1,
       title: "Tin nhắn với gia sư",
-      description: "Liên hệ trực tiếp với giáo viên",
+      description: "Liên hệ trực tiếp với gia sư",
       icon: ChatBubbleLeftRightIcon,
       color: "bg-blue-500",
       path: "/student/messages",
@@ -79,19 +79,22 @@ const StudentDashboardOverview: React.FC = () => {
     {
       id: 1,
       title: "Gia sư Toán nâng cao",
-      description: "Dựa trên điểm số gần đây, bạn nên tìm gia sư chuyên về Toán nâng cao để cải thiện kết quả.",
+      description:
+        "Dựa trên điểm số gần đây, bạn nên tìm gia sư chuyên về Toán nâng cao để cải thiện kết quả.",
       priority: "high",
     },
     {
       id: 2,
       title: "Luyện thi IELTS",
-      description: "Với trình độ Tiếng Anh hiện tại, bạn có thể bắt đầu luyện thi IELTS để đạt mục tiêu 7.0.",
+      description:
+        "Với trình độ Tiếng Anh hiện tại, bạn có thể bắt đầu luyện thi IELTS để đạt mục tiêu 7.0.",
       priority: "medium",
     },
     {
       id: 3,
       title: "Ôn tập Vật lý",
-      description: "Bạn cần tăng cường ôn tập Vật lý, đặc biệt là phần Cơ học và Điện học.",
+      description:
+        "Bạn cần tăng cường ôn tập Vật lý, đặc biệt là phần Cơ học và Điện học.",
       priority: "medium",
     },
   ];
@@ -113,7 +116,9 @@ const StudentDashboardOverview: React.FC = () => {
       >
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Chào mừng trở lại, Minh Anh!</h1>
+            <h1 className="text-2xl font-bold mb-2">
+              Chào mừng trở lại, Minh Anh!
+            </h1>
             <p className="text-blue-50">
               Hôm nay bạn có 2 buổi học và 3 bài tập cần hoàn thành
             </p>
@@ -140,8 +145,12 @@ const StudentDashboardOverview: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Buổi học tuần này</p>
-              <p className="text-3xl font-bold text-gray-900">{studentStats.weeklyLessons}</p>
-              <p className="text-sm text-green-600 mt-1">+2 so với tuần trước</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {studentStats.weeklyLessons}
+              </p>
+              <p className="text-sm text-green-600 mt-1">
+                +2 so với tuần trước
+              </p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg flex items-center justify-center shadow-sm">
               <CalendarDaysIcon className="w-6 h-6 text-blue-600" />
@@ -158,7 +167,9 @@ const StudentDashboardOverview: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Giờ học tích lũy</p>
-              <p className="text-3xl font-bold text-gray-900">{studentStats.totalStudyHours}</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {studentStats.totalStudyHours}
+              </p>
               <p className="text-sm text-blue-600 mt-1">Tổng thời gian học</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-r from-green-100 to-green-200 rounded-lg flex items-center justify-center shadow-sm">
@@ -176,7 +187,9 @@ const StudentDashboardOverview: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Môn học</p>
-              <p className="text-3xl font-bold text-gray-900">{studentStats.subjects}</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {studentStats.subjects}
+              </p>
               <p className="text-sm text-purple-600 mt-1">Đang theo học</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-r from-purple-100 to-purple-200 rounded-lg flex items-center justify-center shadow-sm">
@@ -194,7 +207,9 @@ const StudentDashboardOverview: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Điểm trung bình</p>
-              <p className="text-3xl font-bold text-gray-900">{studentStats.averageGrade}</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {studentStats.averageGrade}
+              </p>
               <p className="text-sm text-yellow-600 mt-1">+0.3 điểm</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-lg flex items-center justify-center shadow-sm">
@@ -269,7 +284,9 @@ const StudentDashboardOverview: React.FC = () => {
           transition={{ delay: 0.6 }}
           className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
         >
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Thao tác nhanh</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">
+            Thao tác nhanh
+          </h2>
           <div className="space-y-3">
             {quickActions.map((action) => (
               <motion.div
@@ -277,7 +294,9 @@ const StudentDashboardOverview: React.FC = () => {
                 whileHover={{ scale: 1.02 }}
                 className="flex items-center p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
               >
-                <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center mr-3 shadow-sm`}>
+                <div
+                  className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center mr-3 shadow-sm`}
+                >
                   <action.icon className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
@@ -308,8 +327,12 @@ const StudentDashboardOverview: React.FC = () => {
             {tutorProgress.map((subject, index) => (
               <div key={index} className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-900">{subject.subject}</span>
-                  <span className="text-sm text-gray-600">{subject.progress}%</span>
+                  <span className="font-medium text-gray-900">
+                    {subject.subject}
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    {subject.progress}%
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <motion.div
@@ -363,10 +386,14 @@ const StudentDashboardOverview: React.FC = () => {
                         : "bg-yellow-100 text-yellow-800"
                     }`}
                   >
-                    {suggestion.priority === "high" ? "Ưu tiên cao" : "Ưu tiên trung bình"}
+                    {suggestion.priority === "high"
+                      ? "Ưu tiên cao"
+                      : "Ưu tiên trung bình"}
                   </span>
                 </div>
-                <p className="text-xs text-gray-600">{suggestion.description}</p>
+                <p className="text-xs text-gray-600">
+                  {suggestion.description}
+                </p>
               </div>
             ))}
           </div>

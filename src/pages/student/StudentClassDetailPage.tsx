@@ -90,18 +90,19 @@ const StudentClassDetailPage: React.FC = () => {
                 <ClassStatusBadge status={currentClass.status} />
               </div>
 
-              {/* Payment Button - Only show for active classes */}
-              {currentClass.status === "ACTIVE" && (
-                <button
-                  onClick={() =>
-                    navigate(`/student/classes/${classId}/payment`)
-                  }
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg font-semibold"
-                >
-                  <BanknotesIcon className="h-5 w-5" />
-                  Thanh toán học phí
-                </button>
-              )}
+              {/* Payment Button - Only show for active classes with unpaid balance */}
+              {currentClass.status === "ACTIVE" &&
+                currentClass.paymentStatus !== "COMPLETED" && (
+                  <button
+                    onClick={() =>
+                      navigate(`/student/classes/${classId}/payment`)
+                    }
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg font-semibold"
+                  >
+                    <BanknotesIcon className="h-5 w-5" />
+                    Thanh toán học phí
+                  </button>
+                )}
             </div>
 
             {/* Divider */}

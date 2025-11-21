@@ -95,6 +95,157 @@ export interface PaymentHistoryResponse {
  */
 const PaymentService = {
   /**
+   * Get financial summary for student
+   * Aggregates data from payment schedules and payment history
+   */
+  getFinancialSummary: async () => {
+    try {
+      // Import contract service dynamically to avoid circular dependency
+      const { default: ContractService } = await import("./contract.service");
+
+      // Fetch all payment schedules
+      const schedulesResponse =
+        await ContractService.getStudentPaymentSchedules({ limit: 100 });
+      const schedules = schedulesResponse.schedules;
+
+      // Calculate totals
+      const totalAmount = schedules.reduce(
+        (sum, s) => sum + (s.totalAmount || 0),
+        0
+      );
+      const totalPaid = schedules.reduce(
+        (sum, s) => sum + (s.paidAmount || 0),
+        0
+      );
+      const totalUnpaid = schedules.reduce(
+        (sum, s) => sum + (s.remainingAmount || 0),
+        0
+      );
+
+      // Get upcoming payments (next 30 days)
+      const now = new Date();
+      const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      let upcomingPayments: Array<{
+        dueDate: string;
+        amount: number;
+        className: string;
+        tutorName: string;
+        classId: string;
+        sessionNumber: number;
+        status: string;
+      }> = [];
+
+      schedules.forEach((schedule) => {
+        const learningClass =
+          typeof schedule.learningClassId === "object"
+            ? schedule.learningClassId
+            : null;
+        const subjectName = learningClass?.subject?.name || "Môn học";
+        const tutorName = learningClass?.tutorId?.full_name || "Gia sư";
+        const classId =
+          learningClass?._id ||
+          (typeof schedule.learningClassId === "string"
+            ? schedule.learningClassId
+            : "");
+
+        schedule.installments?.forEach((installment) => {
+          const dueDate = new Date(installment.dueDate);
+          if (
+            (installment.status === "UNPAID" ||
+              installment.status === "OVERDUE") &&
+            dueDate <= next30Days
+          ) {
+            upcomingPayments.push({
+              dueDate: installment.dueDate,
+              amount: installment.amount,
+              className: subjectName,
+              tutorName: tutorName,
+              classId: classId,
+              sessionNumber: installment.sessionNumber,
+              status: installment.status,
+            });
+          }
+        });
+      });
+
+      // Sort by due date
+      upcomingPayments.sort(
+        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      );
+
+      // Get payment by class breakdown
+      const paymentsByClass = schedules.map((schedule) => {
+        const learningClass =
+          typeof schedule.learningClassId === "object"
+            ? schedule.learningClassId
+            : null;
+        const subjectName = learningClass?.subject?.name || "Môn học";
+        const tutorName = learningClass?.tutorId?.full_name || "Gia sư";
+        const classId =
+          learningClass?._id ||
+          (typeof schedule.learningClassId === "string"
+            ? schedule.learningClassId
+            : "");
+
+        return {
+          classId,
+          className: subjectName,
+          tutorName: tutorName,
+          totalAmount: schedule.totalAmount || 0,
+          paidAmount: schedule.paidAmount || 0,
+          remainingAmount: schedule.remainingAmount || 0,
+          progress:
+            schedule.totalAmount > 0
+              ? (schedule.paidAmount / schedule.totalAmount) * 100
+              : 0,
+        };
+      });
+
+      // Get recent payment history for monthly trend
+      const historyResponse = await PaymentService.getPaymentHistory({
+        limit: 100,
+        status: "COMPLETED",
+      });
+
+      // Group by month for trend
+      const monthlyPayments: { [key: string]: number } = {};
+      historyResponse.data.payments.forEach((payment) => {
+        if (payment.paidAt) {
+          const date = new Date(payment.paidAt);
+          const monthKey = `${date.getFullYear()}-${String(
+            date.getMonth() + 1
+          ).padStart(2, "0")}`;
+          monthlyPayments[monthKey] =
+            (monthlyPayments[monthKey] || 0) + payment.amount;
+        }
+      });
+
+      // Convert to array and sort by month
+      const monthlyTrend = Object.entries(monthlyPayments)
+        .map(([month, amount]) => ({ month, amount }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+
+      return {
+        success: true,
+        data: {
+          totalAmount,
+          totalPaid,
+          totalUnpaid,
+          upcomingPaymentsCount: upcomingPayments.length,
+          upcomingPayments: upcomingPayments.slice(0, 10), // Top 10
+          paymentsByClass,
+          monthlyTrend,
+          recentPayments: historyResponse.data.payments.slice(0, 10),
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching financial summary:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Initiate payment for selected sessions
    * POST /api/v1/payments/initiate
    */

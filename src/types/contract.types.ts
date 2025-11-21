@@ -147,7 +147,19 @@ export interface StudentContractResponse {
 export interface PaymentSchedule {
   id: string;
   contractId: string;
-  learningClassId?: string;
+  learningClassId?:
+    | string
+    | {
+        _id: string;
+        title: string;
+        subject: {
+          _id: string;
+          name: string;
+        };
+        tutorId: {
+          full_name: string;
+        };
+      };
   studentId: string;
   tutorId: string;
 

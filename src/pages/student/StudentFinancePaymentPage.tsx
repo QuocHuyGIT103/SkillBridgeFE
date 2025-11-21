@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,12 +10,55 @@ import { useClassStore } from "../../store/class.store";
 
 const StudentFinancePaymentPage: React.FC = () => {
   const navigate = useNavigate();
-  const { studentClasses } = useClassStore();
+  const { studentClasses, loading, fetchStudentClasses } = useClassStore();
+
+  // Fetch student classes on mount and refresh when coming back to this page
+  useEffect(() => {
+    fetchStudentClasses();
+  }, [fetchStudentClasses]);
 
   // Filter classes that need payment
   const unpaidClasses = studentClasses.filter(
     (cls) => cls.paymentStatus === "PENDING" || cls.paymentStatus === "PARTIAL"
   );
+
+  // Loading skeleton
+  if (loading && studentClasses.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-50 animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+            <div className="flex-1">
+              <div className="h-6 bg-gray-200 rounded w-48 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-64"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Classes Skeleton */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-40 mb-4"></div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-gray-100 rounded-lg p-4 border border-gray-200"
+              >
+                <div className="h-5 bg-gray-200 rounded w-3/4 mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                  <div className="h-6 bg-gray-200 rounded w-32"></div>
+                  <div className="h-10 bg-gray-200 rounded w-24"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

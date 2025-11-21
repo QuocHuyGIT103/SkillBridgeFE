@@ -7,7 +7,9 @@ import React, {
 } from "react";
 import { socketService } from "../services/socket.service";
 import { useAuthStore } from "../store/auth.store";
-import NotificationService, { type NotificationData } from "../services/notification.service";
+import NotificationService, {
+  type NotificationData,
+} from "../services/notification.service";
 
 interface Notification {
   id: string;
@@ -55,53 +57,69 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const fetchNotifications = async () => {
     const userId = user?._id || user?.id;
     if (!isAuthenticated || !userId) {
-      console.log('Cannot fetch notifications: not authenticated or no user ID');
+      console.log(
+        "Cannot fetch notifications: not authenticated or no user ID"
+      );
       return;
     }
 
     try {
       setIsLoading(true);
-      console.log('Fetching notifications for user:', userId);
-      const response = await NotificationService.getNotifications({ page: 1, limit: 50 });
-      console.log('Notifications response:', response);
+      console.log("Fetching notifications for user:", userId);
+      const response = await NotificationService.getNotifications({
+        page: 1,
+        limit: 50,
+      });
+      console.log("Notifications response:", response);
       if (response.success && response.data) {
-        const formattedNotifications = response.data.notifications.map((notif: NotificationData) => ({
-          id: notif._id,
-          title: notif.title,
-          message: notif.message,
-          type: mapNotificationType(notif.type),
-          timestamp: new Date(notif.createdAt),
-          read: notif.isRead,
-          userId: notif.userId,
-          data: notif.data,
-          created_at: notif.createdAt,
-          actionUrl: notif.actionUrl,
-        }));
+        const formattedNotifications = response.data.notifications.map(
+          (notif: NotificationData) => ({
+            id: notif._id,
+            title: notif.title,
+            message: notif.message,
+            type: mapNotificationType(notif.type),
+            timestamp: new Date(notif.createdAt),
+            read: notif.isRead,
+            userId: notif.userId,
+            data: notif.data,
+            created_at: notif.createdAt,
+            actionUrl: notif.actionUrl,
+          })
+        );
         setNotifications(formattedNotifications);
         setUnreadCount(response.data.unreadCount);
-        console.log(`Loaded ${formattedNotifications.length} notifications, ${response.data.unreadCount} unread`);
+        console.log(
+          `Loaded ${formattedNotifications.length} notifications, ${response.data.unreadCount} unread`
+        );
       }
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+      console.error("Failed to fetch notifications:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   // Map backend notification type to frontend type
-  const mapNotificationType = (type: NotificationData['type']): "info" | "success" | "warning" | "error" => {
+  const mapNotificationType = (
+    type: NotificationData["type"]
+  ): "info" | "success" | "warning" | "error" => {
     switch (type) {
-      case 'HOMEWORK_GRADED':
-      case 'CLASS_CREATED':
-      case 'CONTACT_REQUEST':
-        return 'success';
-      case 'CANCELLATION_REQUESTED':
-      case 'HOMEWORK_ASSIGNED':
-        return 'warning';
-      case 'SYSTEM':
-        return 'error';
+      case "HOMEWORK_GRADED":
+      case "CLASS_CREATED":
+      case "CONTACT_REQUEST":
+      case "CONTRACT_APPROVED":
+        return "success";
+      case "CANCELLATION_REQUESTED":
+      case "HOMEWORK_ASSIGNED":
+      case "CONTRACT_CREATED":
+      case "CONTRACT_EXPIRED":
+        return "warning";
+      case "SYSTEM":
+      case "CONTRACT_REJECTED":
+      case "CONTRACT_CANCELLED":
+        return "error";
       default:
-        return 'info';
+        return "info";
     }
   };
 
@@ -131,7 +149,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     const socket = socketService.connect(token);
 
     const handleConnect = () => {
-      console.log("Socket connected, joining notifications room for user:", userId);
+      console.log(
+        "Socket connected, joining notifications room for user:",
+        userId
+      );
       setIsConnected(true);
       socket.emit("join-notifications", { userId: userId });
     };
@@ -158,7 +179,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
       setNotifications((prev) => {
         // Check if notification already exists to avoid duplicates
-        const exists = prev.some(n => n.id === notification.id);
+        const exists = prev.some((n) => n.id === notification.id);
         if (exists) {
           console.log("Notification already exists, skipping duplicate");
           return prev;
@@ -208,7 +229,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     try {
       await NotificationService.markAsRead(notificationId);
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      console.error("Failed to mark notification as read:", error);
       // Revert on error
       setNotifications((prev) =>
         prev.map((n) => (n.id === notificationId ? { ...n, read: false } : n))
@@ -227,7 +248,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     try {
       await NotificationService.markAllAsRead();
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+      console.error("Failed to mark all notifications as read:", error);
       // Revert on error
       setNotifications((prev) => prev.map((n) => ({ ...n, read: false })));
       setUnreadCount(currentUnread);
@@ -243,16 +264,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   };
 
   useEffect(() => {
-    // Cleanup on unmount
-    return () => {
-      disconnectSocket();
-    };
-  }, []);
-
-  useEffect(() => {
     const userId = user?._id || user?.id;
     if (isAuthenticated && userId) {
-      console.log("User authenticated, fetching notifications and connecting socket");
+      console.log(
+        "User authenticated, fetching notifications and connecting socket"
+      );
       fetchNotifications();
       connectSocket();
     } else {
@@ -261,6 +277,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       setNotifications([]);
       setUnreadCount(0);
     }
+
+    // Cleanup on unmount only
+    return () => {
+      if (!isAuthenticated) {
+        disconnectSocket();
+      }
+    };
   }, [isAuthenticated, user?._id, user?.id]);
 
   const value: NotificationContextType = {

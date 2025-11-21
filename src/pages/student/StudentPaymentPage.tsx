@@ -215,18 +215,6 @@ const StudentPaymentPage: React.FC = () => {
           </div>
         )}
 
-        {/* Payment Selector */}
-        <div className={pendingPayment ? "opacity-50 pointer-events-none" : ""}>
-          <SessionPaymentSelector
-            key={refreshKey}
-            classId={classId}
-            onPaymentInitiated={(url) => {
-              // Redirect to VNPay
-              window.location.href = url;
-            }}
-          />
-        </div>
-
         {/* Info Section */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
           <h3 className="font-semibold text-blue-900 mb-3">
