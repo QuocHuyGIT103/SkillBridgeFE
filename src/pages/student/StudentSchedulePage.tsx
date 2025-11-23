@@ -31,7 +31,11 @@ const StudentSchedulePage: React.FC = () => {
   });
 
   const activeClasses = studentClasses.filter((c) => c.status === "ACTIVE");
-  const totalTutors = new Set(studentClasses.map((c) => c.tutorId.id)).size;
+  const totalTutors = new Set(
+    studentClasses
+      .filter((c) => c.tutorId?.id)
+      .map((c) => c.tutorId.id)
+  ).size;
   const totalSessions = studentClasses.reduce(
     (sum, c) => sum + c.totalSessions,
     0
@@ -177,7 +181,7 @@ const StudentSchedulePage: React.FC = () => {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <h3 className="font-bold text-gray-900 mb-1 line-clamp-2">
-                    {cls.subject.name}
+                    {cls.subject?.name || "Chưa có môn học"}
                   </h3>
                   <p className="text-sm text-gray-600">
                     Buổi {cls.completedSessions}/{cls.totalSessions}
@@ -211,38 +215,48 @@ const StudentSchedulePage: React.FC = () => {
               </div>
 
               {/* Tutor Info */}
-              <div className="flex items-center space-x-2 mb-3 pb-3 border-b border-blue-200">
-                <img
-                  src={
-                    cls.tutorId.avatar_url || "https://via.placeholder.com/40"
-                  }
-                  alt={cls.tutorId.full_name}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate flex items-center">
-                    <AcademicCapIcon className="w-4 h-4 mr-1" />
-                    {cls.tutorId.full_name}
-                  </p>
+              {cls.tutorId && (
+                <div className="flex items-center space-x-2 mb-3 pb-3 border-b border-blue-200">
+                  <img
+                    src={
+                      cls.tutorId.avatar_url || "https://via.placeholder.com/40"
+                    }
+                    alt={cls.tutorId.full_name || "Gia sư"}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate flex items-center">
+                      <AcademicCapIcon className="w-4 h-4 mr-1" />
+                      {cls.tutorId.full_name || "Chưa có tên"}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Schedule Info */}
               <div className="space-y-2 text-sm">
-                <div className="flex items-center text-gray-600">
-                  <CalendarDaysIcon className="w-4 h-4 mr-2" />
-                  <span>
-                    {cls.schedule.dayOfWeek
-                      .map((d) => getDayName(d))
-                      .join(", ")}
-                  </span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <ClockIcon className="w-4 h-4 mr-2" />
-                  <span>
-                    {cls.schedule.startTime} - {cls.schedule.endTime}
-                  </span>
-                </div>
+                {cls.schedule && (
+                  <>
+                    {cls.schedule.dayOfWeek && cls.schedule.dayOfWeek.length > 0 && (
+                      <div className="flex items-center text-gray-600">
+                        <CalendarDaysIcon className="w-4 h-4 mr-2" />
+                        <span>
+                          {cls.schedule.dayOfWeek
+                            .map((d) => getDayName(d))
+                            .join(", ")}
+                        </span>
+                      </div>
+                    )}
+                    {cls.schedule.startTime && cls.schedule.endTime && (
+                      <div className="flex items-center text-gray-600">
+                        <ClockIcon className="w-4 h-4 mr-2" />
+                        <span>
+                          {cls.schedule.startTime} - {cls.schedule.endTime}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
                 <div className="flex items-center text-gray-600">
                   {cls.learningMode === "ONLINE" ? (
                     <>

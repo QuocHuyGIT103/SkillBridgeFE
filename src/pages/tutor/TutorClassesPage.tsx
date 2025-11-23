@@ -18,7 +18,11 @@ const TutorClassesPage: React.FC = () => {
   }, [fetchTutorClasses]);
 
   const activeClasses = tutorClasses.filter((c) => c.status === 'ACTIVE');
-  const totalStudents = new Set(tutorClasses.map((c) => c.studentId.id)).size;
+  const totalStudents = new Set(
+    tutorClasses
+      .filter((c) => c.studentId?.id)
+      .map((c) => c.studentId.id)
+  ).size;
   const totalSessions = tutorClasses.reduce((sum, c) => sum + c.totalSessions, 0);
   const completedSessions = tutorClasses.reduce((sum, c) => sum + c.completedSessions, 0);
   const completionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
