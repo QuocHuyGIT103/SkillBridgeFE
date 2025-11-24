@@ -18,8 +18,8 @@ const Hero: React.FC = () => {
           {/* Subtitle */}
           <p className="mx-auto max-w-2xl text-lg text-gray-600 mb-10 leading-relaxed">
             Kết nối học viên và gia sư thông qua nền tảng hiện đại với AI gợi ý
-            thông minh, thanh toán minh bạch qua Blockchain và trải nghiệm học
-            tập trực tuyến tối ưu.
+            thông minh, hợp đồng điện tử minh bạch và trải nghiệm học tập trực
+            tuyến tối ưu.
           </p>
 
           {/* CTA Buttons */}

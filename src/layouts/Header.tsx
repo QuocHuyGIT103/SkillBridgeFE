@@ -55,6 +55,9 @@ const Header: React.FC = () => {
           </NavLink>
         </NavbarBrand>
 
+        {/* Spacer for balance */}
+        <NavbarContent className="hidden lg:flex flex-1" />
+
         <NavbarContent className="hidden lg:flex gap-2" justify="center">
           <NavbarItem>
             <NavLink
@@ -127,6 +130,9 @@ const Header: React.FC = () => {
             </NavLink>
           </NavbarItem>
         </NavbarContent>
+
+        {/* Spacer for balance */}
+        <NavbarContent className="hidden lg:flex flex-1" />
 
         <NavbarContent justify="end" className="gap-2">
           {isAuthenticated ? (

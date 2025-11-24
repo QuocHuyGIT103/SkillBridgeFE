@@ -82,12 +82,7 @@ const Footer: React.FC = () => {
               >
                 Trở thành gia sư
               </NavLink>
-              <NavLink
-                to="/pricing"
-                className="block text-sm text-gray-600 hover:text-teal-600 transition-colors"
-              >
-                Bảng giá
-              </NavLink>
+
               <NavLink
                 to="/blog"
                 className="block text-sm text-gray-600 hover:text-teal-600 transition-colors"
@@ -148,7 +143,7 @@ const Footer: React.FC = () => {
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <MapPin className="h-4 w-4" />
-                <span>Hà Nội, Việt Nam</span>
+                <span>TP.Hồ Chí Minh, Việt Nam</span>
               </div>
             </div>
 
