@@ -6,6 +6,7 @@ export interface SurveyData {
   gradeLevel: string;
   subjects: string[];
   goals: string[];
+  currentChallenges: string[];
   teachingMode: 'ONLINE' | 'OFFLINE' | 'BOTH';
   preferredTeachingStyle: string[];
   availableTime: string[];
@@ -14,6 +15,7 @@ export interface SurveyData {
     max: number;
   };
   learningPace: string;
+  studyFrequency: number;
   priorities: {
     experience: number;
     communication: number;
@@ -35,6 +37,7 @@ export interface StudentSurvey {
   gradeLevel: string;
   subjects: string[];
   goals: string[];
+  currentChallenges: string[];
   teachingMode: 'ONLINE' | 'OFFLINE' | 'BOTH';
   preferredTeachingStyle: string[];
   availableTime: string[];
@@ -43,6 +46,7 @@ export interface StudentSurvey {
     max: number;
   };
   learningPace: string;
+  studyFrequency: number;
   priorities: {
     experience: number;
     communication: number;
@@ -137,6 +141,23 @@ export const LEARNING_PACES = [
     description: 'Tôi cần thời gian nhưng nắm vững kiến thức' 
   },
 ];
+
+export const STUDY_CHALLENGES = [
+  { value: 'missing_foundation', label: 'Mất gốc kiến thức', description: 'Quên kiến thức nền tảng của 1 hoặc nhiều môn' },
+  { value: 'lack_consistency', label: 'Học không đều', description: 'Khó duy trì lịch học cố định, dễ bỏ dở' },
+  { value: 'exam_pressure', label: 'Áp lực thi cử', description: 'Chuẩn bị cho kỳ thi quan trọng trong 3-6 tháng' },
+  { value: 'low_motivation', label: 'Thiếu động lực', description: 'Khó tập trung, cần người kèm để tạo cảm hứng' },
+  { value: 'time_management', label: 'Quản lý thời gian kém', description: 'Lịch học/buổi ngoại khóa dày đặc, cần gia sư linh hoạt' },
+  { value: 'communication_gap', label: 'Ngại hỏi hoặc trao đổi', description: 'Cần gia sư dễ gần, hướng dẫn chi tiết từng bước' },
+];
+
+export const STUDY_CHALLENGE_LABELS = STUDY_CHALLENGES.reduce<Record<string, string>>(
+  (acc, challenge) => {
+    acc[challenge.value] = challenge.label;
+    return acc;
+  },
+  {}
+);
 
 export const PRIORITIES = [
   { key: 'experience', label: 'Kinh nghiệm dạy lâu năm', icon: '⭐', description: 'Gia sư có nhiều năm kinh nghiệm' },

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ClockIcon,
@@ -10,9 +10,40 @@ import {
   DocumentTextIcon,
   UserIcon,
   SparklesIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import SmartRecommendationCard from "../../components/ai/SmartRecommendationCard";
+import type { SmartRecommendation } from "../../services/ai.service";
+import { useSurveyStore } from "../../store/survey.store";
 
 const StudentDashboardOverview: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const {
+    surveyResults,
+    hasCompletedSurvey,
+    isLoading: surveyIsLoading,
+    getSurvey,
+  } = useSurveyStore();
+  const recommendations = surveyResults?.recommendations || [];
+  const topRecommendations = recommendations.slice(0, 3) as SmartRecommendation[];
+  const freshResultsFlag = (location.state as any)?.showFreshResults;
+
+  useEffect(() => {
+    if (hasCompletedSurvey && !surveyResults && !surveyIsLoading) {
+      getSurvey();
+    }
+  }, [hasCompletedSurvey, surveyResults, surveyIsLoading, getSurvey]);
+
+  useEffect(() => {
+    if (freshResultsFlag) {
+      toast.success("Khảo sát đã hoàn tất! Đây là các gợi ý gia sư phù hợp nhất.");
+      navigate(location.pathname, { replace: true });
+    }
+  }, [freshResultsFlag, location.pathname, navigate]);
+
   // Mock data - thay thế bằng data thực từ API
   const studentStats = {
     weeklyLessons: 8,
@@ -123,16 +154,77 @@ const StudentDashboardOverview: React.FC = () => {
               Hôm nay bạn có 2 buổi học và 3 bài tập cần hoàn thành
             </p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2 shadow-lg"
-          >
-            <SparklesIcon className="w-5 h-5" />
-            <span>Gợi ý AI</span>
-          </motion.button>
         </div>
       </motion.div>
+
+      {hasCompletedSurvey && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-white rounded-xl p-6 shadow-sm border border-purple-100"
+        >
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <SparklesIcon className="w-6 h-6 text-purple-600" />
+                Gia sư phù hợp dành riêng cho bạn
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Danh sách được cập nhật tự động sau mỗi lần bạn hoàn thành khảo sát AI.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/student/ai-survey/results"
+                className="px-4 py-2 border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+              >
+                Xem đầy đủ
+              </Link>
+              <button
+                onClick={() => navigate("/student/ai-survey")}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg text-sm font-semibold hover:from-purple-700 hover:to-blue-700 transition flex items-center gap-2"
+              >
+                <ArrowPathIcon className="w-4 h-4" />
+                Làm lại khảo sát
+              </button>
+            </div>
+          </div>
+
+          {surveyIsLoading ? (
+            <div className="py-12 flex flex-col items-center text-gray-500 gap-3">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500" />
+              <p>Đang tải gợi ý mới nhất...</p>
+            </div>
+          ) : recommendations.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {topRecommendations.map((recommendation, index) => (
+                <motion.div
+                  key={recommendation.tutorId || index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + index * 0.05 }}
+                >
+                  <SmartRecommendationCard recommendation={recommendation} rank={index + 1} />
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-10 text-center border-2 border-dashed border-gray-200 rounded-xl">
+              <p className="text-gray-700 font-semibold mb-2">Chưa có gợi ý nào</p>
+              <p className="text-gray-500 text-sm mb-4">
+                Hoàn thành khảo sát AI hoặc thử cập nhật lại thông tin để nhận gợi ý mới.
+              </p>
+              <button
+                onClick={() => navigate("/student/ai-survey")}
+                className="px-5 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition"
+              >
+                Mở khảo sát
+              </button>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

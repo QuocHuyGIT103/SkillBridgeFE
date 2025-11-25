@@ -140,14 +140,28 @@ export const useSurveyStore = create<SurveyState>()(
 
           if (response.success && response.data) {
             set({
-              submittedSurvey: response.data,
+              submittedSurvey: response.data.survey,
+              surveyResults: response.data,
               hasCompletedSurvey: true,
               isLoading: false,
             });
+          } else {
+            set({ isLoading: false });
           }
         } catch (error: any) {
-          // No survey found is not an error
-          set({ isLoading: false });
+          const status = error?.response?.status;
+          if (status === 404) {
+            set({
+              isLoading: false,
+              hasCompletedSurvey: false,
+            });
+            return;
+          }
+
+          set({
+            error: error.message || 'Không thể lấy thông tin khảo sát',
+            isLoading: false,
+          });
         }
       },
 
@@ -168,6 +182,7 @@ export const useSurveyStore = create<SurveyState>()(
           currentSurvey: null,
           currentStep: 0,
           error: null,
+          hasCompletedSurvey: false,
         });
       },
 

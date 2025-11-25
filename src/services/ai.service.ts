@@ -38,7 +38,8 @@ export interface TutorInfo {
 }
 
 export interface TutorPostInfo {
-  id: string;
+  id?: string;
+  _id?: string;
   title: string;
   description?: string;
   subjects: Array<{

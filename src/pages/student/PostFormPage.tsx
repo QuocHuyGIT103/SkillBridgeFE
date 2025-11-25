@@ -14,12 +14,12 @@ const PostFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { selectedPost, isLoading, error, getPostById, createPost, updatePost } = usePostStore();
-  
+
   // ✅ Use subject store
-  const { 
-    activeSubjects, 
-    isLoading: subjectsLoading, 
-    getActiveSubjects 
+  const {
+    activeSubjects,
+    isLoading: subjectsLoading,
+    getActiveSubjects
   } = useSubjectStore();
 
   const isEditMode = !!id;
@@ -151,7 +151,7 @@ const PostFormPage: React.FC = () => {
       }
 
       // ✅ Validate subjects exist in current active subjects
-      const validSubjects = (selectedPost.subjects || []).filter(subjectName => 
+      const validSubjects = (selectedPost.subjects || []).filter(subjectName =>
         activeSubjects.some(subject => subject.name === subjectName)
       );
 
@@ -212,11 +212,11 @@ const PostFormPage: React.FC = () => {
   // ✅ Teaching mode change handler
   const handleTeachingModeChange = (mode: 'ONLINE' | 'OFFLINE' | 'BOTH') => {
     setValue('teachingMode', mode);
-    
+
     if (mode === 'ONLINE') {
       setValue('address', { province: '', district: '', ward: '', specificAddress: '' });
     }
-    
+
     setAddressKey(prev => prev + 1);
   };
 
@@ -259,8 +259,8 @@ const PostFormPage: React.FC = () => {
       return;
     }
 
-    if ((teachingMode === 'OFFLINE' || teachingMode === 'BOTH') && 
-        (!data.address?.province || !data.address?.district || !data.address?.ward || !data.address?.specificAddress?.trim())) {
+    if ((teachingMode === 'OFFLINE' || teachingMode === 'BOTH') &&
+      (!data.address?.province || !data.address?.district || !data.address?.ward || !data.address?.specificAddress?.trim())) {
       toast.error('Phải điền đầy đủ thông tin địa chỉ');
       return;
     }
@@ -281,9 +281,9 @@ const PostFormPage: React.FC = () => {
     };
 
     try {
-      const success = isEditMode && id 
-      ? await updatePost(id, formattedData)
-      : await createPost(formattedData);
+      const success = isEditMode && id
+        ? await updatePost(id, formattedData)
+        : await createPost(formattedData);
 
       if (success) {
         navigate('/student/my-posts');
@@ -376,9 +376,8 @@ const PostFormPage: React.FC = () => {
                 maxLength: { value: 200, message: 'Tiêu đề không được vượt quá 200 ký tự' },
               })}
               placeholder="VD: Tìm gia sư toán lớp 12 - Cần ôn thi đại học"
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.title ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.title ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.title && <span className="text-sm text-red-600 mt-1 block">{errors.title.message}</span>}
           </div>
@@ -395,9 +394,8 @@ const PostFormPage: React.FC = () => {
                 maxLength: { value: 5000, message: 'Nội dung không được vượt quá 5000 ký tự' },
               })}
               placeholder="Mô tả chi tiết về nhu cầu học, mục tiêu, kinh nghiệm mong muốn của gia sư..."
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.content ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.content ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.content && <span className="text-sm text-red-600 mt-1 block">{errors.content.message}</span>}
           </div>
@@ -410,9 +408,9 @@ const PostFormPage: React.FC = () => {
             <Controller
               name="subjects"
               control={control}
-              rules={{ 
-                required: 'Vui lòng chọn ít nhất một môn học', 
-                validate: (value) => value.length <= 10 || 'Không được chọn quá 10 môn học' 
+              rules={{
+                required: 'Vui lòng chọn ít nhất một môn học',
+                validate: (value) => value.length <= 10 || 'Không được chọn quá 10 môn học'
               }}
               render={({ field: { onChange, value } }) => (
                 <Select
@@ -431,7 +429,7 @@ const PostFormPage: React.FC = () => {
               )}
             />
             {errors.subjects && <span className="text-sm text-red-600 mt-1 block">{errors.subjects.message}</span>}
-            
+
             {/* ✅ Show selected subjects info */}
             {watch('subjects')?.length > 0 && (
               <p className="text-sm text-gray-600 mt-1">
@@ -455,9 +453,9 @@ const PostFormPage: React.FC = () => {
             <Controller
               name="grade_levels"
               control={control}
-              rules={{ 
-                required: 'Vui lòng chọn ít nhất một lớp', 
-                validate: (value) => value.length <= 10 || 'Không được chọn quá 10 lớp' 
+              rules={{
+                required: 'Vui lòng chọn ít nhất một lớp',
+                validate: (value) => value.length <= 10 || 'Không được chọn quá 10 lớp'
               }}
               render={({ field: { onChange, value } }) => (
                 <Select

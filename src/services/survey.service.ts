@@ -40,9 +40,9 @@ class SurveyService {
   /**
    * Get student's current survey
    */
-  static async getSurvey(): Promise<ApiResponse<StudentSurvey>> {
+  static async getSurvey(): Promise<ApiResponse<SurveySubmitResponse>> {
     try {
-      const response = await axiosClient.get<StudentSurvey>('/ai/survey');
+      const response = await axiosClient.get<SurveySubmitResponse>('/ai/survey');
       return response;
     } catch (error: any) {
       console.error('❌ Get survey error:', error);

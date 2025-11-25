@@ -9,8 +9,8 @@ import {
   CheckCircleIcon,
   StarIcon,
 } from '@heroicons/react/24/outline';
-import { SparklesIcon as SparklesSolidIcon, StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import type { SmartRecommendation } from '../../services/ai.service';
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
+import type { SmartRecommendation, TutorInfo, MatchDetails } from '../../services/ai.service';
 import TutorReviewsModal from '../tutorPost/TutorReviewsModal';
 
 interface SmartRecommendationCardProps {
@@ -32,9 +32,11 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
   const handleCardClick = () => {
     if (onClick) {
       onClick();
-    } else {
-      // Navigate to tutor post detail - use id from tutorPost
-      const postId = recommendation.tutorPost.id;
+      return;
+    }
+
+    const postId = tutorPost.id || tutorPost._id;
+    if (postId) {
       navigate(`/tutors/${postId}`);
     }
   };
@@ -87,7 +89,58 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
     }
   };
 
-  const { tutor, tutorPost, matchScore, explanation, matchDetails } = recommendation;
+  const { tutor: tutorRaw, tutorPost: tutorPostRaw, matchScore, explanation, matchDetails } = recommendation;
+
+  const fallbackTutor: TutorInfo = {
+    name: 'Gia sư ẩn danh',
+    email: '',
+    phone: '',
+    avatar: '',
+    headline: '',
+    introduction: '',
+    rating: {
+      average: 0,
+      count: 0,
+      badges: [],
+      lastReviewAt: null,
+    },
+  };
+
+  const tutor = {
+    ...fallbackTutor,
+    ...tutorRaw,
+    rating: {
+      ...fallbackTutor.rating!,
+      ...tutorRaw?.rating,
+    },
+  };
+
+  const fallbackTutorPost = {
+    id: '',
+    _id: '',
+    title: 'Thông tin bài đăng không khả dụng',
+    description: '',
+    subjects: [],
+    pricePerSession: 0,
+    sessionDuration: 60,
+    teachingMode: 'ONLINE',
+    studentLevel: [],
+  };
+
+  const tutorPost = {
+    ...fallbackTutorPost,
+    ...tutorPostRaw,
+    subjects: tutorPostRaw?.subjects || [],
+    studentLevel: tutorPostRaw?.studentLevel || [],
+  };
+
+  const normalizedMatchDetails: MatchDetails = {
+    subjectMatch: !!matchDetails?.subjectMatch,
+    levelMatch: !!matchDetails?.levelMatch,
+    priceMatch: !!matchDetails?.priceMatch,
+    scheduleMatch: !!matchDetails?.scheduleMatch,
+    semanticScore: matchDetails?.semanticScore ?? 0,
+  };
   const ratingAverage = tutor.rating?.average || 0;
   const ratingCount = tutor.rating?.count || 0;
   const showRating = ratingCount > 0;
@@ -117,15 +170,6 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
           </div>
         </div>
       )}
-
-      {/* AI Badge */}
-      <div className="absolute top-4 right-4 z-10">
-        <div className="flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 
-                        rounded-full shadow-lg">
-          <SparklesSolidIcon className="w-4 h-4 text-white" />
-          <span className="text-white text-xs font-semibold">AI Match</span>
-        </div>
-      </div>
 
       {/* Highlight Banner for Top Match */}
       {isTopMatch && (
@@ -302,7 +346,7 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
             Chi tiết khớp:
           </p>
           <div className="flex flex-wrap gap-2">
-            {matchDetails.subjectMatch && (
+            {normalizedMatchDetails.subjectMatch && (
               <span className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border ${
                 isTopMatch
                   ? 'bg-green-100 text-green-800 border-green-300 font-medium'
@@ -312,7 +356,7 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
                 <span>Môn học</span>
               </span>
             )}
-            {matchDetails.levelMatch && (
+            {normalizedMatchDetails.levelMatch && (
               <span className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border ${
                 isTopMatch
                   ? 'bg-green-100 text-green-800 border-green-300 font-medium'
@@ -322,7 +366,7 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
                 <span>Cấp độ</span>
               </span>
             )}
-            {matchDetails.priceMatch && (
+            {normalizedMatchDetails.priceMatch && (
               <span className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border ${
                 isTopMatch
                   ? 'bg-green-100 text-green-800 border-green-300 font-medium'
@@ -332,7 +376,7 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
                 <span>Giá</span>
               </span>
             )}
-            {matchDetails.semanticScore > 0 && (
+            {normalizedMatchDetails.semanticScore > 0 && (
               <span className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border ${
                 isTopMatch
                   ? 'bg-purple-100 text-purple-800 border-purple-300 font-medium'
@@ -348,6 +392,11 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
         {/* View Button - Enhanced for Top Match */}
         <div className="mt-4">
           <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              handleCardClick();
+            }}
             className={`w-full px-4 py-2.5 text-white font-medium rounded-lg 
                       transition-all duration-200 shadow-md hover:shadow-lg ${
                         isTopMatch

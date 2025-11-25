@@ -7,9 +7,10 @@ import { useAuthStore } from '../../store/auth.store';
 import WelcomeScreen from '../../components/survey/WelcomeScreen';
 import SurveyQuestions from '../../components/survey/SurveyQuestions';
 import ProcessingScreen from '../../components/survey/ProcessingScreen';
+import SurveyResultsContent from '../../components/survey/SurveyResultsContent';
 import type { SurveyData } from '../../types/survey.types';
 
-type SurveyStage = 'welcome' | 'questions' | 'processing' | 'completed';
+type SurveyStage = 'welcome' | 'questions' | 'processing' | 'completed' | 'summary';
 
 const AISurveyPage: React.FC = () => {
   const navigate = useNavigate();
@@ -22,9 +23,19 @@ const AISurveyPage: React.FC = () => {
     surveyResults,
     error,
     clearError,
+    getSurvey,
+    clearResults,
+    isLoading,
   } = useSurveyStore();
 
   const [stage, setStage] = useState<SurveyStage>('welcome');
+  const [isForceRetake, setIsForceRetake] = useState(() => {
+    const shouldRetake = sessionStorage.getItem('surveyRetake') === 'true';
+    if (shouldRetake) {
+      sessionStorage.removeItem('surveyRetake');
+    }
+    return shouldRetake;
+  });
 
   // Check survey status on mount
   useEffect(() => {
@@ -39,6 +50,24 @@ const AISurveyPage: React.FC = () => {
     }
   }, [user, navigate]);
 
+  useEffect(() => {
+    if (hasCompletedSurvey && !isForceRetake) {
+      if (!surveyResults) {
+        getSurvey();
+      }
+      setStage('summary');
+    } else if (isForceRetake) {
+      setStage('questions');
+    } else {
+      setStage('welcome');
+    }
+  }, [
+    hasCompletedSurvey,
+    isForceRetake,
+    surveyResults,
+    getSurvey,
+  ]);
+
   // Handle errors
   useEffect(() => {
     if (error) {
@@ -51,14 +80,18 @@ const AISurveyPage: React.FC = () => {
     }
   }, [error, clearError, stage]);
 
-  // Navigate to results when survey is completed
+  // Navigate to dashboard when survey is completed so students immediately see matches
   useEffect(() => {
     if (stage === 'completed' && surveyResults) {
-      navigate('/student/ai-survey/results');
+      navigate('/student/dashboard', {
+        state: { showFreshResults: true },
+        replace: true,
+      });
     }
   }, [stage, surveyResults, navigate]);
 
   const handleStart = () => {
+    setIsForceRetake(false);
     setStage('questions');
   };
 
@@ -97,6 +130,7 @@ const AISurveyPage: React.FC = () => {
   const handleSubmit = async (data: SurveyData) => {
     try {
       console.log('📋 Submitting survey:', data);
+      setIsForceRetake(false);
       setStage('processing');
 
       await submitSurvey(data);
@@ -114,6 +148,29 @@ const AISurveyPage: React.FC = () => {
   const handleProcessingComplete = () => {
     setStage('completed');
   };
+
+  const handleSummaryRetake = () => {
+    setIsForceRetake(true);
+    clearResults();
+    setStage('questions');
+  };
+
+  if (stage === 'summary') {
+    if (isLoading || !surveyResults) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500" />
+        </div>
+      );
+    }
+
+    return (
+      <SurveyResultsContent
+        surveyResults={surveyResults}
+        onRetake={handleSummaryRetake}
+      />
+    );
+  }
 
   return (
     <AnimatePresence mode="wait">

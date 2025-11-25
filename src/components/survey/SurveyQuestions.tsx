@@ -6,12 +6,14 @@ import SurveyProgress from './SurveyProgress';
 import GradeLevelQuestion from './questions/GradeLevelQuestion';
 import SubjectsQuestion from './questions/SubjectsQuestion';
 import GoalsQuestion from './questions/GoalsQuestion';
+import ChallengesQuestion from './questions/ChallengesQuestion';
 import TeachingModeQuestion from './questions/TeachingModeQuestion';
 import StylesQuestion from './questions/StylesQuestion';
 import AvailableTimeQuestion from './questions/AvailableTimeQuestion';
 import BudgetQuestion from './questions/BudgetQuestion';
 import LearningPaceQuestion from './questions/LearningPaceQuestion';
 import PrioritiesQuestion from './questions/PrioritiesQuestion';
+import StudyFrequencyQuestion from './questions/StudyFrequencyQuestion';
 import type { SurveyData } from '../../types/survey.types';
 
 interface SurveyQuestionsProps {
@@ -30,11 +32,13 @@ const SurveyQuestions: React.FC<SurveyQuestionsProps> = ({
     gradeLevel: '',
     subjects: [],
     goals: [],
+    currentChallenges: [],
     teachingMode: 'BOTH',
     preferredTeachingStyle: [],
     availableTime: [],
     budgetRange: { min: 100000, max: 200000 },
     learningPace: '',
+    studyFrequency: 2,
     priorities: {
       experience: 3,
       communication: 3,
@@ -44,16 +48,18 @@ const SurveyQuestions: React.FC<SurveyQuestionsProps> = ({
     },
   });
 
-  const totalSteps = 9;
+  const totalSteps = 11;
 
   const stepTitles = [
     'Lớp học',
     'Môn học',
     'Mục tiêu',
+    'Khó khăn',
     'Hình thức',
     'Phong cách',
     'Thời gian',
     'Ngân sách',
+    'Số buổi/tuần',
     'Tốc độ',
     'Ưu tiên',
   ];
@@ -76,32 +82,42 @@ const SurveyQuestions: React.FC<SurveyQuestionsProps> = ({
           return { valid: false, message: 'Vui lòng chọn ít nhất 1 mục tiêu' };
         }
         break;
-      case 3: // Teaching Mode
+      case 3: // Challenges
+        if (surveyData.currentChallenges.length === 0) {
+          return { valid: false, message: 'Vui lòng chọn ít nhất 1 khó khăn' };
+        }
+        break;
+      case 4: // Teaching Mode
         if (!surveyData.teachingMode) {
           return { valid: false, message: 'Vui lòng chọn hình thức học' };
         }
         break;
-      case 4: // Teaching Styles
+      case 5: // Teaching Styles
         if (surveyData.preferredTeachingStyle.length === 0) {
           return { valid: false, message: 'Vui lòng chọn ít nhất 1 phong cách' };
         }
         break;
-      case 5: // Available Time
+      case 6: // Available Time
         if (surveyData.availableTime.length === 0) {
           return { valid: false, message: 'Vui lòng chọn ít nhất 1 khung giờ' };
         }
         break;
-      case 6: // Budget
+      case 7: // Budget
         if (surveyData.budgetRange.min >= surveyData.budgetRange.max) {
           return { valid: false, message: 'Ngân sách tối thiểu phải nhỏ hơn tối đa' };
         }
         break;
-      case 7: // Learning Pace
+      case 8: // Study frequency
+        if (!surveyData.studyFrequency) {
+          return { valid: false, message: 'Vui lòng chọn số buổi học mỗi tuần' };
+        }
+        break;
+      case 9: // Learning Pace
         if (!surveyData.learningPace) {
           return { valid: false, message: 'Vui lòng chọn tốc độ học' };
         }
         break;
-      case 8: // Priorities - all must be rated
+      case 10: // Priorities - all must be rated
         const priorities = surveyData.priorities;
         if (Object.values(priorities).some((v) => v === 0)) {
           return { valid: false, message: 'Vui lòng đánh giá tất cả các tiêu chí' };
@@ -190,13 +206,22 @@ const SurveyQuestions: React.FC<SurveyQuestionsProps> = ({
       case 3:
         return (
           <motion.div {...questionProps}>
+            <ChallengesQuestion
+              value={surveyData.currentChallenges}
+              onChange={(value) => updateSurveyData('currentChallenges', value)}
+            />
+          </motion.div>
+        );
+      case 4:
+        return (
+          <motion.div {...questionProps}>
             <TeachingModeQuestion
               value={surveyData.teachingMode}
               onChange={(value) => updateSurveyData('teachingMode', value)}
             />
           </motion.div>
         );
-      case 4:
+      case 5:
         return (
           <motion.div {...questionProps}>
             <StylesQuestion
@@ -205,7 +230,7 @@ const SurveyQuestions: React.FC<SurveyQuestionsProps> = ({
             />
           </motion.div>
         );
-      case 5:
+      case 6:
         return (
           <motion.div {...questionProps}>
             <AvailableTimeQuestion
@@ -214,7 +239,7 @@ const SurveyQuestions: React.FC<SurveyQuestionsProps> = ({
             />
           </motion.div>
         );
-      case 6:
+      case 7:
         return (
           <motion.div {...questionProps}>
             <BudgetQuestion
@@ -223,7 +248,16 @@ const SurveyQuestions: React.FC<SurveyQuestionsProps> = ({
             />
           </motion.div>
         );
-      case 7:
+      case 8:
+        return (
+          <motion.div {...questionProps}>
+            <StudyFrequencyQuestion
+              value={surveyData.studyFrequency}
+              onChange={(value) => updateSurveyData('studyFrequency', value)}
+            />
+          </motion.div>
+        );
+      case 9:
         return (
           <motion.div {...questionProps}>
             <LearningPaceQuestion
@@ -232,7 +266,7 @@ const SurveyQuestions: React.FC<SurveyQuestionsProps> = ({
             />
           </motion.div>
         );
-      case 8:
+      case 10:
         return (
           <motion.div {...questionProps}>
             <PrioritiesQuestion
