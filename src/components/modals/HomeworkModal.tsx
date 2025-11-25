@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   XMarkIcon,
   DocumentTextIcon,
@@ -11,22 +11,22 @@ import {
   CalendarDaysIcon,
   AcademicCapIcon,
   UserCircleIcon,
-} from '@heroicons/react/24/outline';
-import { attendanceService } from '../../services/attendance.service';
-import { uploadService } from '../../services';
-import toast from 'react-hot-toast';
-import type { WeeklySession } from '../../types/attendance';
-import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+} from "@heroicons/react/24/outline";
+import { attendanceService } from "../../services/attendance.service";
+import { uploadService } from "../../services";
+import toast from "react-hot-toast";
+import type { WeeklySession } from "../../types/attendance";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 
 interface HomeworkModalProps {
   session: WeeklySession;
-  userRole: 'TUTOR' | 'STUDENT';
+  userRole: "TUTOR" | "STUDENT";
   onClose: () => void;
   onSuccess: () => void;
 }
 
-type TabType = 'view' | 'assign' | 'submit' | 'grade';
+type TabType = "view" | "assign" | "submit" | "grade";
 
 const HomeworkModal: React.FC<HomeworkModalProps> = ({
   session,
@@ -35,50 +35,56 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   onSuccess,
 }) => {
   const assignments = session.homework.assignments || [];
-  const pendingSubmissionAssignments = assignments.filter(assignment => !assignment.submission);
+  const pendingSubmissionAssignments = assignments.filter(
+    (assignment) => !assignment.submission
+  );
   const pendingGradeAssignments = assignments.filter(
-    assignment => assignment.submission && !assignment.grade
+    (assignment) => assignment.submission && !assignment.grade
   );
 
   const [activeTab, setActiveTab] = useState<TabType>(() => {
-    if (userRole === 'TUTOR') {
-      if (!session.homework.hasAssignment) return 'assign';
-      if (pendingGradeAssignments.length > 0) return 'grade';
-      return 'view';
+    if (userRole === "TUTOR") {
+      if (!session.homework.hasAssignment) return "assign";
+      if (pendingGradeAssignments.length > 0) return "grade";
+      return "view";
     }
-    if (session.homework.hasAssignment && pendingSubmissionAssignments.length > 0) return 'submit';
-    return 'view';
+    if (
+      session.homework.hasAssignment &&
+      pendingSubmissionAssignments.length > 0
+    )
+      return "submit";
+    return "view";
   });
 
   const [loading, setLoading] = useState(false);
   const [selectedSubmitAssignmentId, setSelectedSubmitAssignmentId] = useState(
-    pendingSubmissionAssignments[0]?.id || assignments[0]?.id || ''
+    pendingSubmissionAssignments[0]?.id || assignments[0]?.id || ""
   );
   const [selectedGradeAssignmentId, setSelectedGradeAssignmentId] = useState(
-    pendingGradeAssignments[0]?.id
-    || assignments.find(assignment => assignment.submission)?.id
-    || assignments[0]?.id
-    || ''
+    pendingGradeAssignments[0]?.id ||
+      assignments.find((assignment) => assignment.submission)?.id ||
+      assignments[0]?.id ||
+      ""
   );
 
   // Assignment Form State
   const [assignmentData, setAssignmentData] = useState({
-    title: '',
-    description: '',
-    deadline: '',
-    fileUrl: '',
+    title: "",
+    description: "",
+    deadline: "",
+    fileUrl: "",
   });
 
   // Submission Form State
   const [submissionData, setSubmissionData] = useState({
-    fileUrl: '',
-    notes: '',
+    fileUrl: "",
+    notes: "",
   });
 
   // Grading Form State
   const [gradeData, setGradeData] = useState({
     score: 0,
-    feedback: '',
+    feedback: "",
   });
 
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -86,35 +92,35 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   // Handle File Upload
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    target: 'assignment' | 'submission'
+    target: "assignment" | "submission"
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('File quá lớn! Giới hạn 10MB');
+      toast.error("File quá lớn! Giới hạn 10MB");
       return;
     }
 
     setUploadingFile(true);
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
       const response = await uploadService.uploadFile(formData);
       const fileUrl = response.data.url;
 
-      if (target === 'assignment') {
-        setAssignmentData(prev => ({ ...prev, fileUrl }));
+      if (target === "assignment") {
+        setAssignmentData((prev) => ({ ...prev, fileUrl }));
       } else {
-        setSubmissionData(prev => ({ ...prev, fileUrl }));
+        setSubmissionData((prev) => ({ ...prev, fileUrl }));
       }
 
-      toast.success('Tải file lên thành công!');
+      toast.success("Tải file lên thành công!");
     } catch (error: any) {
-      console.error('Upload failed:', error);
-      toast.error('Tải file lên thất bại');
+      console.error("Upload failed:", error);
+      toast.error("Tải file lên thất bại");
     } finally {
       setUploadingFile(false);
     }
@@ -123,15 +129,15 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   // Handle Assign Homework
   const handleAssignHomework = async () => {
     if (!assignmentData.title.trim()) {
-      toast.error('Vui lòng nhập tiêu đề bài tập');
+      toast.error("Vui lòng nhập tiêu đề bài tập");
       return;
     }
     if (!assignmentData.description.trim()) {
-      toast.error('Vui lòng nhập mô tả bài tập');
+      toast.error("Vui lòng nhập mô tả bài tập");
       return;
     }
     if (!assignmentData.deadline) {
-      toast.error('Vui lòng chọn hạn nộp');
+      toast.error("Vui lòng chọn hạn nộp");
       return;
     }
 
@@ -148,27 +154,27 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
         }
       );
 
-      toast.success(response.message || 'Giao bài tập thành công!');
+      toast.success(response.message || "Giao bài tập thành công!");
 
       // Refresh parent data to get updated session info
       await onSuccess();
 
       // Reset form state (for lần mở tiếp theo)
       setAssignmentData({
-        title: '',
-        description: '',
-        deadline: '',
-        fileUrl: '',
+        title: "",
+        description: "",
+        deadline: "",
+        fileUrl: "",
       });
 
       // Đảm bảo lần mở tiếp theo sẽ vào tab xem bài tập
-      setActiveTab('view');
+      setActiveTab("view");
 
       // Đóng modal và quay lại trang lịch/bài tập
       onClose();
     } catch (error: any) {
-      console.error('Assign homework failed:', error);
-      toast.error(error.response?.data?.message || 'Giao bài tập thất bại');
+      console.error("Assign homework failed:", error);
+      toast.error(error.response?.data?.message || "Giao bài tập thất bại");
     } finally {
       setLoading(false);
     }
@@ -177,11 +183,11 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   // Handle Submit Homework
   const handleSubmitHomework = async () => {
     if (!selectedSubmitAssignmentId) {
-      toast.error('Vui lòng chọn bài tập cần nộp');
+      toast.error("Vui lòng chọn bài tập cần nộp");
       return;
     }
     if (!submissionData.fileUrl) {
-      toast.error('Vui lòng tải lên file bài làm');
+      toast.error("Vui lòng tải lên file bài làm");
       return;
     }
 
@@ -197,25 +203,25 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
         }
       );
 
-      toast.success(response.message || 'Nộp bài tập thành công!');
+      toast.success(response.message || "Nộp bài tập thành công!");
 
       // Refresh parent data to get updated submission info
       await onSuccess();
 
       // Reset form state (cho lần mở tiếp theo)
       setSubmissionData({
-        fileUrl: '',
-        notes: '',
+        fileUrl: "",
+        notes: "",
       });
 
       // Đảm bảo lần mở tiếp theo sẽ vào tab xem bài tập
-      setActiveTab('view');
+      setActiveTab("view");
 
       // Đóng modal và quay lại trang lịch/bài tập
       onClose();
     } catch (error: any) {
-      console.error('Submit homework failed:', error);
-      toast.error(error.response?.data?.message || 'Nộp bài tập thất bại');
+      console.error("Submit homework failed:", error);
+      toast.error(error.response?.data?.message || "Nộp bài tập thất bại");
     } finally {
       setLoading(false);
     }
@@ -224,11 +230,11 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   // Handle Grade Homework
   const handleGradeHomework = async () => {
     if (!selectedGradeAssignmentId) {
-      toast.error('Vui lòng chọn bài tập cần chấm');
+      toast.error("Vui lòng chọn bài tập cần chấm");
       return;
     }
     if (gradeData.score < 0 || gradeData.score > 10) {
-      toast.error('Điểm số phải từ 0 đến 10');
+      toast.error("Điểm số phải từ 0 đến 10");
       return;
     }
 
@@ -244,7 +250,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
         }
       );
 
-      toast.success(response.message || 'Chấm điểm thành công!');
+      toast.success(response.message || "Chấm điểm thành công!");
 
       // Refresh parent data to get updated grade info
       await onSuccess();
@@ -252,17 +258,17 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       // Reset form state (cho lần mở tiếp theo)
       setGradeData({
         score: 0,
-        feedback: '',
+        feedback: "",
       });
 
       // Đảm bảo lần mở tiếp theo sẽ vào tab xem bài tập
-      setActiveTab('view');
+      setActiveTab("view");
 
       // Đóng modal và quay lại trang lịch/bài tập
       onClose();
     } catch (error: any) {
-      console.error('Grade homework failed:', error);
-      toast.error(error.response?.data?.message || 'Chấm điểm thất bại');
+      console.error("Grade homework failed:", error);
+      toast.error(error.response?.data?.message || "Chấm điểm thất bại");
     } finally {
       setLoading(false);
     }
@@ -270,38 +276,45 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
 
   // Determine available tabs
   const getTabs = (): { id: TabType; label: string; icon: any }[] => {
-    if (userRole === 'TUTOR') {
+    if (userRole === "TUTOR") {
       return [
-        { id: 'view', label: 'Xem chi tiết', icon: DocumentTextIcon },
-        { id: 'assign', label: 'Giao bài tập', icon: CloudArrowUpIcon },
+        { id: "view", label: "Xem chi tiết", icon: DocumentTextIcon },
+        { id: "assign", label: "Giao bài tập", icon: CloudArrowUpIcon },
         ...(pendingGradeAssignments.length > 0
-          ? [{ id: 'grade' as TabType, label: 'Chấm điểm', icon: StarIcon }]
+          ? [{ id: "grade" as TabType, label: "Chấm điểm", icon: StarIcon }]
           : []),
       ];
     } else {
       return [
-        { id: 'view', label: 'Xem bài tập', icon: DocumentTextIcon },
-        ...(session.homework.hasAssignment && pendingSubmissionAssignments.length > 0
-          ? [{ id: 'submit' as TabType, label: 'Nộp bài', icon: CloudArrowUpIcon }]
+        { id: "view", label: "Xem bài tập", icon: DocumentTextIcon },
+        ...(session.homework.hasAssignment &&
+        pendingSubmissionAssignments.length > 0
+          ? [
+              {
+                id: "submit" as TabType,
+                label: "Nộp bài",
+                icon: CloudArrowUpIcon,
+              },
+            ]
           : []),
       ];
     }
   };
 
   const tabs = getTabs();
-  const canSubmitAssignments = tabs.some((tab) => tab.id === 'submit');
-  const canGradeAssignments = tabs.some((tab) => tab.id === 'grade');
+  const canSubmitAssignments = tabs.some((tab) => tab.id === "submit");
+  const canGradeAssignments = tabs.some((tab) => tab.id === "grade");
 
   const handleOpenSubmitTab = (assignmentId?: string) => {
     if (!assignmentId || !canSubmitAssignments) return;
     setSelectedSubmitAssignmentId(assignmentId);
-    setActiveTab('submit');
+    setActiveTab("submit");
   };
 
   const handleOpenGradeTab = (assignmentId?: string) => {
     if (!assignmentId || !canGradeAssignments) return;
     setSelectedGradeAssignmentId(assignmentId);
-    setActiveTab('grade');
+    setActiveTab("grade");
   };
 
   return (
@@ -309,7 +322,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <motion.div
@@ -341,7 +354,9 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
             <div className="flex items-center space-x-2">
               <CalendarDaysIcon className="w-4 h-4" />
               <span>
-                {format(new Date(session.scheduledDate), 'dd/MM/yyyy', { locale: vi })}
+                {format(new Date(session.scheduledDate), "dd/MM/yyyy", {
+                  locale: vi,
+                })}
               </span>
             </div>
             <div className="flex items-center space-x-2">
@@ -358,10 +373,11 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 text-sm font-medium rounded-t-lg transition-colors flex items-center space-x-2 ${activeTab === tab.id
-                  ? 'bg-white text-purple-600 border-t-2 border-purple-600'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
+                className={`px-4 py-3 text-sm font-medium rounded-t-lg transition-colors flex items-center space-x-2 ${
+                  activeTab === tab.id
+                    ? "bg-white text-purple-600 border-t-2 border-purple-600"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
               >
                 <tab.icon className="w-4 h-4" />
                 <span>{tab.label}</span>
@@ -374,7 +390,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
             {/* View Tab */}
-            {activeTab === 'view' && (
+            {activeTab === "view" && (
               <motion.div
                 key="view"
                 initial={{ opacity: 0, x: -20 }}
@@ -385,10 +401,12 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                 {!session.homework.hasAssignment ? (
                   <div className="text-center py-12">
                     <DocumentTextIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">Chưa có bài tập nào được giao</p>
-                    {userRole === 'TUTOR' && (
+                    <p className="text-gray-500">
+                      Chưa có bài tập nào được giao
+                    </p>
+                    {userRole === "TUTOR" && (
                       <button
-                        onClick={() => setActiveTab('assign')}
+                        onClick={() => setActiveTab("assign")}
                         className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
                       >
                         Giao bài tập ngay
@@ -399,8 +417,12 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   <div className="space-y-4">
                     {assignments.map((assignment, index) => {
                       const deadlineLabel = assignment.deadline
-                        ? format(new Date(assignment.deadline), 'dd/MM/yyyy HH:mm', { locale: vi })
-                        : 'N/A';
+                        ? format(
+                            new Date(assignment.deadline),
+                            "dd/MM/yyyy HH:mm",
+                            { locale: vi }
+                          )
+                        : "N/A";
                       return (
                         <div
                           key={assignment.id || `assignment-${index}`}
@@ -421,18 +443,20 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                                   Legacy
                                 </span>
                               )}
-                              <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                                assignment.status === 'graded'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : assignment.status === 'submitted'
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-yellow-100 text-yellow-700'
-                              }`}>
-                                {assignment.status === 'graded'
-                                  ? 'Đã chấm'
-                                  : assignment.status === 'submitted'
-                                    ? 'Học viên đã nộp'
-                                    : 'Chưa nộp'}
+                              <span
+                                className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                  assignment.status === "graded"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : assignment.status === "submitted"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                                }`}
+                              >
+                                {assignment.status === "graded"
+                                  ? "Đã chấm"
+                                  : assignment.status === "submitted"
+                                  ? "Học viên đã nộp"
+                                  : "Chưa nộp"}
                               </span>
                               {assignment.isLate && (
                                 <span className="px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700">
@@ -467,8 +491,8 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                           </div>
 
                           <div className="mt-4 flex flex-wrap items-center gap-3">
-                            {userRole === 'STUDENT' && (
-                              assignment.submission ? (
+                            {userRole === "STUDENT" &&
+                              (assignment.submission ? (
                                 <>
                                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
                                     ✓ Bạn đã nộp bài này
@@ -485,7 +509,9 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                                 </>
                               ) : canSubmitAssignments ? (
                                 <button
-                                  onClick={() => handleOpenSubmitTab(assignment.id)}
+                                  onClick={() =>
+                                    handleOpenSubmitTab(assignment.id)
+                                  }
                                   className="inline-flex items-center px-3 py-2 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition-colors"
                                 >
                                   <CloudArrowUpIcon className="w-4 h-4 mr-1" />
@@ -495,11 +521,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-100">
                                   Chưa nộp
                                 </span>
-                              )
-                            )}
+                              ))}
 
-                            {userRole === 'TUTOR' && (
-                              assignment.submission ? (
+                            {userRole === "TUTOR" &&
+                              (assignment.submission ? (
                                 <>
                                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-100">
                                     Học viên đã nộp
@@ -515,7 +540,9 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                                   </a>
                                   {!assignment.grade && canGradeAssignments && (
                                     <button
-                                      onClick={() => handleOpenGradeTab(assignment.id)}
+                                      onClick={() =>
+                                        handleOpenGradeTab(assignment.id)
+                                      }
                                       className="inline-flex items-center px-3 py-2 rounded-lg border border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
                                     >
                                       <StarIcon className="w-4 h-4 mr-1" />
@@ -527,8 +554,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                                   Học viên chưa nộp
                                 </span>
-                              )
-                            )}
+                              ))}
                           </div>
 
                           <div className="mt-4 space-y-3">
@@ -550,17 +576,27 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                                   </a>
                                   {assignment.submission.notes && (
                                     <div>
-                                      <span className="font-medium text-gray-700">Ghi chú:</span>
-                                      <p className="text-gray-900 mt-1">{assignment.submission.notes}</p>
+                                      <span className="font-medium text-gray-700">
+                                        Ghi chú:
+                                      </span>
+                                      <p className="text-gray-900 mt-1">
+                                        {assignment.submission.notes}
+                                      </p>
                                     </div>
                                   )}
                                   <div className="flex items-center text-gray-600">
                                     <ClockIcon className="w-4 h-4 mr-1" />
                                     <span>
-                                      Nộp lúc:{' '}
+                                      Nộp lúc:{" "}
                                       {assignment.submission.submittedAt
-                                        ? format(new Date(assignment.submission.submittedAt), 'dd/MM/yyyy HH:mm', { locale: vi })
-                                        : 'N/A'}
+                                        ? format(
+                                            new Date(
+                                              assignment.submission.submittedAt
+                                            ),
+                                            "dd/MM/yyyy HH:mm",
+                                            { locale: vi }
+                                          )
+                                        : "N/A"}
                                     </span>
                                   </div>
                                 </div>
@@ -599,7 +635,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
             )}
 
             {/* Assign Tab (Tutor only) */}
-            {activeTab === 'assign' && userRole === 'TUTOR' && (
+            {activeTab === "assign" && userRole === "TUTOR" && (
               <motion.div
                 key="assign"
                 initial={{ opacity: 0, x: -20 }}
@@ -614,7 +650,12 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   <input
                     type="text"
                     value={assignmentData.title}
-                    onChange={(e) => setAssignmentData({ ...assignmentData, title: e.target.value })}
+                    onChange={(e) =>
+                      setAssignmentData({
+                        ...assignmentData,
+                        title: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="VD: Bài tập ôn tập chương 1"
                   />
@@ -627,7 +668,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   <textarea
                     value={assignmentData.description}
                     onChange={(e) =>
-                      setAssignmentData({ ...assignmentData, description: e.target.value })
+                      setAssignmentData({
+                        ...assignmentData,
+                        description: e.target.value,
+                      })
                     }
                     rows={4}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -643,7 +687,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     type="datetime-local"
                     value={assignmentData.deadline}
                     onChange={(e) =>
-                      setAssignmentData({ ...assignmentData, deadline: e.target.value })
+                      setAssignmentData({
+                        ...assignmentData,
+                        deadline: e.target.value,
+                      })
                     }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
@@ -657,13 +704,15 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     <label className="flex-1">
                       <input
                         type="file"
-                        onChange={(e) => handleFileUpload(e, 'assignment')}
+                        onChange={(e) => handleFileUpload(e, "assignment")}
                         className="hidden"
                         disabled={uploadingFile}
                       />
                       <div className="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 cursor-pointer transition-colors flex items-center justify-center space-x-2 text-gray-600 hover:text-purple-600">
                         <CloudArrowUpIcon className="w-5 h-5" />
-                        <span>{uploadingFile ? 'Đang tải...' : 'Chọn file'}</span>
+                        <span>
+                          {uploadingFile ? "Đang tải..." : "Chọn file"}
+                        </span>
                       </div>
                     </label>
                   </div>
@@ -711,7 +760,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
             )}
 
             {/* Submit Tab (Student only) */}
-            {activeTab === 'submit' && userRole === 'STUDENT' && (
+            {activeTab === "submit" && userRole === "STUDENT" && (
               <motion.div
                 key="submit"
                 initial={{ opacity: 0, x: -20 }}
@@ -721,8 +770,8 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
               >
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                   <p className="text-sm text-yellow-800">
-                    <strong>Lưu ý:</strong> Hãy kiểm tra kỹ bài làm trước khi nộp. Bạn chỉ có thể
-                    nộp một lần!
+                    <strong>Lưu ý:</strong> Hãy kiểm tra kỹ bài làm trước khi
+                    nộp. Bạn chỉ có thể nộp một lần!
                   </p>
                 </div>
 
@@ -732,11 +781,16 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   </label>
                   <select
                     value={selectedSubmitAssignmentId}
-                    onChange={(e) => setSelectedSubmitAssignmentId(e.target.value)}
+                    onChange={(e) =>
+                      setSelectedSubmitAssignmentId(e.target.value)
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
                     {pendingSubmissionAssignments.map((assignment, index) => (
-                      <option key={assignment.id || `pending-${index}`} value={assignment.id}>
+                      <option
+                        key={assignment.id || `pending-${index}`}
+                        value={assignment.id}
+                      >
                         {assignment.title || `Bài tập ${index + 1}`}
                       </option>
                     ))}
@@ -751,13 +805,15 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     <label className="flex-1">
                       <input
                         type="file"
-                        onChange={(e) => handleFileUpload(e, 'submission')}
+                        onChange={(e) => handleFileUpload(e, "submission")}
                         className="hidden"
                         disabled={uploadingFile}
                       />
                       <div className="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 cursor-pointer transition-colors flex items-center justify-center space-x-2 text-gray-600 hover:text-purple-600">
                         <CloudArrowUpIcon className="w-5 h-5" />
-                        <span>{uploadingFile ? 'Đang tải...' : 'Chọn file bài làm'}</span>
+                        <span>
+                          {uploadingFile ? "Đang tải..." : "Chọn file bài làm"}
+                        </span>
                       </div>
                     </label>
                   </div>
@@ -782,7 +838,12 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   </label>
                   <textarea
                     value={submissionData.notes}
-                    onChange={(e) => setSubmissionData({ ...submissionData, notes: e.target.value })}
+                    onChange={(e) =>
+                      setSubmissionData({
+                        ...submissionData,
+                        notes: e.target.value,
+                      })
+                    }
                     rows={3}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Ghi chú hoặc thắc mắc về bài làm..."
@@ -798,7 +859,12 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   </button>
                   <button
                     onClick={handleSubmitHomework}
-                    disabled={loading || uploadingFile || !submissionData.fileUrl || !selectedSubmitAssignmentId}
+                    disabled={
+                      loading ||
+                      uploadingFile ||
+                      !submissionData.fileUrl ||
+                      !selectedSubmitAssignmentId
+                    }
                     className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
                   >
                     {loading ? (
@@ -818,7 +884,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
             )}
 
             {/* Grade Tab (Tutor only) */}
-            {activeTab === 'grade' && userRole === 'TUTOR' && (
+            {activeTab === "grade" && userRole === "TUTOR" && (
               <motion.div
                 key="grade"
                 initial={{ opacity: 0, x: -20 }}
@@ -828,15 +894,21 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
               >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Chọn bài tập cần chấm <span className="text-red-500">*</span>
+                    Chọn bài tập cần chấm{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={selectedGradeAssignmentId}
-                    onChange={(e) => setSelectedGradeAssignmentId(e.target.value)}
+                    onChange={(e) =>
+                      setSelectedGradeAssignmentId(e.target.value)
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
                     {pendingGradeAssignments.map((assignment, index) => (
-                      <option key={assignment.id || `grade-${index}`} value={assignment.id}>
+                      <option
+                        key={assignment.id || `grade-${index}`}
+                        value={assignment.id}
+                      >
                         {assignment.title || `Bài tập ${index + 1}`}
                       </option>
                     ))}
@@ -854,7 +926,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     step="0.5"
                     value={gradeData.score}
                     onChange={(e) =>
-                      setGradeData({ ...gradeData, score: parseFloat(e.target.value) || 0 })
+                      setGradeData({
+                        ...gradeData,
+                        score: parseFloat(e.target.value) || 0,
+                      })
                     }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-2xl font-bold text-center"
                   />
@@ -866,7 +941,9 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   </label>
                   <textarea
                     value={gradeData.feedback}
-                    onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
+                    onChange={(e) =>
+                      setGradeData({ ...gradeData, feedback: e.target.value })
+                    }
                     rows={4}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Nhận xét về bài làm của học viên..."

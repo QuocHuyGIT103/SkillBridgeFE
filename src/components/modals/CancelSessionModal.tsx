@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  XMarkIcon,
+  ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline";
 
 interface CancelSessionModalProps {
   isOpen: boolean;
@@ -21,17 +24,17 @@ const CancelSessionModal: React.FC<CancelSessionModalProps> = ({
   sessionInfo,
   isLoading = false,
 }) => {
-  const [reason, setReason] = useState('');
-  const [error, setError] = useState('');
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = () => {
     if (!reason.trim()) {
-      setError('Vui lòng nhập lý do huỷ buổi học');
+      setError("Vui lòng nhập lý do huỷ buổi học");
       return;
     }
 
     if (reason.trim().length < 10) {
-      setError('Lý do phải có ít nhất 10 ký tự');
+      setError("Lý do phải có ít nhất 10 ký tự");
       return;
     }
 
@@ -40,8 +43,8 @@ const CancelSessionModal: React.FC<CancelSessionModalProps> = ({
 
   const handleClose = () => {
     if (!isLoading) {
-      setReason('');
-      setError('');
+      setReason("");
+      setError("");
       onClose();
     }
   };
@@ -56,7 +59,7 @@ const CancelSessionModal: React.FC<CancelSessionModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           >
             {/* Modal */}
             <motion.div
@@ -80,7 +83,9 @@ const CancelSessionModal: React.FC<CancelSessionModalProps> = ({
                     <ExclamationTriangleIcon className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Yêu cầu huỷ buổi học</h3>
+                    <h3 className="text-xl font-bold text-white">
+                      Yêu cầu huỷ buổi học
+                    </h3>
                     <p className="text-white/90 text-sm">
                       Buổi {sessionInfo.sessionNumber} • {sessionInfo.date}
                     </p>
@@ -109,11 +114,15 @@ const CancelSessionModal: React.FC<CancelSessionModalProps> = ({
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Thời gian:</span>
-                    <span className="font-medium text-gray-900">{sessionInfo.time}</span>
+                    <span className="font-medium text-gray-900">
+                      {sessionInfo.time}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Ngày học:</span>
-                    <span className="font-medium text-gray-900">{sessionInfo.date}</span>
+                    <span className="font-medium text-gray-900">
+                      {sessionInfo.date}
+                    </span>
                   </div>
                 </div>
 
@@ -126,13 +135,15 @@ const CancelSessionModal: React.FC<CancelSessionModalProps> = ({
                     value={reason}
                     onChange={(e) => {
                       setReason(e.target.value);
-                      setError('');
+                      setError("");
                     }}
                     placeholder="Ví dụ: Tôi có việc đột xuất cần xử lý gấp..."
                     rows={4}
                     disabled={isLoading}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all resize-none ${
-                      error ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
+                      error
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-300 bg-white"
                     } disabled:bg-gray-100 disabled:cursor-not-allowed`}
                   />
                   {error && (

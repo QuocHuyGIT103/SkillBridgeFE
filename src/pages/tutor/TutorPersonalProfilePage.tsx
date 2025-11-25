@@ -544,22 +544,6 @@ const TutorPersonalProfilePage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Tutor Profile Status Card (no actions on profile page) */}
-        {profileStatusData && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mb-6"
-          >
-            <TutorProfileStatusCard
-              statusData={profileStatusData}
-              profileData={profileData?.profile as any}
-              showActions={false}
-            />
-          </motion.div>
-        )}
-
         {/* Personal Info Section */}
         <PersonalInfoSection
           profileData={profileData}

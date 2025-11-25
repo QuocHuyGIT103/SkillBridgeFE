@@ -40,25 +40,31 @@ const TutorSearchPage: React.FC = () => {
     clearError,
   } = useTutorPostStore();
 
-  const [currentFilters, setCurrentFilters] = useState<TutorPostSearchQuery>(() => {
-    const urlFilters: TutorPostSearchQuery = {
-      subjects: searchParams.getAll("subjects").filter(Boolean),
-      teachingMode: (searchParams.get("teachingMode") as any) || undefined,
-      studentLevel: searchParams.getAll("studentLevel").filter(Boolean),
-      priceMin: searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined,
-      priceMax: searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined,
-      province: searchParams.get("province") || undefined,
-      district: searchParams.get("district") || undefined,
-      ward: searchParams.get("ward") || undefined,
-      search: searchParams.get("search") || undefined,
-      page: searchParams.get("page") ? Number(searchParams.get("page")) : 1,
-      limit: 12,
-      sortBy: (searchParams.get("sortBy") as any) || "createdAt",
-      sortOrder: (searchParams.get("sortOrder") as any) || "desc",
-      featured: searchParams.get("featured") === "true",
-    };
-    return urlFilters;
-  });
+  const [currentFilters, setCurrentFilters] = useState<TutorPostSearchQuery>(
+    () => {
+      const urlFilters: TutorPostSearchQuery = {
+        subjects: searchParams.getAll("subjects").filter(Boolean),
+        teachingMode: (searchParams.get("teachingMode") as any) || undefined,
+        studentLevel: searchParams.getAll("studentLevel").filter(Boolean),
+        priceMin: searchParams.get("priceMin")
+          ? Number(searchParams.get("priceMin"))
+          : undefined,
+        priceMax: searchParams.get("priceMax")
+          ? Number(searchParams.get("priceMax"))
+          : undefined,
+        province: searchParams.get("province") || undefined,
+        district: searchParams.get("district") || undefined,
+        ward: searchParams.get("ward") || undefined,
+        search: searchParams.get("search") || undefined,
+        page: searchParams.get("page") ? Number(searchParams.get("page")) : 1,
+        limit: 12,
+        sortBy: (searchParams.get("sortBy") as any) || "createdAt",
+        sortOrder: (searchParams.get("sortOrder") as any) || "desc",
+        featured: searchParams.get("featured") === "true",
+      };
+      return urlFilters;
+    }
+  );
 
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
@@ -177,7 +183,7 @@ const TutorSearchPage: React.FC = () => {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/')}
+                onClick={() => navigate("/")}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
                 title="Về trang chủ"
               >
@@ -188,16 +194,13 @@ const TutorSearchPage: React.FC = () => {
                   Tìm gia sư
                 </h1>
                 <p className="text-base lg:text-lg text-gray-600 max-w-2xl">
-                  Khám phá hàng ngàn gia sư chất lượng được xác minh và đánh giá cao
+                  Khám phá hàng ngàn gia sư chất lượng được xác minh và đánh giá
+                  cao
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200/50 shadow-sm">
-                <div className="text-sm font-semibold text-gray-900">{getTotalText()}</div>
-              </div>
-
               {hasSearched && (
                 <div className="flex items-center gap-3 bg-white/60 px-3 py-2 rounded-full border border-gray-200/50">
                   <div
@@ -253,7 +256,9 @@ const TutorSearchPage: React.FC = () => {
                     <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200"></div>
                     <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent absolute top-0"></div>
                   </div>
-                  <span className="text-gray-700 mt-6 text-lg font-medium">Đang khởi tạo hệ thống tìm kiếm...</span>
+                  <span className="text-gray-700 mt-6 text-lg font-medium">
+                    Đang khởi tạo hệ thống tìm kiếm...
+                  </span>
                 </div>
               </motion.div>
             )}
@@ -289,11 +294,23 @@ const TutorSearchPage: React.FC = () => {
                 className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-red-200/50 p-12 text-center"
               >
                 <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-red-100 to-pink-100 rounded-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-10 h-10 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Đã xảy ra lỗi</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  Đã xảy ra lỗi
+                </h3>
                 <p className="text-gray-600 mb-8 max-w-md mx-auto">{error}</p>
                 <button
                   onClick={handleSearch}
@@ -319,7 +336,9 @@ const TutorSearchPage: React.FC = () => {
                     {searchLoading && posts.length > 0 && (
                       <div className="flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent mr-3"></div>
-                        <span className="font-medium">Đang làm mới kết quả...</span>
+                        <span className="font-medium">
+                          Đang làm mới kết quả...
+                        </span>
                       </div>
                     )}
                   </div>
@@ -346,7 +365,11 @@ const TutorSearchPage: React.FC = () => {
 
                 {/* Load More */}
                 {pagination?.hasNext && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center pt-8">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center pt-8"
+                  >
                     <button
                       onClick={handleLoadMore}
                       disabled={searchLoading}
@@ -377,31 +400,48 @@ const TutorSearchPage: React.FC = () => {
             )}
 
             {/* Empty State */}
-            {!isInitialLoading && !error && !searchLoading && posts.length === 0 && hasSearched && (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-16 text-center"
-              >
-                <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center shadow-lg">
-                  <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">🔍 Không tìm thấy gia sư nào</h3>
-                <p className="text-gray-600 mb-10 max-w-lg mx-auto leading-relaxed">
-                  Hãy thử điều chỉnh bộ lọc, thay đổi từ khóa tìm kiếm hoặc mở rộng tiêu chí để tìm được gia sư phù hợp
-                </p>
-                <button
-                  onClick={handleReset}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg transform hover:scale-105"
+            {!isInitialLoading &&
+              !error &&
+              !searchLoading &&
+              posts.length === 0 &&
+              hasSearched && (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-16 text-center"
                 >
-                  🗑️ Xóa tất cả bộ lọc
-                </button>
-              </motion.div>
-            )}
+                  <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center shadow-lg">
+                    <svg
+                      className="w-16 h-16 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                    🔍 Không tìm thấy gia sư nào
+                  </h3>
+                  <p className="text-gray-600 mb-10 max-w-lg mx-auto leading-relaxed">
+                    Hãy thử điều chỉnh bộ lọc, thay đổi từ khóa tìm kiếm hoặc mở
+                    rộng tiêu chí để tìm được gia sư phù hợp
+                  </p>
+                  <button
+                    onClick={handleReset}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg transform hover:scale-105"
+                  >
+                    🗑️ Xóa tất cả bộ lọc
+                  </button>
+                </motion.div>
+              )}
           </AnimatePresence>
         </div>
       </div>

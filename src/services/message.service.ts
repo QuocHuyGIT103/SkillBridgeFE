@@ -1,9 +1,12 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Support either VITE_API_URL or VITE_API_BASE_URL; fallback to localhost
-const API_BASE_URL = (import.meta.env.VITE_API_URL 
-  || (import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/api/v1` : undefined)
-  || 'http://localhost:3000/api/v1');
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.VITE_API_BASE_URL
+    ? `${import.meta.env.VITE_API_BASE_URL}/api/v1`
+    : undefined) ||
+  "http://localhost:3000/api/v1";
 
 export interface MessageData {
   _id: string;
@@ -11,14 +14,14 @@ export interface MessageData {
   senderId: string;
   receiverId: string;
   content: string;
-  messageType: 'text' | 'image' | 'file';
+  messageType: "text" | "image" | "file";
   fileMetadata?: {
     fileName: string;
     fileSize: number;
     fileType: string;
     fileUrl: string;
   };
-  status: 'sent' | 'delivered' | 'read';
+  status: "sent" | "delivered" | "read";
   replyTo?: {
     messageId: string;
     content: string;
@@ -48,7 +51,7 @@ export interface ConversationData {
     _id: string;
     name: string;
   };
-  status: 'active' | 'closed';
+  status: "active" | "closed";
   lastMessage?: {
     content: string;
     senderId: string;
@@ -64,7 +67,7 @@ export interface ConversationData {
 
 export interface SendMessageRequest {
   content: string;
-  messageType?: 'text' | 'image' | 'file';
+  messageType?: "text" | "image" | "file";
   fileMetadata?: {
     fileName: string;
     fileSize: number;
@@ -90,39 +93,41 @@ export interface GetMessagesResponse {
 }
 
 // === Normalization helpers to align BE -> FE types ===
-const mapMessageStatus = (status: string): MessageData['status'] => {
+const mapMessageStatus = (status: string): MessageData["status"] => {
   switch (status) {
-    case 'SENT':
-      return 'sent';
-    case 'DELIVERED':
-      return 'delivered';
-    case 'READ':
-      return 'read';
+    case "SENT":
+      return "sent";
+    case "DELIVERED":
+      return "delivered";
+    case "READ":
+      return "read";
     default:
-      return 'sent';
+      return "sent";
   }
 };
 
-const mapMessageType = (type: string): NonNullable<MessageData['messageType']> => {
+const mapMessageType = (
+  type: string
+): NonNullable<MessageData["messageType"]> => {
   switch (type) {
-    case 'TEXT':
-      return 'text';
-    case 'IMAGE':
-      return 'image';
-    case 'FILE':
-      return 'file';
+    case "TEXT":
+      return "text";
+    case "IMAGE":
+      return "image";
+    case "FILE":
+      return "file";
     default:
-      return 'text';
+      return "text";
   }
 };
 
 // Tạo 1 hàm helper để lấy ID nhất quán
 const getNormalizedId = (field: any): string => {
-  if (typeof field === 'string') {
+  if (typeof field === "string") {
     return field;
   }
   // Luôn kiểm tra cả _id và id
-  return field?._id ?? field?.id ?? '';
+  return field?._id ?? field?.id ?? "";
 };
 
 export const normalizeMessage = (m: any): MessageData => {
@@ -135,62 +140,67 @@ export const normalizeMessage = (m: any): MessageData => {
     messageType: mapMessageType(m.messageType),
     fileMetadata: m.fileMetadata
       ? {
-          fileName: m.fileMetadata.fileName || m.fileMetadata.originalName || '',
+          fileName:
+            m.fileMetadata.fileName || m.fileMetadata.originalName || "",
           fileSize: m.fileMetadata.fileSize || 0,
-          fileType: m.fileMetadata.mimeType || '',
-          fileUrl: m.fileMetadata.fileUrl || ''
+          fileType: m.fileMetadata.mimeType || "",
+          fileUrl: m.fileMetadata.fileUrl || "",
         }
       : undefined,
     status: mapMessageStatus(m.status),
-    replyTo: m.replyTo ? { messageId: m.replyTo.messageId, content: m.replyTo.content } : undefined,
+    replyTo: m.replyTo
+      ? { messageId: m.replyTo.messageId, content: m.replyTo.content }
+      : undefined,
     createdAt: new Date(m.sentAt || m.createdAt || Date.now()),
-    updatedAt: new Date(m.updatedAt || m.sentAt || Date.now())
+    updatedAt: new Date(m.updatedAt || m.sentAt || Date.now()),
   };
 };
 
-const mapConversationStatus = (status: string): ConversationData['status'] => {
+const mapConversationStatus = (status: string): ConversationData["status"] => {
   switch (status) {
-    case 'ACTIVE':
-      return 'active';
-    case 'CLOSED':
-      return 'closed';
+    case "ACTIVE":
+      return "active";
+    case "CLOSED":
+      return "closed";
     default:
-      return 'active';
+      return "active";
   }
 };
 
 export const normalizeConversation = (c: any): ConversationData => {
   // Ensure user objects always have full_name and avatar_url
   const normalizeUser = (u: any) => {
-    if (typeof u === 'string') {
-      return { _id: u, full_name: '', avatar_url: undefined };
+    if (typeof u === "string") {
+      return { _id: u, full_name: "", avatar_url: undefined };
     }
     return {
       _id: getNormalizedId(u),
-      full_name: (u?.full_name ?? u?.fullName ?? u?.name ?? '') as string,
-      avatar_url: (u?.avatar_url ?? u?.avatarUrl ?? u?.avatar ?? undefined) as string | undefined
+      full_name: (u?.full_name ?? u?.fullName ?? u?.name ?? "") as string,
+      avatar_url: (u?.avatar_url ?? u?.avatarUrl ?? u?.avatar ?? undefined) as
+        | string
+        | undefined,
     };
   };
 
   // Ensure subject object always has name
   const normalizeSubject = (s: any) => {
-    if (typeof s === 'string') {
-      return { _id: s, name: '' };
+    if (typeof s === "string") {
+      return { _id: s, name: "" };
     }
     return {
-      _id: s?._id ?? s?.id ?? '',
-      name: (s?.name ?? s?.subjectName ?? s?.title ?? '') as string
+      _id: s?._id ?? s?.id ?? "",
+      name: (s?.name ?? s?.subjectName ?? s?.title ?? "") as string,
     };
   };
 
   // Ensure tutor post has title
   const normalizeTutorPost = (tp: any) => {
-    if (typeof tp === 'string') {
-      return { _id: tp, title: '' };
+    if (typeof tp === "string") {
+      return { _id: tp, title: "" };
     }
     return {
-      _id: tp?._id ?? tp?.id ?? '',
-      title: (tp?.title ?? tp?.name ?? '') as string
+      _id: tp?._id ?? tp?.id ?? "",
+      title: (tp?.title ?? tp?.name ?? "") as string,
     };
   };
 
@@ -201,7 +211,7 @@ export const normalizeConversation = (c: any): ConversationData => {
 
   return {
     _id: c._id,
-    contactRequestId: c.contactRequestId ?? c.contactRequest?._id ?? '',
+    contactRequestId: c.contactRequestId ?? c.contactRequest?._id ?? "",
     studentId: student,
     tutorId: tutor,
     tutorPostId: tutorPost,
@@ -212,35 +222,40 @@ export const normalizeConversation = (c: any): ConversationData => {
           content: c.lastMessage.content,
           senderId: getNormalizedId(c.lastMessage.senderId),
           timestamp: new Date(
-            c.lastMessage.sentAt || c.lastMessage.timestamp || c.lastMessage.createdAt || Date.now()
-          )
+            c.lastMessage.sentAt ||
+              c.lastMessage.timestamp ||
+              c.lastMessage.createdAt ||
+              Date.now()
+          ),
         }
       : undefined,
     unreadCount: c.unreadCount || { student: 0, tutor: 0 },
     createdAt: new Date(c.createdAt || Date.now()),
-    updatedAt: new Date(c.updatedAt || Date.now())
+    updatedAt: new Date(c.updatedAt || Date.now()),
   };
 };
 
 const normalizeMessagesResponse = (data: any): GetMessagesResponse => {
   return {
-    messages: Array.isArray(data?.messages) ? data.messages.map(normalizeMessage) : [],
+    messages: Array.isArray(data?.messages)
+      ? data.messages.map(normalizeMessage)
+      : [],
     pagination: {
       currentPage: data?.pagination?.page ?? data?.pagination?.currentPage ?? 1,
       totalPages: data?.pagination?.totalPages ?? 1,
       totalMessages: data?.pagination?.totalMessages ?? 0,
       hasNext: data?.pagination?.hasNext ?? false,
-      hasPrev: data?.pagination?.hasPrev ?? false
-    }
+      hasPrev: data?.pagination?.hasPrev ?? false,
+    },
   };
 };
 
 class MessageService {
   private getAuthHeaders() {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem("access_token");
     return {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
   }
 
@@ -250,59 +265,72 @@ class MessageService {
   async uploadAttachment(
     conversationId: string,
     file: File,
-    subdir: 'images' | 'files' = 'images',
+    subdir: "images" | "files" = "images",
     onProgress?: (progress: number) => void
-  ): Promise<{ url: string; fileName: string; fileType: string; fileSize: number }> {
+  ): Promise<{
+    url: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+  }> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
-    const token = localStorage.getItem('access_token');
-    
+    const token = localStorage.getItem("access_token");
+
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
 
       // Track upload progress
-      xhr.upload.addEventListener('progress', (e) => {
+      xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable && onProgress) {
           const percentComplete = Math.round((e.loaded / e.total) * 100);
           onProgress(percentComplete);
         }
       });
 
-      xhr.addEventListener('load', () => {
+      xhr.addEventListener("load", () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const response = JSON.parse(xhr.responseText);
             if (response.success && response.data) {
               resolve(response.data);
             } else {
-              reject(new Error(response.message || 'Upload failed'));
+              reject(new Error(response.message || "Upload failed"));
             }
           } catch (err) {
-            reject(new Error('Invalid response from server'));
+            reject(new Error("Invalid response from server"));
           }
         } else {
           try {
             const errorResponse = JSON.parse(xhr.responseText);
-            reject(new Error(errorResponse.message || `Upload failed with status ${xhr.status}`));
+            reject(
+              new Error(
+                errorResponse.message ||
+                  `Upload failed with status ${xhr.status}`
+              )
+            );
           } catch {
             reject(new Error(`Upload failed with status ${xhr.status}`));
           }
         }
       });
 
-      xhr.addEventListener('error', () => {
-        reject(new Error('Network error during upload'));
+      xhr.addEventListener("error", () => {
+        reject(new Error("Network error during upload"));
       });
 
-      xhr.addEventListener('abort', () => {
-        reject(new Error('Upload cancelled'));
+      xhr.addEventListener("abort", () => {
+        reject(new Error("Upload cancelled"));
       });
 
-      xhr.open('POST', `${API_BASE_URL}/messages/conversations/${conversationId}/attachments?subdir=${subdir}`);
-      
+      xhr.open(
+        "POST",
+        `${API_BASE_URL}/messages/conversations/${conversationId}/attachments?subdir=${subdir}`
+      );
+
       if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
       }
 
       xhr.send(formData);
@@ -310,7 +338,9 @@ class MessageService {
   }
 
   // Create conversation
-  async createConversation(data: CreateConversationRequest): Promise<ConversationData> {
+  async createConversation(
+    data: CreateConversationRequest
+  ): Promise<ConversationData> {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/messages/conversations`,
@@ -319,19 +349,47 @@ class MessageService {
       );
       return normalizeConversation(response.data.data);
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Lỗi khi tạo cuộc trò chuyện');
+      throw new Error(
+        error.response?.data?.message || "Lỗi khi tạo cuộc trò chuyện"
+      );
+    }
+  }
+
+  // Create conversation from class
+  async createConversationFromClass(
+    classId: string
+  ): Promise<ConversationData> {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/messages/conversations/from-class`,
+        { classId },
+        { headers: this.getAuthHeaders() }
+      );
+      return normalizeConversation(response.data.data);
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message ||
+          "Lỗi khi tạo cuộc trò chuyện từ lớp học"
+      );
     }
   }
 
   // Send message
-  async sendMessage(conversationId: string, data: SendMessageRequest): Promise<MessageData> {
+  async sendMessage(
+    conversationId: string,
+    data: SendMessageRequest
+  ): Promise<MessageData> {
     try {
       // Convert messageType to uppercase for backend
       const backendData = {
         ...data,
-        messageType: data.messageType?.toUpperCase() as 'TEXT' | 'IMAGE' | 'FILE' | undefined
+        messageType: data.messageType?.toUpperCase() as
+          | "TEXT"
+          | "IMAGE"
+          | "FILE"
+          | undefined,
       };
-      
+
       const response = await axios.post(
         `${API_BASE_URL}/messages/conversations/${conversationId}/messages`,
         backendData,
@@ -339,7 +397,7 @@ class MessageService {
       );
       return normalizeMessage(response.data.data);
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Lỗi khi gửi tin nhắn');
+      throw new Error(error.response?.data?.message || "Lỗi khi gửi tin nhắn");
     }
   }
 
@@ -356,7 +414,7 @@ class MessageService {
       );
       return normalizeMessagesResponse(response.data.data);
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Lỗi khi lấy tin nhắn');
+      throw new Error(error.response?.data?.message || "Lỗi khi lấy tin nhắn");
     }
   }
 
@@ -370,7 +428,9 @@ class MessageService {
       const raw = response.data.data || [];
       return raw.map(normalizeConversation);
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Lỗi khi lấy danh sách cuộc trò chuyện');
+      throw new Error(
+        error.response?.data?.message || "Lỗi khi lấy danh sách cuộc trò chuyện"
+      );
     }
   }
 
@@ -383,7 +443,9 @@ class MessageService {
         { headers: this.getAuthHeaders() }
       );
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Lỗi khi đánh dấu tin nhắn đã đọc');
+      throw new Error(
+        error.response?.data?.message || "Lỗi khi đánh dấu tin nhắn đã đọc"
+      );
     }
   }
 
@@ -396,12 +458,16 @@ class MessageService {
         { headers: this.getAuthHeaders() }
       );
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Lỗi khi đóng cuộc trò chuyện');
+      throw new Error(
+        error.response?.data?.message || "Lỗi khi đóng cuộc trò chuyện"
+      );
     }
   }
 
   // Get conversation by contact request ID
-  async getConversationByContactRequest(contactRequestId: string): Promise<ConversationData> {
+  async getConversationByContactRequest(
+    contactRequestId: string
+  ): Promise<ConversationData> {
     try {
       const response = await axios.get(
         `${API_BASE_URL}/messages/conversations/contact-request/${contactRequestId}`,
@@ -409,7 +475,9 @@ class MessageService {
       );
       return normalizeConversation(response.data.data);
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Lỗi khi lấy cuộc trò chuyện');
+      throw new Error(
+        error.response?.data?.message || "Lỗi khi lấy cuộc trò chuyện"
+      );
     }
   }
 }

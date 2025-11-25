@@ -525,46 +525,6 @@ const TutorDashboardOverview: React.FC = () => {
           </div>
         </motion.div>
       </div>
-
-      {/* Performance Overview */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
-      >
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Tổng quan hiệu suất
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
-              <ArrowTrendingUpIcon className="w-8 h-8 text-green-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">
-              {stats.completed_lessons}
-            </p>
-            <p className="text-sm text-gray-600">Bài học hoàn thành</p>
-            <p className="text-xs text-green-600 mt-1">+8% tháng này</p>
-          </div>
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-3">
-              <ClockIcon className="w-8 h-8 text-blue-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">124</p>
-            <p className="text-sm text-gray-600">Giờ dạy</p>
-            <p className="text-xs text-blue-600 mt-1">Tháng này</p>
-          </div>
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-3">
-              <VideoCameraIcon className="w-8 h-8 text-purple-600" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">98%</p>
-            <p className="text-sm text-gray-600">Tỷ lệ tham dự</p>
-            <p className="text-xs text-purple-600 mt-1">Tuyệt vời!</p>
-          </div>
-        </div>
-      </motion.div>
     </div>
   );
 };

@@ -32,9 +32,7 @@ const StudentSchedulePage: React.FC = () => {
 
   const activeClasses = studentClasses.filter((c) => c.status === "ACTIVE");
   const totalTutors = new Set(
-    studentClasses
-      .filter((c) => c.tutorId?.id)
-      .map((c) => c.tutorId.id)
+    studentClasses.filter((c) => c.tutorId?.id).map((c) => c.tutorId.id)
   ).size;
   const totalSessions = studentClasses.reduce(
     (sum, c) => sum + c.totalSessions,
@@ -237,16 +235,17 @@ const StudentSchedulePage: React.FC = () => {
               <div className="space-y-2 text-sm">
                 {cls.schedule && (
                   <>
-                    {cls.schedule.dayOfWeek && cls.schedule.dayOfWeek.length > 0 && (
-                      <div className="flex items-center text-gray-600">
-                        <CalendarDaysIcon className="w-4 h-4 mr-2" />
-                        <span>
-                          {cls.schedule.dayOfWeek
-                            .map((d) => getDayName(d))
-                            .join(", ")}
-                        </span>
-                      </div>
-                    )}
+                    {cls.schedule.dayOfWeek &&
+                      cls.schedule.dayOfWeek.length > 0 && (
+                        <div className="flex items-center text-gray-600">
+                          <CalendarDaysIcon className="w-4 h-4 mr-2" />
+                          <span>
+                            {cls.schedule.dayOfWeek
+                              .map((d) => getDayName(d))
+                              .join(", ")}
+                          </span>
+                        </div>
+                      )}
                     {cls.schedule.startTime && cls.schedule.endTime && (
                       <div className="flex items-center text-gray-600">
                         <ClockIcon className="w-4 h-4 mr-2" />

@@ -68,6 +68,26 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       path: "/student/dashboard",
     },
     {
+      id: "profile",
+      label: "Hồ sơ của tôi",
+      icon: "user",
+      path: "/student/profile",
+      children: [
+        {
+          id: "profile-personal",
+          label: "Thông tin cá nhân",
+          icon: "user",
+          path: "/student/profile/personal",
+        },
+        {
+          id: "profile-preferences",
+          label: "Sở thích học tập",
+          icon: "heart",
+          path: "/student/profile/preferences",
+        },
+      ],
+    },
+    {
       id: "smart-search",
       label: "Tìm gia sư thông minh",
       icon: "search",
@@ -124,7 +144,6 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       icon: "academic",
       path: "/student/classes",
     },
-    // ✅ Quản lý tài chính với submenu
     {
       id: "finance",
       label: "Quản lý tài chính",
@@ -157,27 +176,6 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
       icon: "document",
       path: "/student/assignments",
       badge: 5,
-    },
-    // ✅ Thêm Profile menu với submenu
-    {
-      id: "profile",
-      label: "Hồ sơ của tôi",
-      icon: "user",
-      path: "/student/profile",
-      children: [
-        {
-          id: "profile-personal",
-          label: "Thông tin cá nhân",
-          icon: "user",
-          path: "/student/profile/personal",
-        },
-        {
-          id: "profile-preferences",
-          label: "Sở thích học tập",
-          icon: "heart",
-          path: "/student/profile/preferences",
-        },
-      ],
     },
     {
       id: "ratings",
@@ -478,7 +476,7 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
               animate={{ opacity: 1, x: 0 }}
               className="font-medium"
             >
-              Đăng xuất
+              Quay lại trang chủ
             </motion.span>
           )}
         </Link>

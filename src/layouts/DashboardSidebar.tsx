@@ -80,25 +80,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           path: "/tutor/schedule/calendar",
         },
         {
-          id: "schedule-availability",
-          label: "Thiết lập lịch rảnh",
-          path: "/tutor/schedule/availability",
-        },
-        {
-          id: "schedule-lessons",
-          label: "Quản lý bài học",
-          path: "/tutor/schedule/lessons",
-        },
-        {
           id: "contact-requests",
           label: "Yêu cầu học tập",
           path: "/tutor/contact-requests",
           badge: 3,
-        },
-        {
-          id: "schedule-history",
-          label: "Lịch sử bài học",
-          path: "/tutor/schedule/history",
         },
       ],
     },
@@ -146,31 +131,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           label: "Quản lý bài tập",
           path: "/tutor/assignments",
         },
-        {
-          id: "academics-curriculum",
-          label: "Lập kế hoạch giảng dạy",
-          path: "/tutor/academics/curriculum",
-        },
-        {
-          id: "academics-materials",
-          label: "Tài liệu học tập",
-          path: "/tutor/academics/materials",
-        },
-        {
-          id: "academics-assessments",
-          label: "Đánh giá & Chấm điểm",
-          path: "/tutor/academics/assessments",
-        },
-        {
-          id: "academics-progress",
-          label: "Tiến độ học sinh",
-          path: "/tutor/academics/progress",
-        },
-        {
-          id: "academics-reports",
-          label: "Báo cáo & Phân tích",
-          path: "/tutor/academics/reports",
-        },
       ],
     },
     {
@@ -184,23 +144,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           id: "chat-conversations",
           label: "Tất cả cuộc hội thoại",
           path: "/tutor/messages/conversations",
-        },
-        {
-          id: "chat-students",
-          label: "Tin nhắn học sinh",
-          path: "/tutor/messages/students",
-          badge: 3,
-        },
-        {
-          id: "chat-announcements",
-          label: "Thông báo",
-          path: "/tutor/messages/announcements",
-        },
-        {
-          id: "chat-support",
-          label: "Hỗ trợ chat",
-          path: "/tutor/messages/support",
-          badge: 1,
         },
       ],
     },
@@ -360,10 +303,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             return (
               <div key={item.id} className="space-y-1">
                 <div
-                  className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${isActive
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-gray-700 hover:bg-secondary/10 hover:text-primary"
-                    }`}
+                  className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${
+                    isActive
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-gray-700 hover:bg-secondary/10 hover:text-primary"
+                  }`}
                   onClick={() => {
                     if (hasChildren) {
                       toggleExpanded(item.id);
@@ -416,10 +360,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                         <Link
                           key={child.id}
                           to={child.path}
-                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200 ${isChildActive(child.path)
-                            ? "bg-accent text-primary font-medium"
-                            : "text-gray-600 hover:bg-secondary/5 hover:text-primary"
-                            }`}
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                            isChildActive(child.path)
+                              ? "bg-accent text-primary font-medium"
+                              : "text-gray-600 hover:bg-secondary/5 hover:text-primary"
+                          }`}
                         >
                           <span>{child.label}</span>
                           {child.badge && (
