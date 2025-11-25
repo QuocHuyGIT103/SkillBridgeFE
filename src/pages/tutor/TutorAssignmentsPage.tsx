@@ -74,17 +74,36 @@ const TutorAssignmentsPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await attendanceService.getTutorAssignments();
+
       if (response.data) {
-        setAssignments(response.data.assignments || []);
-        setStats({
-          pendingSubmission: response.data.pendingSubmission || 0,
-          pendingGrade: response.data.pendingGrade || 0,
-          graded: response.data.graded || 0,
-          total: response.data.total || 0,
-        });
+        // Check if response.data has the expected structure
+        if (response.data.success && response.data.data) {
+          // Backend returns {success: true, data: {...}}
+          const data = response.data.data;
+          setAssignments(data.assignments || []);
+          setStats({
+            pendingSubmission: data.pendingSubmission || 0,
+            pendingGrade: data.pendingGrade || 0,
+            graded: data.graded || 0,
+            total: data.total || 0,
+          });
+        } else if (response.data.assignments) {
+          // Direct structure {assignments: [...], ...}
+          setAssignments(response.data.assignments || []);
+          setStats({
+            pendingSubmission: response.data.pendingSubmission || 0,
+            pendingGrade: response.data.pendingGrade || 0,
+            graded: response.data.graded || 0,
+            total: response.data.total || 0,
+          });
+        } else {
+          toast.error("Dữ liệu trả về không đúng định dạng");
+        }
+      } else {
+        toast.error("Không có dữ liệu trả về");
       }
     } catch (error: any) {
-      console.error("Failed to fetch assignments:", error);
+      console.error("Failed to fetch assignments:", error.message);
       toast.error("Không thể tải danh sách bài tập");
     } finally {
       setLoading(false);

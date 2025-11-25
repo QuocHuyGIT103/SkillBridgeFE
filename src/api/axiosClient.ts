@@ -37,13 +37,6 @@ class AxiosClient {
     // Response interceptor
     this.instance.interceptors.response.use(
       (response: AxiosResponse) => {
-        // ✅ Log response để debug
-        console.log("✅ API Response:", {
-          status: response.status,
-          url: response.config.url,
-          data: response.data,
-        });
-
         // Any status code that lies within the range of 2xx
         return response.data;
       },
