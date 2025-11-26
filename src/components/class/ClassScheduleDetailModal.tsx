@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import HomeworkModal from '../modals/HomeworkModal';
 import CancelSessionModal from '../modals/CancelSessionModal';
+import RespondCancelSessionModal from '../modals/RespondCancelSessionModal';
 import { attendanceService } from '../../services/attendance.service';
 import type { WeeklySession } from '../../types/attendance';
 import toast from 'react-hot-toast';
@@ -38,6 +39,8 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
   const [cancellingSession, setCancellingSession] = useState<number | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [sessionToCancel, setSessionToCancel] = useState<any>(null);
+  const [respondingSession, setRespondingSession] = useState<any>(null);
+  const [showRespondModal, setShowRespondModal] = useState(false);
 
   useEffect(() => {
     fetchClassSchedule(classId);
@@ -185,14 +188,6 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
     sessionNumber: number,
     action: 'APPROVE' | 'REJECT'
   ) => {
-    const message = action === 'APPROVE'
-      ? 'Bạn có chắc chắn muốn chấp nhận huỷ buổi học này?'
-      : 'Bạn có chắc chắn muốn từ chối yêu cầu huỷ buổi học?';
-
-    if (!window.confirm(message)) {
-      return;
-    }
-
     setCancellingSession(sessionNumber);
     try {
       await attendanceService.respondToCancellationRequest(classId, sessionNumber, action);
@@ -202,6 +197,9 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
           : 'Đã từ chối yêu cầu huỷ buổi học'
       );
       await fetchClassSchedule(classId); // Refresh
+      // Đóng modal phản hồi sau khi xử lý xong
+      setShowRespondModal(false);
+      setRespondingSession(null);
     } catch (error: any) {
       console.error('Respond to cancellation failed:', error);
       toast.error(error.response?.data?.message || 'Phản hồi yêu cầu huỷ thất bại');
@@ -447,25 +445,20 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
                             ⏳ Đang chờ phê duyệt yêu cầu huỷ buổi học
                           </div>
                         ) : (
-                          // Other party - show approve/reject buttons
+                          // Other party - single respond button opens modal
                           <div className="flex items-center space-x-2">
                             <button
-                              onClick={() => handleRespondToCancellation(session.sessionNumber, 'APPROVE')}
+                              onClick={() => {
+                                setRespondingSession(session);
+                                setShowRespondModal(true);
+                              }}
                               disabled={cancellingSession === session.sessionNumber}
-                              className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                              className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
                             >
-                              ✓ Chấp nhận
-                            </button>
-                            <button
-                              onClick={() => handleRespondToCancellation(session.sessionNumber, 'REJECT')}
-                              disabled={cancellingSession === session.sessionNumber}
-                              className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
-                            >
-                              ✗ Từ chối
+                              Phản hồi yêu cầu
                             </button>
                           </div>
-                );
-              })}
+                        )}
                       </div>
                     )}
                   </div>
@@ -542,6 +535,46 @@ const ClassScheduleDetailModal: React.FC<ClassScheduleDetailModalProps> = ({
             )}`,
           }}
           isLoading={cancellingSession === sessionToCancel.sessionNumber}
+        />
+      )}
+
+      {/* Respond Cancel Session Modal */}
+      {respondingSession && respondingSession.cancellationRequest && (
+        <RespondCancelSessionModal
+          isOpen={showRespondModal}
+          onClose={() => {
+            if (cancellingSession === null) {
+              setShowRespondModal(false);
+              setRespondingSession(null);
+            }
+          }}
+          onConfirm={(action) =>
+            handleRespondToCancellation(respondingSession.sessionNumber, action)
+          }
+          isLoading={cancellingSession === respondingSession.sessionNumber}
+          sessionInfo={{
+            sessionNumber: respondingSession.sessionNumber,
+            date: format(
+              new Date(respondingSession.scheduledDate),
+              'EEEE, dd/MM/yyyy',
+              { locale: vi }
+            ),
+            time: `${format(
+              new Date(respondingSession.scheduledDate),
+              'HH:mm'
+            )} - ${format(
+              new Date(
+                new Date(respondingSession.scheduledDate).getTime() +
+                respondingSession.duration * 60000
+              ),
+              'HH:mm'
+            )}`,
+            requestedByLabel:
+              respondingSession.cancellationRequest.requestedBy === 'TUTOR'
+                ? 'Gia sư'
+                : 'Học viên',
+            reason: respondingSession.cancellationRequest.reason,
+          }}
         />
       )}
     </motion.div>
