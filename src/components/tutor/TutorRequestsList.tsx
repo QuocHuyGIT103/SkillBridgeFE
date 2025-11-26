@@ -346,12 +346,22 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${style.chip} ${style.chipText}`}>
                   {statusLabel}
                 </span>
+                {/* Badge phân biệt loại request */}
+                {request.initiatedBy === 'TUTOR' ? (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                    📤 Đề nghị dạy của bạn
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                    📥 Yêu cầu từ học viên
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-500 mt-1">
                 {request.initiatedBy === 'TUTOR' ? 'Gửi lúc' : 'Nhận lúc'} {formatDate(request.createdAt)}
               </p>
               <p className={`text-xs mt-2 ${style.subtle}`}>
-                Học viên: {studentName}
+                {request.initiatedBy === 'TUTOR' ? 'Đề nghị gửi đến' : 'Học viên'}: {studentName}
               </p>
             </div>
           </div>
@@ -373,13 +383,20 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
                 Tạo lớp học
               </button>
             )}
-            {statusKey === 'PENDING' && requestId && (
+            {/* Chỉ hiển thị button phản hồi khi request được học viên gửi tới, không phải khi gia sư tự gửi */}
+            {statusKey === 'PENDING' && requestId && request.initiatedBy !== 'TUTOR' && (
               <button
                 onClick={() => onResponse(request)}
                 className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-emerald-700 transition-transform"
               >
                 Phản hồi ngay
               </button>
+            )}
+            {/* Hiển thị thông báo khi request do gia sư gửi */}
+            {statusKey === 'PENDING' && request.initiatedBy === 'TUTOR' && (
+              <span className="inline-flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200">
+                Đang chờ học viên phản hồi
+              </span>
             )}
           </div>
         </div>

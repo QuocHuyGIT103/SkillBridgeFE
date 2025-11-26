@@ -5,7 +5,24 @@ export interface ContactRequest {
   tutorPostId: string | Record<string, any>; // backend có thể trả object populate ở đây
   studentPostId?: string | Record<string, any>; // backend có thể trả object populate ở đây
   initiatedBy?: 'STUDENT' | 'TUTOR';
-  tutorPost?: Record<string, any>; // optional fallback nếu backend dùng khác tên
+  tutorPost?: {
+    id: string;
+    title: string;
+    description?: string;
+    pricePerSession?: number;
+    sessionDuration?: number;
+    teachingMode?: 'ONLINE' | 'OFFLINE' | 'BOTH';
+    teachingSchedule?: Array<{
+      dayOfWeek: number;
+      startTime: string;
+      endTime: string;
+    }>;
+    address?: {
+      specificAddress?: string;
+      province?: string;
+      district?: string;
+    };
+  };
   studentPost?: { // populated when initiatedBy = 'TUTOR'
     id: string;
     title: string;
@@ -17,6 +34,13 @@ export interface ContactRequest {
       max: number;
     };
     is_online?: boolean;
+    availability?: string; // Lịch học mong muốn của học viên (string format)
+    location?: string; // Địa điểm học
+    teachingSchedule?: Array<{ // Nếu có format array
+      dayOfWeek: number;
+      startTime: string;
+      endTime: string;
+    }>;
   };
   subject: string | { _id?: string; name?: string };
   message: string;

@@ -9,6 +9,7 @@ import {
   PlusIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 import { useContactRequestStore } from '../../store/contactRequest.store';
 import { REQUEST_STATUS_LABELS } from '../../types/contactRequest.types';
@@ -401,6 +402,16 @@ const StudentRequestCard: React.FC<StudentRequestCardProps> = ({
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${style.chip} ${style.chipText}`}>
                   {statusLabel}
                 </span>
+                {/* Badge phân biệt loại request */}
+                {request.initiatedBy === 'TUTOR' ? (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                    📥 Đề nghị từ gia sư
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                    📤 Yêu cầu của tôi
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-500 mt-1">
                 {request.initiatedBy === 'TUTOR' ? 'Nhận lúc' : 'Gửi lúc'} {formatDate(request.createdAt)}
@@ -412,22 +423,32 @@ const StudentRequestCard: React.FC<StudentRequestCardProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 md:gap-3 self-start">
-            <Link
-              to={requestId ? `/student/contact-requests/${requestId}` : '#'}
-              className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors shadow-sm"
-              aria-disabled={!requestId}
-            >
-              <EyeIcon className="w-4 h-4" />
-              Xem chi tiết
-            </Link>
-            {canCancel && (
-              <button
-                onClick={() => requestId && onCancel(requestId)}
-                disabled={!requestId}
-                className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:bg-rose-600"
-              >
-                Hủy yêu cầu
-              </button>
+            {/* Khi gia sư gửi đề nghị (initiatedBy === 'TUTOR'), hiển thị button chấp nhận/từ chối trực tiếp */}
+            {request.initiatedBy === 'TUTOR' && request.status === 'PENDING' ? (
+              <>
+                <StudentResponseButtons requestId={requestId} request={request} />
+              </>
+            ) : (
+              <>
+                <Link
+                  to={requestId ? `/student/contact-requests/${requestId}` : '#'}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors shadow-sm"
+                  aria-disabled={!requestId}
+                >
+                  <EyeIcon className="w-4 h-4" />
+                  Xem chi tiết
+                </Link>
+                {/* Chỉ hiển thị button hủy khi học viên tự gửi request */}
+                {canCancel && request.initiatedBy !== 'TUTOR' && (
+                  <button
+                    onClick={() => requestId && onCancel(requestId)}
+                    disabled={!requestId}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:bg-rose-600"
+                  >
+                    Hủy yêu cầu
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -484,7 +505,8 @@ const StudentRequestCard: React.FC<StudentRequestCardProps> = ({
                 className={`font-semibold ${request.status === 'ACCEPTED' ? 'text-emerald-900' : 'text-rose-900'
                   }`}
               >
-                Phản hồi từ gia sư
+                {/* Nếu initiatedBy === 'TUTOR', thì tutorResponse là phản hồi từ học viên, ngược lại là từ gia sư */}
+                {request.initiatedBy === 'TUTOR' ? 'Phản hồi của bạn' : 'Phản hồi từ gia sư'}
               </h4>
               {responseTimestamp && (
                 <span className="text-xs text-gray-500">
@@ -568,6 +590,109 @@ const StudentRequestCard: React.FC<StudentRequestCardProps> = ({
         )}
       </div>
     </motion.div>
+  );
+};
+
+// Component for student response buttons (Accept/Reject)
+interface StudentResponseButtonsProps {
+  requestId: string;
+  request: ContactRequest;
+}
+
+const StudentResponseButtons: React.FC<StudentResponseButtonsProps> = ({ requestId, request }) => {
+  const { studentRespondToRequest, isResponding, getStudentRequests } = useContactRequestStore();
+  const [showConfirmModal, setShowConfirmModal] = useState<'ACCEPT' | 'REJECT' | null>(null);
+  const [responseMessage, setResponseMessage] = useState('');
+
+  const handleResponse = async (action: 'ACCEPT' | 'REJECT') => {
+    if (!requestId) {
+      toast.error('Không tìm thấy ID yêu cầu');
+      return;
+    }
+
+    try {
+      await studentRespondToRequest(requestId, {
+        action,
+        message: responseMessage || undefined
+      });
+      setShowConfirmModal(null);
+      setResponseMessage('');
+      await getStudentRequests();
+    } catch (error) {
+      // Error handled in store
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setShowConfirmModal('ACCEPT')}
+        disabled={isResponding || !requestId}
+        className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <CheckCircleIcon className="w-4 h-4" />
+        Chấp nhận
+      </button>
+      <button
+        onClick={() => setShowConfirmModal('REJECT')}
+        disabled={isResponding || !requestId}
+        className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <XCircleIcon className="w-4 h-4" />
+        Từ chối
+      </button>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              {showConfirmModal === 'ACCEPT' ? 'Chấp nhận đề nghị dạy' : 'Từ chối đề nghị dạy'}
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              {showConfirmModal === 'ACCEPT'
+                ? 'Bạn có chắc chắn muốn chấp nhận đề nghị dạy này?'
+                : 'Bạn có chắc chắn muốn từ chối đề nghị dạy này?'}
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tin nhắn phản hồi (tùy chọn)
+              </label>
+              <textarea
+                value={responseMessage}
+                onChange={(e) => setResponseMessage(e.target.value)}
+                rows={3}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                placeholder={showConfirmModal === 'ACCEPT' ? 'Cảm ơn gia sư, tôi rất vui được học với bạn...' : 'Xin lỗi, tôi không thể chấp nhận đề nghị này...'}
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowConfirmModal(null);
+                  setResponseMessage('');
+                }}
+                disabled={isResponding}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => handleResponse(showConfirmModal)}
+                disabled={isResponding}
+                className={`px-4 py-2 rounded-lg text-white font-medium disabled:opacity-50 ${
+                  showConfirmModal === 'ACCEPT'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-rose-600 hover:bg-rose-700'
+                }`}
+              >
+                {isResponding ? 'Đang xử lý...' : showConfirmModal === 'ACCEPT' ? 'Chấp nhận' : 'Từ chối'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

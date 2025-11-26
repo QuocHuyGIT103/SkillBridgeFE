@@ -329,11 +329,12 @@ const ContactRequestDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Tutor Response */}
+            {/* Response - Hiển thị đúng người phản hồi dựa trên initiatedBy */}
             {currentRequest.tutorResponse && (
               <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 md:p-7">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Phản hồi từ gia sư
+                  {/* Nếu initiatedBy === 'TUTOR', thì tutorResponse là phản hồi từ học viên, ngược lại là từ gia sư */}
+                  {initiatedBy === 'TUTOR' ? 'Phản hồi từ học viên' : 'Phản hồi từ gia sư'}
                 </h2>
 
                 <div

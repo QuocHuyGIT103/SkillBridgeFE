@@ -335,13 +335,6 @@ const TutorPostListPage: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3 flex-wrap">
-                <Link
-                  to="/tutor/ai-recommendations"
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 flex items-center shadow-md hover:shadow-lg transition-all"
-                >
-                  <SparklesIcon className="w-5 h-5 mr-2" />
-                  Gợi ý học viên thông minh
-                </Link>
                 <button
                   onClick={handleCreateNew}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center shadow-md hover:shadow-lg transition-all"
@@ -452,7 +445,7 @@ const TutorPostListPage: React.FC = () => {
                 {myPosts.map((post, index) => (
                   <div
                     key={post.id || `post-${index}`}
-                    className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200"
+                    className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:border-blue-200"
                   >
                     <div className="p-6">
                       <div className="flex items-start justify-between mb-4">
@@ -482,7 +475,7 @@ const TutorPostListPage: React.FC = () => {
                       <div className="flex items-center gap-2 mb-4 pb-4 border-b border-gray-100">
                         <button
                           onClick={() => handleView(post.id)}
-                          className="flex-1 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center space-x-1"
+                          className="flex-1 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 hover:shadow-sm transition-all flex items-center justify-center space-x-1"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -492,7 +485,7 @@ const TutorPostListPage: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handleEdit(post.id)}
-                          className="flex-1 px-3 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center space-x-1"
+                          className="flex-1 px-3 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 hover:shadow-sm transition-all flex items-center justify-center space-x-1"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -501,7 +494,7 @@ const TutorPostListPage: React.FC = () => {
                         </button>
                         <Link
                           to={`/tutor/ai-recommendations?tutorPostId=${post.id || post._id}`}
-                          className="flex-1 px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all flex items-center justify-center space-x-1 shadow-sm"
+                          className="flex-1 px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-md transition-all flex items-center justify-center space-x-1 shadow-sm"
                         >
                           <SparklesIcon className="w-4 h-4" />
                           <span>Gợi ý</span>
