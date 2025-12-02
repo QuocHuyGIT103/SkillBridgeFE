@@ -278,6 +278,8 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
     typeof rawId === 'string' ? rawId : rawId?.toString?.() || '';
   const statusKey = request.status ?? 'PENDING';
   const statusLabel = (REQUEST_STATUS_LABELS as any)[statusKey] ?? statusKey;
+  const hasLearningClass = Boolean(request.learningClass?.id);
+  const displayStatusLabel = hasLearningClass ? 'Đã tạo lớp học' : statusLabel;
   const statusStyles: Record<string, { accentBar: string; iconBg: string; iconText: string; chip: string; chipText: string; gradient: string; subtle: string }> = {
     PENDING: {
       accentBar: 'from-blue-400/80 to-blue-500/60',
@@ -344,8 +346,13 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
                     : (tutorPost?.title ?? 'Yêu cầu học tập')}
                 </h3>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${style.chip} ${style.chipText}`}>
-                  {statusLabel}
+                  {displayStatusLabel}
                 </span>
+                {hasLearningClass && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-600/10 text-emerald-700 border border-emerald-200">
+                    ✅ Lớp học đã tạo
+                  </span>
+                )}
                 {/* Badge phân biệt loại request */}
                 {request.initiatedBy === 'TUTOR' ? (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
@@ -375,13 +382,21 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
               <EyeIcon className="w-4 h-4" />
               Xem chi tiết
             </Link>
-            {statusKey === 'ACCEPTED' && requestId && (
+            {statusKey === 'ACCEPTED' && requestId && !hasLearningClass && (
               <button
                 onClick={() => onCreateClass(request)}
                 className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-blue-700 transition-transform"
               >
                 Tạo lớp học
               </button>
+            )}
+            {hasLearningClass && request.learningClass?.id && (
+              <Link
+                to={`/tutor/classes/${request.learningClass.id}`}
+                className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-emerald-700 transition-transform"
+              >
+                Xem lớp học
+              </Link>
             )}
             {/* Chỉ hiển thị button phản hồi khi request được học viên gửi tới, không phải khi gia sư tự gửi */}
             {statusKey === 'PENDING' && requestId && request.initiatedBy !== 'TUTOR' && (
@@ -458,6 +473,24 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
         {isExpired && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-800">
             ⏰ Yêu cầu đã hết hạn vào {formatDate(request.expiresAt)}. Hãy phản hồi để tránh mất cơ hội hoặc chờ yêu cầu mới.
+          </div>
+        )}
+
+        {hasLearningClass && request.learningClass && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 text-sm text-emerald-900 space-y-1">
+            <p className="font-semibold">Thông tin lớp học đã tạo</p>
+            <p>Tên lớp: {request.learningClass.title || 'Chưa đặt tên'}</p>
+            {request.learningClass.startDate && (
+              <p>
+                Ngày bắt đầu: {formatDate(request.learningClass.startDate)}
+              </p>
+            )}
+            {request.learningClass.schedule && (
+              <p>
+                Lịch học: {request.learningClass.schedule.dayOfWeek?.length || 0} buổi/tuần ·{' '}
+                {request.learningClass.schedule.startTime} - {request.learningClass.schedule.endTime}
+              </p>
+            )}
           </div>
         )}
       </div>

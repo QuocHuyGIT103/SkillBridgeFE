@@ -94,6 +94,20 @@ export interface ContactRequest {
     id: string;
     name: string;
   };
+
+  learningClass?: {
+    id: string;
+    title?: string;
+    status?: string;
+    startDate?: string;
+    totalSessions?: number;
+    learningMode?: 'ONLINE' | 'OFFLINE' | 'FLEXIBLE';
+    schedule?: {
+      dayOfWeek: number[];
+      startTime: string;
+      endTime: string;
+    };
+  };
 }
 
 export interface CreateContactRequestInput {
