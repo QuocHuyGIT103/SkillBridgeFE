@@ -11,3 +11,4 @@ export { default as PaymentService } from "./payment.service";
 export { contactRequestService } from "./contactRequest.service";
 export { uploadService } from "./upload.service";
 export { attendanceService } from "./attendance.service";
+export { aiService } from "./ai.service";

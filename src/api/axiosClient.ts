@@ -23,7 +23,8 @@ class AxiosClient {
     // Request interceptor
     this.instance.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem("access_token");
+        // Check both possible token keys for compatibility
+        const token = localStorage.getItem("token") || localStorage.getItem("access_token");
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }

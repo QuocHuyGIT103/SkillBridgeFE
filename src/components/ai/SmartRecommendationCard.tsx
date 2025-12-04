@@ -376,6 +376,16 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
                 <span>Giá</span>
               </span>
             )}
+            {normalizedMatchDetails.scheduleMatch && (
+              <span className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border ${
+                isTopMatch
+                  ? 'bg-green-100 text-green-800 border-green-300 font-medium'
+                  : 'bg-green-50 text-green-700 border-green-200'
+              }`}>
+                <ClockIcon className="w-3.5 h-3.5" />
+                <span>Lịch trùng khớp</span>
+              </span>
+            )}
             {normalizedMatchDetails.semanticScore > 0 && (
               <span className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-full border ${
                 isTopMatch

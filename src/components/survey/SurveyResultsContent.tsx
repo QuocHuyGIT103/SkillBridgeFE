@@ -8,7 +8,10 @@ import {
   UserGroupIcon,
   ArrowRightIcon,
   ArrowPathIcon,
+  BookOpenIcon,
 } from '@heroicons/react/24/outline';
+import { useState } from 'react';
+import SurveyService from '../../services/survey.service';
 import SmartRecommendationCard from '../ai/SmartRecommendationCard';
 import type { SurveySubmitResponse } from '../../types/survey.types';
 import { STUDY_CHALLENGE_LABELS } from '../../types/survey.types';
@@ -30,6 +33,26 @@ const SurveyResultsContent: React.FC<SurveyResultsContentProps> = ({
     ) || [];
 
   const formatSubjects = (subjects: string[]) => subjects.join(', ');
+  const [loadingExercises, setLoadingExercises] = useState(false);
+  const [recommendedExercises, setRecommendedExercises] = useState<any[] | null>(null);
+
+  const handleLoadExercises = async () => {
+    try {
+      setLoadingExercises(true);
+      const res = await SurveyService.getExerciseRecommendations();
+      if (res.success && res.data?.templates) {
+        setRecommendedExercises(res.data.templates);
+      } else if (res.data?.data?.templates) {
+        setRecommendedExercises(res.data.data.templates);
+      } else {
+        setRecommendedExercises([]);
+      }
+    } catch (error) {
+      console.error('Failed to load exercise recommendations:', error);
+    } finally {
+      setLoadingExercises(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 py-8 px-4">
@@ -123,6 +146,79 @@ const SurveyResultsContent: React.FC<SurveyResultsContentProps> = ({
             )}
           </motion.div>
         )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="bg-white rounded-2xl shadow-xl p-6 mb-8"
+        >
+          <div className="flex items-center justify-between mb  -4">
+            <div className="flex items-center space-x-3">
+              <BookOpenIcon className="w-6 h-6 text-indigo-600" />
+              <h3 className="text-xl font-bold text-gray-800">
+                Gợi ý bài tập phù hợp từ AI
+              </h3>
+            </div>
+            <button
+              onClick={handleLoadExercises}
+              disabled={loadingExercises}
+              className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {loadingExercises ? (
+                <>
+                  <span className="mr-2 inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Đang tải...
+                </>
+              ) : (
+                <>
+                  <SparklesIcon className="w-4 h-4 mr-2" />
+                  Xem gợi ý bài tập
+                </>
+              )}
+            </button>
+          </div>
+
+          {recommendedExercises && (
+            <div className="mt-4 space-y-3">
+              {recommendedExercises.length === 0 ? (
+                <p className="text-sm text-gray-600">
+                  Chưa tìm được bài tập nào phù hợp. Hãy thử lại sau khi hệ thống có thêm nội dung.
+                </p>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {recommendedExercises.slice(0, 6).map((tpl, index) => (
+                    <div
+                      key={tpl.id || tpl._id || index}
+                      className="border border-gray-200 rounded-lg p-4 hover:border-indigo-400 hover:shadow-md transition-all"
+                    >
+                      <p className="text-sm font-semibold text-gray-900">
+                        {tpl.title}
+                      </p>
+                      {tpl.content?.prompt && (
+                        <p className="mt-1 text-xs text-gray-600 line-clamp-3">
+                          {tpl.content.prompt}
+                        </p>
+                      )}
+                      {Array.isArray(tpl.tags) && tpl.tags.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {tpl.tags.slice(0, 4).map((tag: string) => (
+                            <span
+                              key={tag}
+                              className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-[11px] font-medium"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -1,6 +1,12 @@
 import axiosClient from '../api/axiosClient';
 import type { ApiResponse } from '../types';
 
+export const aiService = {
+  transcribeAudio: (audioUrl: string) => {
+    return axiosClient.post('/ai/speech/transcribe', { audioUrl });
+  },
+};
+
 /**
  * AI Smart Recommendation Service
  * Integrates with Gemini AI backend for intelligent tutor recommendations

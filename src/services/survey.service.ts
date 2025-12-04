@@ -80,6 +80,14 @@ class SurveyService {
       return true; // Show survey if error
     }
   }
+
+  /**
+   * Gợi ý bài tập phù hợp dựa trên survey
+   */
+  static async getExerciseRecommendations() {
+    const response = await axiosClient.get('/ai/survey/exercises');
+    return response;
+  }
 }
 
 export default SurveyService;

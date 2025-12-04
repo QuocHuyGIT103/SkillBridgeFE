@@ -348,11 +348,6 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${style.chip} ${style.chipText}`}>
                   {displayStatusLabel}
                 </span>
-                {hasLearningClass && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-600/10 text-emerald-700 border border-emerald-200">
-                    ✅ Lớp học đã tạo
-                  </span>
-                )}
                 {/* Badge phân biệt loại request */}
                 {request.initiatedBy === 'TUTOR' ? (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
@@ -476,23 +471,7 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
           </div>
         )}
 
-        {hasLearningClass && request.learningClass && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 text-sm text-emerald-900 space-y-1">
-            <p className="font-semibold">Thông tin lớp học đã tạo</p>
-            <p>Tên lớp: {request.learningClass.title || 'Chưa đặt tên'}</p>
-            {request.learningClass.startDate && (
-              <p>
-                Ngày bắt đầu: {formatDate(request.learningClass.startDate)}
-              </p>
-            )}
-            {request.learningClass.schedule && (
-              <p>
-                Lịch học: {request.learningClass.schedule.dayOfWeek?.length || 0} buổi/tuần ·{' '}
-                {request.learningClass.schedule.startTime} - {request.learningClass.schedule.endTime}
-              </p>
-            )}
-          </div>
-        )}
+        {/* Thông tin lớp học đã chuyển vào trang lớp học, không hiển thị tại đây */}
       </div>
     </div>
   );

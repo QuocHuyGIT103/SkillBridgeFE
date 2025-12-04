@@ -430,23 +430,23 @@ const StudentRequestCard: React.FC<StudentRequestCardProps> = ({
               </>
             ) : (
               <>
-                <Link
-                  to={requestId ? `/student/contact-requests/${requestId}` : '#'}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors shadow-sm"
-                  aria-disabled={!requestId}
-                >
-                  <EyeIcon className="w-4 h-4" />
-                  Xem chi tiết
-                </Link>
+            <Link
+              to={requestId ? `/student/contact-requests/${requestId}` : '#'}
+              className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors shadow-sm"
+              aria-disabled={!requestId}
+            >
+              <EyeIcon className="w-4 h-4" />
+              Xem chi tiết
+            </Link>
                 {/* Chỉ hiển thị button hủy khi học viên tự gửi request */}
                 {canCancel && request.initiatedBy !== 'TUTOR' && (
-                  <button
-                    onClick={() => requestId && onCancel(requestId)}
-                    disabled={!requestId}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:bg-rose-600"
-                  >
-                    Hủy yêu cầu
-                  </button>
+              <button
+                onClick={() => requestId && onCancel(requestId)}
+                disabled={!requestId}
+                className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:bg-rose-600"
+              >
+                Hủy yêu cầu
+              </button>
                 )}
               </>
             )}
