@@ -69,7 +69,7 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
     },
     {
       id: "smart-search",
-      label: "Tìm gia sư thông minh",
+      label: "Tìm gia sư phù hợp",
       icon: "search",
       path: "/student/smart-search",
     },

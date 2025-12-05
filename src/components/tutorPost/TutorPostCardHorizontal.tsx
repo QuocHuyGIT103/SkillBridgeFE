@@ -76,6 +76,11 @@ const TutorPostCardHorizontal: React.FC<TutorPostCardHorizontalProps> = ({
   showCompatibility = false,
   onClick 
 }) => {
+  // Hooks must be called before any conditional returns (Rules of Hooks)
+  const navigate = useNavigate();
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  
   // Guard clause to prevent rendering if post or tutorId is undefined
   if (!post || !post.tutorId) {
     return (
@@ -91,8 +96,6 @@ const TutorPostCardHorizontal: React.FC<TutorPostCardHorizontalProps> = ({
       </div>
     );
   }
-  
-  const navigate = useNavigate();
 
   // Utility functions
   const calculateAge = (dateOfBirth: string): number => {
@@ -223,7 +226,6 @@ const TutorPostCardHorizontal: React.FC<TutorPostCardHorizontalProps> = ({
     }
   };
 
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const modeConfig = getTeachingModeConfig(post.teachingMode);
   const ratingAverage = post.tutorId?.rating?.average || 0;
   const ratingCount = post.tutorId?.rating?.count || 0;
@@ -350,7 +352,7 @@ const TutorPostCardHorizontal: React.FC<TutorPostCardHorizontalProps> = ({
             <BookOpenIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
             <span className="text-sm font-medium text-gray-700 flex-shrink-0">Môn học:</span>
             <div className="flex flex-wrap gap-1 min-w-0">
-              {post.subjects.slice(0, 3).map((subject, index) => (
+              {(post.subjects || []).slice(0, 3).map((subject, index) => (
                 <span
                   key={subject._id || subject.name || index}
                   className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-md font-medium border border-blue-200 flex-shrink-0"
@@ -358,9 +360,9 @@ const TutorPostCardHorizontal: React.FC<TutorPostCardHorizontalProps> = ({
                   {subject.name}
                 </span>
               ))}
-              {post.subjects.length > 3 && (
+              {(post.subjects?.length || 0) > 3 && (
                 <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-md font-medium flex-shrink-0">
-                  +{post.subjects.length - 3}
+                  +{(post.subjects?.length || 0) - 3}
                 </span>
               )}
             </div>

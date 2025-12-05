@@ -11,16 +11,15 @@ import {
   CalendarDaysIcon,
   AcademicCapIcon,
   UserCircleIcon,
-  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { attendanceService } from '../../services/attendance.service';
 import { uploadService, aiService } from '../../services';
 import toast from 'react-hot-toast';
-import type { WeeklySession, AIEvaluationResult } from '../../types/attendance';
+import type { WeeklySession } from '../../types/attendance';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import ExerciseLibraryService from '../../services/exerciseLibrary.service';
-import type { ExerciseTemplate, Rubric } from '../../services/exerciseLibrary.service';
+import type { ExerciseTemplate } from '../../services/exerciseLibrary.service';
 import { useNavigate } from 'react-router-dom';
 
 interface HomeworkModalProps {
@@ -87,10 +86,8 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
     deadline: '',
     fileUrl: '',
     templateId: '' as string | undefined,
-    rubricId: '' as string | undefined,
   });
   const [availableTemplates, setAvailableTemplates] = useState<ExerciseTemplate[]>([]);
-  const [availableRubrics, setAvailableRubrics] = useState<Rubric[]>([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
 
@@ -109,53 +106,33 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   });
 
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [aiEvaluatingAssignmentId, setAiEvaluatingAssignmentId] = useState<string | null>(null);
   const [transcribingAudio, setTranscribingAudio] = useState(false);
 
   const selectedGradeAssignment = assignments.find(
     (assignment) => assignment.id === selectedGradeAssignmentId
   );
 
-  const calculateAiScoreOn10 = (evaluation?: AIEvaluationResult | null) => {
-    if (!evaluation || !evaluation.maxScore) return null;
-    const normalized = (evaluation.totalScore / evaluation.maxScore) * 10;
-    return Math.round(normalized * 10) / 10;
-  };
-
-  const handleApplyAiScore = () => {
-    if (!selectedGradeAssignment?.aiEvaluation) return;
-    const normalized = calculateAiScoreOn10(selectedGradeAssignment.aiEvaluation);
-    if (normalized == null) return;
-    setGradeData((prev) => ({ ...prev, score: normalized }));
-    toast.success('Đã áp dụng điểm AI vào form chấm');
-  };
-
   const loadExerciseLibrary = async () => {
     try {
       setLoadingLibrary(true);
-      const [templatesRes, rubricsRes] = await Promise.all([
-        ExerciseLibraryService.listTemplates({ mineOnly: true }),
-        ExerciseLibraryService.listRubrics(),
-      ]);
+      const templatesRes = await ExerciseLibraryService.listTemplates({ mineOnly: true });
 
       // axiosClient đã unwrap nên data chính là mảng dữ liệu
       const templates = templatesRes.data || [];
-      const rubrics = rubricsRes.data || [];
 
       setAvailableTemplates(templates);
-      setAvailableRubrics(rubrics);
 
-      return { templates, rubrics };
+      return { templates };
     } catch (error) {
       console.error('Failed to load exercise library', error);
-      return { templates: [], rubrics: [] };
+      return { templates: [] };
     } finally {
       setLoadingLibrary(false);
     }
   };
 
   const handleOpenTemplatePicker = async () => {
-    if (!availableTemplates.length || !availableRubrics.length) {
+    if (!availableTemplates.length) {
       setShowTemplatePicker(true);
       const result = await loadExerciseLibrary();
       if (!result.templates.length) {
@@ -175,7 +152,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       title: template.title,
       description: template.content?.prompt || template.description || '',
       templateId: template.id,
-      rubricId: template.rubricId || prev.rubricId,
       // Copy file attachment from template if available
       fileUrl: template.content?.attachmentUrl || template.content?.resources?.[0] || prev.fileUrl,
     }));
@@ -294,7 +270,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
           deadline: assignmentData.deadline,
           fileUrl: assignmentData.fileUrl || undefined,
           templateId: assignmentData.templateId || undefined,
-          rubricId: assignmentData.rubricId || undefined,
         }
       );
 
@@ -310,7 +285,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
         deadline: '',
         fileUrl: '',
         templateId: undefined,
-        rubricId: undefined,
       });
 
       // Đảm bảo lần mở tiếp theo sẽ vào tab xem bài tập
@@ -323,24 +297,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       toast.error(error.response?.data?.message || 'Giao bài tập thất bại');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleEvaluateWithAI = async (assignmentId: string) => {
-    setAiEvaluatingAssignmentId(assignmentId);
-    try {
-      const response = await attendanceService.evaluateHomeworkAI(
-        session.classId,
-        session.sessionNumber,
-        assignmentId
-      );
-      toast.success(response.message || 'Đã chấm AI cho bài viết!');
-      await onSuccess();
-    } catch (error: any) {
-      console.error('AI evaluation failed:', error);
-      toast.error(error.response?.data?.message || 'Không thể chấm điểm AI');
-    } finally {
-      setAiEvaluatingAssignmentId(null);
     }
   };
 
@@ -575,12 +531,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                       const deadlineLabel = assignment.deadline
                         ? format(new Date(assignment.deadline), 'dd/MM/yyyy HH:mm', { locale: vi })
                         : 'N/A';
-                      const aiEvaluation = assignment.aiEvaluation;
-                      const aiPercent =
-                        aiEvaluation && aiEvaluation.maxScore
-                          ? Math.round((aiEvaluation.totalScore / aiEvaluation.maxScore) * 100)
-                          : null;
-                      const aiScoreOn10 = calculateAiScoreOn10(aiEvaluation);
                       return (
                         <div
                           key={assignment.id || `assignment-${index}`}
@@ -645,144 +595,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                               </a>
                             )}
                           </div>
-
-                          {/* AI Grading Button - for TUTOR */}
-                          {userRole === 'TUTOR' && assignment.submission && (
-                            <div className="mt-4">
-                              {assignment.rubricId && assignment.submission?.textAnswer ? (
-                                // Has rubric + textAnswer => can use AI
-                                <div className="flex flex-wrap gap-2">
-                                  <button
-                                    onClick={() => handleEvaluateWithAI(assignment.id)}
-                                    disabled={aiEvaluatingAssignmentId === assignment.id}
-                                    className="inline-flex items-center px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                                  >
-                                    {aiEvaluatingAssignmentId === assignment.id ? (
-                                      <>
-                                        <span className="mr-2 inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                        Đang chấm AI...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <SparklesIcon className="w-4 h-4 mr-1" />
-                                        {aiEvaluation ? 'Chấm lại bằng AI' : 'Chấm bằng AI (beta)'}
-                                      </>
-                                    )}
-                                  </button>
-                                  {!aiEvaluation && (
-                                    <span className="text-xs text-gray-500">
-                                      AI dựa trên rubric để đề xuất điểm tham khảo.
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                // Missing rubric or textAnswer => show why AI is not available
-                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                                  <p className="text-xs text-gray-600">
-                                    <span className="font-medium">💡 Không thể chấm AI vì:</span>
-                                    {!assignment.rubricId && (
-                                      <span className="block mt-1">• Bài tập chưa được gán rubric tiêu chí chấm điểm</span>
-                                    )}
-                                    {assignment.rubricId && !assignment.submission?.textAnswer && (
-                                      <span className="block mt-1">• Học viên chưa nhập nội dung text (chỉ upload file)</span>
-                                    )}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {aiEvaluation && (
-                            <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-4">
-                              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                <div>
-                                  <p className="text-sm font-semibold text-purple-700 flex items-center gap-2">
-                                    <SparklesIcon className="w-4 h-4" />
-                                    AI đánh giá theo rubric
-                                  </p>
-                                  <p className="text-xs text-purple-600">
-                                    Tổng: {aiEvaluation.totalScore}/{aiEvaluation.maxScore}{' '}
-                                    điểm{aiPercent !== null ? ` (${aiPercent}%)` : ''}
-                                  </p>
-                                </div>
-                                {aiScoreOn10 !== null && (
-                                  <div className="text-right">
-                                    <p className="text-[11px] uppercase tracking-wide text-purple-500">
-                                      Quy đổi tham khảo
-                                    </p>
-                                    <p className="text-2xl font-bold text-purple-700">
-                                      {aiScoreOn10}/10
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-
-                              {aiEvaluation.criteria?.length > 0 && (
-                                <div className="mt-3 space-y-2">
-                                  {aiEvaluation.criteria.map((criterion, idx) => {
-                                    const percent =
-                                      criterion.maxScore > 0
-                                        ? Math.round((criterion.score / criterion.maxScore) * 100)
-                                        : 0;
-                                    return (
-                                      <div
-                                        key={`${criterion.label}-${idx}`}
-                                        className="bg-white rounded-md p-3 shadow-sm"
-                                      >
-                                        <div className="flex justify-between text-sm font-medium text-gray-800">
-                                          <span>{criterion.label}</span>
-                                          <span>
-                                            {criterion.score}/{criterion.maxScore} điểm
-                                          </span>
-                                        </div>
-                                        <div className="mt-2 h-2 bg-purple-100 rounded-full overflow-hidden">
-                                          <div
-                                            className="h-2 bg-purple-500"
-                                            style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
-                                          />
-                                        </div>
-                                        {criterion.feedback && (
-                                          <p className="mt-2 text-xs text-gray-600">
-                                            {criterion.feedback}
-                                          </p>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-
-                              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                {aiEvaluation.strengths && aiEvaluation.strengths.length > 0 && (
-                                  <div>
-                                    <p className="font-semibold text-green-700 mb-2">Điểm mạnh</p>
-                                    <ul className="space-y-1 text-green-900 text-sm list-disc list-inside">
-                                      {aiEvaluation.strengths.slice(0, 3).map((item, idx) => (
-                                        <li key={`strength-${idx}`}>{item}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {aiEvaluation.improvements && aiEvaluation.improvements.length > 0 && (
-                                  <div>
-                                    <p className="font-semibold text-orange-700 mb-2">Đề xuất cải thiện</p>
-                                    <ul className="space-y-1 text-orange-900 text-sm list-disc list-inside">
-                                      {aiEvaluation.improvements.slice(0, 3).map((item, idx) => (
-                                        <li key={`improve-${idx}`}>{item}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-
-                              {aiEvaluation.summary && (
-                                <p className="mt-4 text-sm text-gray-700">
-                                  <span className="font-semibold text-gray-800">Tổng kết:</span>{' '}
-                                  {aiEvaluation.summary}
-                                </p>
-                              )}
-                            </div>
-                          )}
 
                           <div className="mt-4 flex flex-wrap items-center gap-3">
                             {userRole === 'STUDENT' && (
@@ -1013,10 +825,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   )}
                 </div>
 
-                {/* Chọn từ kho bài tập & rubric */}
+                {/* Chọn từ kho bài tập */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Kho bài tập & rubric
+                    Kho bài tập
                   </label>
                   <div className="flex flex-wrap gap-2 items-center">
                     <button
@@ -1032,14 +844,9 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                         Đã chọn template
                       </span>
                     )}
-                    {assignmentData.rubricId && (
-                      <span className="inline-flex items-center px-3 py-1 text-xs rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                        Đã gắn rubric
-                      </span>
-                    )}
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    Bạn có thể chọn bài tập mẫu để tự động điền tiêu đề và đề bài, đồng thời gắn sẵn rubric chấm điểm.
+                    Bạn có thể chọn bài tập mẫu để tự động điền tiêu đề và đề bài.
                   </p>
                 </div>
 
@@ -1086,25 +893,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     bài nộp mới sẽ thay thế bài cũ.
                   </p>
                 </div>
-
-                {/* AI Grading Hint - show when selected assignment has rubric */}
-                {(() => {
-                  const selectedAssignment = canSubmitAssignments.find(a => a.id === selectedSubmitAssignmentId);
-                  return selectedAssignment?.rubricId ? (
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-                      <div className="flex items-start space-x-2">
-                        <SparklesIcon className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium text-purple-800">Bài tập này có hỗ trợ chấm điểm AI!</p>
-                          <p className="text-xs text-purple-700 mt-1">
-                            Để AI có thể chấm điểm tự động theo rubric, vui lòng nhập nội dung bài làm vào ô 
-                            <strong> "Bài viết dạng text"</strong> bên dưới (ngoài việc upload file).
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null;
-                })()}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1218,9 +1006,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Nhập nội dung bài viết tại đây..."
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    AI sẽ dùng nội dung này cùng với rubric để chấm điểm tự động.
-                  </p>
                 </div>
 
                 <div>
@@ -1295,48 +1080,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     ))}
                   </select>
                 </div>
-
-                {selectedGradeAssignment?.aiEvaluation && (
-                  <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 text-sm">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div>
-                        <p className="text-indigo-700 font-semibold flex items-center gap-2">
-                          <SparklesIcon className="w-4 h-4" />
-                          Gợi ý từ AI
-                        </p>
-                        <p className="text-indigo-600 mt-1">
-                          {selectedGradeAssignment.aiEvaluation.totalScore}/
-                          {selectedGradeAssignment.aiEvaluation.maxScore} điểm theo rubric
-                        </p>
-                      </div>
-                      {calculateAiScoreOn10(selectedGradeAssignment.aiEvaluation) !== null && (
-                        <div className="text-right">
-                          <p className="text-[11px] uppercase tracking-wide text-indigo-500">
-                            Quy đổi tham khảo
-                          </p>
-                          <p className="text-2xl font-bold text-indigo-700">
-                            {calculateAiScoreOn10(selectedGradeAssignment.aiEvaluation)}/10
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        onClick={handleApplyAiScore}
-                        className="inline-flex items-center px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition-colors"
-                      >
-                        <SparklesIcon className="w-4 h-4 mr-1" />
-                        Dùng điểm AI
-                      </button>
-                      {selectedGradeAssignment.aiEvaluation.summary && (
-                        <p className="text-indigo-700 text-sm">
-                          {selectedGradeAssignment.aiEvaluation.summary}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1450,7 +1193,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                 ) : (
                   <div className="grid grid-cols-1 gap-4">
                     {availableTemplates.map((template) => {
-                      const rubric = availableRubrics.find(r => r.id === template.rubricId);
                       return (
                         <div
                           key={template.id}
@@ -1479,12 +1221,6 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                                   }`}>
                                     {template.difficulty === 'EASY' ? 'Dễ' :
                                      template.difficulty === 'MEDIUM' ? 'Trung bình' : 'Khó'}
-                                  </span>
-                                )}
-                                {rubric && (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-50 text-purple-700 border border-purple-200">
-                                    <SparklesIcon className="w-3 h-3 mr-1" />
-                                    {rubric.name}
                                   </span>
                                 )}
                               </div>

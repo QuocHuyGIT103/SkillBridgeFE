@@ -8,7 +8,7 @@ import {
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import ExerciseLibraryService from '../../services/exerciseLibrary.service';
-import type { ExerciseTemplate, Rubric } from '../../services/exerciseLibrary.service';
+import type { ExerciseTemplate } from '../../services/exerciseLibrary.service';
 import SubjectService from '../../services/subject.service';
 import type { Subject } from '../../services/subject.service';
 import { uploadService } from '../../services';
@@ -32,7 +32,6 @@ const ASSIGNMENT_TYPES = [
 const TutorExerciseBankPage: React.FC = () => {
   const [templates, setTemplates] = useState<ExerciseTemplate[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [rubrics, setRubrics] = useState<Rubric[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -49,7 +48,6 @@ const TutorExerciseBankPage: React.FC = () => {
     sampleAnswer: '',
     resources: '',
     isPublic: true,
-    rubricId: '',
     attachmentUrl: '',
   });
 
@@ -62,15 +60,12 @@ const TutorExerciseBankPage: React.FC = () => {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
-      const [templateRes, rubricRes, subjectRes] = await Promise.all([
+      const [templateRes, subjectRes] = await Promise.all([
         ExerciseLibraryService.listTemplates({ mineOnly: true }),
-        ExerciseLibraryService.listRubrics(),
         SubjectService.getActiveSubjects(),
       ]);
 
-      // axiosClient đã unwrap response nên data chính là mảng template/rubric
       setTemplates(templateRes.data || []);
-      setRubrics(rubricRes.data || []);
       setSubjects(subjectRes.data?.subjects || []);
     } catch (error) {
       console.error('Failed to load exercise bank data:', error);
@@ -148,7 +143,6 @@ const TutorExerciseBankPage: React.FC = () => {
         tags: formData.tags
           ? formData.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
           : [],
-        rubricId: formData.rubricId || undefined,
         content: {
           prompt: formData.prompt.trim(),
           attachmentUrl: formData.attachmentUrl || undefined,
@@ -216,11 +210,11 @@ const TutorExerciseBankPage: React.FC = () => {
         <div>
           <p className="text-sm text-purple-500 font-semibold">Kho bài tập</p>
           <h1 className="text-3xl font-bold text-gray-900 mt-1">
-            Exercise Bank & Rubric
+            Exercise Bank
           </h1>
           <p className="text-gray-600 mt-2 max-w-2xl">
             Tạo và tái sử dụng các bài tập chất lượng cao cho từng buổi học. Kho
-            bài tập giúp bạn gắn rubric, đề bài, tài nguyên và chia sẻ cho các
+            bài tập giúp bạn gắn đề bài, tài nguyên và chia sẻ cho các
             lớp khác nhau.
           </p>
         </div>
@@ -359,60 +353,17 @@ const TutorExerciseBankPage: React.FC = () => {
     </div>
   </div>
 
-  <div className="grid md:grid-cols-2 gap-4">
-    <div>
-      <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-        Rubric (tùy chọn)
-        <span className="group relative">
-          <svg className="w-4 h-4 text-gray-400 cursor-help" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-          </svg>
-          <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg z-10">
-            <div className="font-semibold mb-1">Rubric là gì?</div>
-            <div className="text-gray-300">
-              Rubric là bảng tiêu chí chấm điểm chi tiết, giúp AI tự động chấm điểm theo từng tiêu chí (nội dung, cấu trúc, ngữ pháp...). Khi gắn rubric, bài làm của học viên sẽ được AI đánh giá và gợi ý điểm tham khảo.
-            </div>
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
-              <div className="w-2 h-2 bg-gray-900 rotate-45"></div>
-            </div>
-          </div>
-        </span>
-      </label>
-      <select
-        value={formData.rubricId}
-        onChange={(e) =>
-          setFormData((prev) => ({ ...prev, rubricId: e.target.value }))
-        }
-        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-      >
-        <option value="">Không gắn rubric</option>
-        {rubrics.map((rubric) => (
-          <option key={rubric.id} value={rubric.id}>
-            {rubric.name}
-          </option>
-        ))}
-      </select>
-      {formData.rubricId && (
-        <p className="mt-1 text-xs text-purple-600 flex items-center gap-1">
-          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-          AI sẽ tự động chấm điểm theo rubric này
-        </p>
-      )}
-    </div>
-    <div>
-      <label className="text-sm font-medium text-gray-700">Tags</label>
-      <input
-        type="text"
-        value={formData.tags}
-        onChange={(e) =>
-          setFormData((prev) => ({ ...prev, tags: e.target.value }))
-        }
-        placeholder="VD: IELTS, Writing task 2"
-        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-      />
-    </div>
+  <div>
+    <label className="text-sm font-medium text-gray-700">Tags</label>
+    <input
+      type="text"
+      value={formData.tags}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, tags: e.target.value }))
+      }
+      placeholder="VD: IELTS, Writing task 2"
+      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+    />
   </div>
 
   <div>

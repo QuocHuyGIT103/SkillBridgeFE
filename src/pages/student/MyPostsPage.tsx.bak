@@ -1,0 +1,217 @@
+import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import usePostStore from '../../store/post.store';
+import type { IPost } from '../../types';
+import { toast } from 'react-hot-toast';
+import { 
+    ArrowPathIcon, 
+    EyeIcon, 
+    PencilIcon, 
+    TrashIcon, 
+    PlusIcon,
+    AcademicCapIcon,
+    BookOpenIcon,
+    CalendarDaysIcon,
+    InformationCircleIcon
+} from "@heroicons/react/24/outline";
+import { AISmartSearchButton } from '../../components/ai';
+
+const StatusBadge: React.FC<{ status: IPost['status'] }> = ({ status }) => {
+  const statusMap = {
+    pending: { text: 'Chờ duyệt', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    approved: { text: 'Đã duyệt', color: 'bg-green-100 text-green-800 border-green-200' },
+    rejected: { text: 'Bị từ chối', color: 'bg-red-100 text-red-800 border-red-200' },
+  };
+  const statusInfo = statusMap[status] || { text: 'Không rõ', color: 'bg-gray-100 text-gray-800 border-gray-200' };
+  return <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${statusInfo.color}`}>{statusInfo.text}</span>;
+};
+
+const PostCardSkeleton: React.FC = () => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-4 animate-pulse">
+        <div className="flex justify-between items-start">
+            <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-5 bg-gray-200 rounded w-1/4"></div>
+        </div>
+        <div className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+        <div className="space-y-1">
+            <div className="h-3 bg-gray-200 rounded w-full"></div>
+            <div className="h-3 bg-gray-200 rounded w-full"></div>
+            <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+        </div>
+        <div className="h-10 bg-gray-200 rounded-lg mt-4"></div>
+    </div>
+)
+
+const MyPostsPage: React.FC = () => {
+  const { posts: myPosts, isLoading, error, fetchMyPosts, deletePost } = usePostStore();
+
+  useEffect(() => {
+    fetchMyPosts();
+  }, [fetchMyPosts]);
+
+  const handleDelete = (postId: string) => {
+    toast((t) => (
+        <div className="flex flex-col gap-3 p-1">
+            <p className="font-medium text-gray-800">Bạn có chắc chắn muốn xóa bài đăng này không?</p>
+            <div className="flex gap-3">
+                <button
+                    className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold transition-colors shadow-sm"
+                    onClick={() => {
+                        toast.dismiss(t.id);
+                        deletePost(postId); 
+                    }}
+                >
+                    Xác nhận Xóa
+                </button>
+                <button
+                    className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm font-semibold transition-colors"
+                    onClick={() => toast.dismiss(t.id)}
+                >
+                    Hủy
+                </button>
+            </div>
+        </div>
+    ));
+  };
+
+  const postsToRender = myPosts || [];
+
+  return (
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Bài Đăng Của Tôi</h1>
+            <p className="mt-1 text-gray-600">Quản lý các yêu cầu tìm gia sư của bạn.</p>
+          </div>
+          <div className="flex gap-3 mt-4 sm:mt-0">
+            <Link 
+                to="/student/posts/create" 
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-semibold"
+            >
+                <PlusIcon className="w-5 h-5"/>
+                Tạo yêu cầu mới
+            </Link>
+            <button
+              onClick={() => fetchMyPosts()}
+              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+              disabled={isLoading}
+            >
+              <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>Làm mới</span>
+            </button>
+          </div>
+        </div>
+
+        {error && <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6 border border-red-200">{error}</div>}
+
+        {isLoading && postsToRender.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => <PostCardSkeleton key={i} />)}
+          </div>
+        ) : postsToRender.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {postsToRender.map((post) => (
+              <div key={post.id} className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:border-blue-300">
+                {/* [SỬA] Gộp nội dung và các nút vào cùng một div lớn */}
+                <div className="p-5 flex flex-col flex-grow">
+                  <div className="flex items-start justify-between mb-4">
+                     <h2 className="font-bold text-lg text-gray-800 line-clamp-2 pr-2 flex-1">{post.title}</h2>
+                     <StatusBadge status={post.status} />
+                  </div>
+                  
+                  <div className="space-y-3 text-sm text-gray-600 mb-4">
+                    <div className="flex items-center gap-2">
+                        <AcademicCapIcon className="w-5 h-5 text-gray-400"/>
+                        <p><span className="font-medium text-gray-500">Lớp:</span> {post.grade_levels?.join(', ') || 'Chưa rõ'}</p>
+                    </div>
+                     <div className="flex items-center gap-2">
+                        <BookOpenIcon className="w-5 h-5 text-gray-400"/>
+                        <p><span className="font-medium text-gray-500">Môn:</span> {post.subjects?.join(', ') || 'Chưa rõ'}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <CalendarDaysIcon className="w-5 h-5 text-gray-400"/>
+                        <p><span className="font-medium text-gray-500">Ngày tạo:</span> {new Date(post.created_at).toLocaleDateString('vi-VN')}</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-gray-700 text-sm line-clamp-3 mb-4">{post.content}</p>
+                  
+                  {/* [SỬA] Thiết kế lại phần ghi chú bị từ chối */}
+                  {post.status === 'rejected' && post.admin_note && (
+                    <div className="mt-auto mb-4 text-sm text-red-800 bg-red-50 p-3 rounded-lg border border-red-200 flex items-start gap-2">
+                      <InformationCircleIcon className="w-5 h-5 flex-shrink-0 mt-0.5"/>
+                      <div>
+                        <p className="font-semibold">Lý do từ chối:</p>
+                        <p>{post.admin_note}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sử dụng flex-grow và mt-auto để đẩy các nút xuống dưới cùng */}
+                  <div className="flex-grow"></div> 
+                  
+                  {/* AI Smart Search Button - Only for approved posts */}
+                  {post.status === 'approved' && (
+                    <div className="mb-3">
+                      <AISmartSearchButton 
+                        postId={post.id}
+                        variant="secondary"
+                        size="sm"
+                        fullWidth
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Action Buttons */}
+                  <div className="flex justify-end items-center gap-3 mt-4">
+                      <Link 
+                        to={`/student/posts/${post.id}`} 
+                        className="px-3 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 transition-colors flex items-center gap-2 font-medium"
+                      >
+                        <EyeIcon className="w-4 h-4" />
+                        Chi tiết
+                      </Link>
+
+                      <Link 
+                        to={`/student/posts/edit/${post.id}`} 
+                        className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                        Sửa
+                      </Link>
+
+                      <button 
+                        onClick={() => handleDelete(post.id)} 
+                        className="px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-2 font-medium"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                        Xóa
+                      </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 bg-white rounded-lg border-2 border-dashed">
+            <h3 className="text-xl font-semibold text-gray-800">Bạn chưa có bài đăng nào.</h3>
+            <p className="text-gray-500 mt-2">Hãy tạo một yêu cầu để tìm gia sư phù hợp ngay nhé!</p>
+            <Link 
+                to="/student/posts/create" 
+                className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-sm"
+            >
+                <PlusIcon className="w-5 h-5"/>
+                Tạo yêu cầu tìm gia sư
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default MyPostsPage;

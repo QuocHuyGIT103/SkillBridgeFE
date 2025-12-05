@@ -63,20 +63,6 @@ export const attendanceService = {
   },
 
   /**
-   * Chấm điểm AI cho bài viết (Tutor only)
-   */
-  evaluateHomeworkAI: async (
-    classId: string,
-    sessionNumber: number,
-    assignmentId: string
-  ) => {
-    const response = await axiosClient.post(
-      `/classes/${classId}/sessions/${sessionNumber}/homework/${assignmentId}/ai-evaluate`
-    );
-    return response;
-  },
-
-  /**
    * Lấy lịch học theo tuần
    */
   getWeeklySchedule: async (date?: string): Promise<WeeklyScheduleResponse> => {

@@ -26,10 +26,10 @@ const AISmartRecommendationsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [aiAvailable, setAiAvailable] = useState(true);
 
-  // Query parameters
+  // Query parameters - minScore 0 để hiển thị tất cả gia sư được gợi ý
   const [query, setQuery] = useState<SmartRecommendationQuery>({
     limit: 10,
-    minScore: 0.5,
+    minScore: 0,
     includeExplanations: true,
   });
 
@@ -298,9 +298,9 @@ const AISmartRecommendationsPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Recommendations Grid */}
+        {/* Recommendations Grid - 2 columns for better visibility */}
         {recommendations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AnimatePresence>
               {(() => {
                 // Calculate max score once
@@ -324,6 +324,7 @@ const AISmartRecommendationsPage: React.FC = () => {
                         recommendation={rec} 
                         rank={index + 1}
                         isTopMatch={isTopMatch}
+                        postId={postId}
                       />
                     </motion.div>
                   );

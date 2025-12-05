@@ -406,7 +406,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-visible relative ${className} ${disabled ? "opacity-50 pointer-events-none" : ""
         }`}
-      style={{ zIndex: 10 }}
+      style={{ zIndex: 20 }}
     >
       {/* HEADER */}
       <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
@@ -494,25 +494,24 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
       {/* FILTER DROPDOWNS */}
       <div className="px-4 py-3 relative">
-        <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {/* Subjects Dropdown */}
           <div className="relative">
             <button
               onClick={() => toggleDropdown("subjects")}
-              // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.subjects?.length
-                  ? "border-blue-300 bg-blue-50 text-blue-700"
-                  : "border-gray-200"
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.subjects?.length
+                  ? "border-blue-400 bg-blue-50 text-blue-700"
+                  : "border-gray-200 text-gray-700"
                 }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <AcademicCapIcon className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">
+                <span className="truncate text-left">
                   {getFilterDisplayText("subjects")}
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${openDropdowns.subjects ? "rotate-180" : ""
+                className={`w-4 h-4 flex-shrink-0 transition-transform ${openDropdowns.subjects ? "rotate-180" : ""
                   }`}
               />
             </button>
@@ -524,7 +523,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
-                  style={{ zIndex: 9999 }}
+                  style={{ zIndex: 50 }}
                 >
                   <SubjectSelector
                     selectedSubjects={localFilters.subjects || []}
@@ -548,20 +547,19 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("studentLevel")}
-              // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.studentLevel?.length
-                  ? "border-green-300 bg-green-50 text-green-700"
-                  : "border-gray-200"
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.studentLevel?.length
+                  ? "border-green-400 bg-green-50 text-green-700"
+                  : "border-gray-200 text-gray-700"
                 }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span className="text-base">🎓</span>
-                <span className="truncate">
+                <span className="text-sm flex-shrink-0">🎓</span>
+                <span className="truncate text-left">
                   {getFilterDisplayText("studentLevel")}
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${openDropdowns.studentLevel ? "rotate-180" : ""
+                className={`w-4 h-4 flex-shrink-0 transition-transform ${openDropdowns.studentLevel ? "rotate-180" : ""
                   }`}
               />
             </button>
@@ -573,7 +571,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-64"
-                  style={{ zIndex: 9999 }}
+                  style={{ zIndex: 50 }}
                 >
                   <div className="grid grid-cols-1 gap-2">
                     {STUDENT_LEVELS.map((level) => {
@@ -621,20 +619,19 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("teachingMode")}
-              // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.teachingMode
-                  ? "border-purple-300 bg-purple-50 text-purple-700"
-                  : "border-gray-200"
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.teachingMode
+                  ? "border-purple-400 bg-purple-50 text-purple-700"
+                  : "border-gray-200 text-gray-700"
                 }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <ComputerDesktopIcon className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">
+                <span className="truncate text-left">
                   {getFilterDisplayText("teachingMode")}
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${openDropdowns.teachingMode ? "rotate-180" : ""
+                className={`w-4 h-4 flex-shrink-0 transition-transform ${openDropdowns.teachingMode ? "rotate-180" : ""
                   }`}
               />
             </button>
@@ -646,7 +643,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-56"
-                  style={{ zIndex: 9999 }}
+                  style={{ zIndex: 50 }}
                 >
                   <div className="space-y-2">
                     {TEACHING_MODES.map((mode) => {
@@ -690,15 +687,14 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("price")}
-              // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.priceMin || localFilters.priceMax
-                  ? "border-green-300 bg-green-50 text-green-700"
-                  : "border-gray-200"
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.priceMin || localFilters.priceMax
+                  ? "border-green-400 bg-green-50 text-green-700"
+                  : "border-gray-200 text-gray-700"
                 }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <CurrencyDollarIcon className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">
+                <span className="truncate text-left">
                   {getFilterDisplayText("price")}
                 </span>
               </div>
@@ -715,7 +711,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80"
-                  style={{ zIndex: 9999 }}
+                  style={{ zIndex: 50 }}
                 >
                   {/* Price Presets */}
                   <div className="mb-3">
@@ -763,19 +759,19 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("quality")}
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.minRating || localFilters.minReviews
-                  ? "border-yellow-300 bg-yellow-50 text-yellow-700"
-                  : "border-gray-200"
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.minRating || localFilters.minReviews
+                  ? "border-yellow-400 bg-yellow-50 text-yellow-700"
+                  : "border-gray-200 text-gray-700"
                 }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span className="text-base">⭐</span>
-                <span className="truncate">
+                <span className="text-sm flex-shrink-0">⭐</span>
+                <span className="truncate text-left">
                   {getFilterDisplayText("quality")}
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${openDropdowns.quality ? "rotate-180" : ""
+                className={`w-4 h-4 flex-shrink-0 transition-transform ${openDropdowns.quality ? "rotate-180" : ""
                   }`}
               />
             </button>
@@ -787,7 +783,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80"
-                  style={{ zIndex: 9999 }}
+                  style={{ zIndex: 50 }}
                 >
                   <div className="space-y-4">
                     <div>
@@ -883,20 +879,19 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("location")}
-              // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className={`w-full px-3 py-2.5 text-base border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.province
-                  ? "border-red-300 bg-red-50 text-red-700"
-                  : "border-gray-200"
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.province
+                  ? "border-red-400 bg-red-50 text-red-700"
+                  : "border-gray-200 text-gray-700"
                 }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <MapPinIcon className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">
+                <span className="truncate text-left">
                   {getFilterDisplayText("location")}
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${openDropdowns.location ? "rotate-180" : ""
+                className={`w-4 h-4 flex-shrink-0 transition-transform ${openDropdowns.location ? "rotate-180" : ""
                   }`}
               />
             </button>
@@ -908,7 +903,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-64"
-                  style={{ zIndex: 9999 }}
+                  style={{ zIndex: 50 }}
                 >
                   <div className="space-y-3">
                     <div>
@@ -982,7 +977,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-2 w-48"
-                  style={{ zIndex: 9999 }}
+                  style={{ zIndex: 50 }}
                 >
                   <div className="space-y-1">
                     {SORT_OPTIONS.map((option, index) => {
