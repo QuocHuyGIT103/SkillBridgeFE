@@ -11,13 +11,20 @@ import {
   CalendarDaysIcon,
   AcademicCapIcon,
   UserCircleIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { attendanceService } from "../../services/attendance.service";
-import { uploadService } from "../../services";
+import { uploadService, aiService } from "../../services";
 import toast from "react-hot-toast";
-import type { WeeklySession } from "../../types/attendance";
+import type { WeeklySession, AIEvaluationResult } from "../../types/attendance";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import ExerciseLibraryService from "../../services/exerciseLibrary.service";
+import type {
+  ExerciseTemplate,
+  Rubric,
+} from "../../services/exerciseLibrary.service";
+import { useNavigate } from "react-router-dom";
 
 interface HomeworkModalProps {
   session: WeeklySession;
@@ -34,10 +41,23 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const navigate = useNavigate();
   const assignments = session.homework.assignments || [];
-  const pendingSubmissionAssignments = assignments.filter(
-    (assignment) => !assignment.submission
-  );
+
+  // Allow submission for:
+  // 1. Assignments without submission (pending)
+  // 2. Assignments with submission but not graded yet (can resubmit)
+  // 3. Assignments graded with score < 5 (failed, can retry)
+  const canSubmitAssignments = assignments.filter((assignment) => {
+    if (!assignment.submission) return true; // Never submitted
+    if (!assignment.grade) return true; // Submitted but not graded - allow resubmit
+    if (assignment.grade.score < 5) return true; // Failed - allow retry
+    return false; // Passed - no need to resubmit
+  });
+
+  // For backward compatibility
+  const pendingSubmissionAssignments = canSubmitAssignments;
+
   const pendingGradeAssignments = assignments.filter(
     (assignment) => assignment.submission && !assignment.grade
   );
@@ -73,12 +93,22 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
     description: "",
     deadline: "",
     fileUrl: "",
+    templateId: "" as string | undefined,
+    rubricId: "" as string | undefined,
   });
+  const [availableTemplates, setAvailableTemplates] = useState<
+    ExerciseTemplate[]
+  >([]);
+  const [availableRubrics, setAvailableRubrics] = useState<Rubric[]>([]);
+  const [loadingLibrary, setLoadingLibrary] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
 
   // Submission Form State
   const [submissionData, setSubmissionData] = useState({
     fileUrl: "",
     notes: "",
+    textAnswer: "",
+    audioUrl: "",
   });
 
   // Grading Form State
@@ -88,14 +118,149 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   });
 
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [aiEvaluatingAssignmentId, setAiEvaluatingAssignmentId] = useState<
+    string | null
+  >(null);
+  const [transcribingAudio, setTranscribingAudio] = useState(false);
+
+  const selectedGradeAssignment = assignments.find(
+    (assignment) => assignment.id === selectedGradeAssignmentId
+  );
+
+  const calculateAiScoreOn10 = (evaluation?: AIEvaluationResult | null) => {
+    if (!evaluation || !evaluation.maxScore) return null;
+    const normalized = (evaluation.totalScore / evaluation.maxScore) * 10;
+    return Math.round(normalized * 10) / 10;
+  };
+
+  const handleApplyAiScore = () => {
+    if (!selectedGradeAssignment?.aiEvaluation) return;
+    const normalized = calculateAiScoreOn10(
+      selectedGradeAssignment.aiEvaluation
+    );
+    if (normalized == null) return;
+    setGradeData((prev) => ({ ...prev, score: normalized }));
+    toast.success("Đã áp dụng điểm AI vào form chấm");
+  };
+
+  const loadExerciseLibrary = async () => {
+    try {
+      setLoadingLibrary(true);
+      const [templatesRes, rubricsRes] = await Promise.all([
+        ExerciseLibraryService.listTemplates({ mineOnly: true }),
+        ExerciseLibraryService.listRubrics(),
+      ]);
+
+      // axiosClient đã unwrap nên data chính là mảng dữ liệu
+      const templates = templatesRes.data || [];
+      const rubrics = rubricsRes.data || [];
+
+      setAvailableTemplates(templates);
+      setAvailableRubrics(rubrics);
+
+      return { templates, rubrics };
+    } catch (error) {
+      console.error("Failed to load exercise library", error);
+      return { templates: [], rubrics: [] };
+    } finally {
+      setLoadingLibrary(false);
+    }
+  };
+
+  const handleOpenTemplatePicker = async () => {
+    if (!availableTemplates.length || !availableRubrics.length) {
+      setShowTemplatePicker(true);
+      const result = await loadExerciseLibrary();
+      if (!result.templates.length) {
+        setShowTemplatePicker(false);
+        toast.error("Kho bài tập của bạn đang rỗng. Hãy thêm bài tập mới!");
+        navigate("/tutor/exercise-bank");
+      }
+      return;
+    }
+
+    setShowTemplatePicker(true);
+  };
+
+  const handleSelectTemplate = (template: ExerciseTemplate) => {
+    setAssignmentData((prev) => ({
+      ...prev,
+      title: template.title,
+      description: template.content?.prompt || template.description || "",
+      templateId: template.id,
+      rubricId: template.rubricId || prev.rubricId,
+      // Copy file attachment from template if available
+      fileUrl:
+        template.content?.attachmentUrl ||
+        template.content?.resources?.[0] ||
+        prev.fileUrl,
+    }));
+    setShowTemplatePicker(false);
+  };
+
+  const transcribeAudioToText = async (audioUrl: string) => {
+    if (!audioUrl) return;
+    setTranscribingAudio(true);
+    try {
+      const response = await aiService.transcribeAudio(audioUrl);
+      const transcript =
+        response.data?.transcript || response.data?.data?.transcript || "";
+      if (transcript) {
+        setSubmissionData((prev) => ({ ...prev, textAnswer: transcript }));
+        toast.success(
+          "Đã chuyển audio thành văn bản, vui lòng kiểm tra lại trước khi nộp."
+        );
+      } else {
+        toast.error("Không thể nhận dạng được nội dung audio.");
+      }
+    } catch (error: any) {
+      console.error("Transcribe audio failed:", error);
+      const msg = error.response?.data?.message || error.message;
+      if (
+        typeof msg === "string" &&
+        msg.includes("Định dạng audio không được hỗ trợ")
+      ) {
+        toast.error(
+          "Định dạng audio không được hỗ trợ. Vui lòng chọn file mp3, m4a, wav, ogg, webm..."
+        );
+      } else {
+        toast.error(msg || "Không thể chuyển audio thành văn bản");
+      }
+    } finally {
+      setTranscribingAudio(false);
+    }
+  };
 
   // Handle File Upload
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    target: "assignment" | "submission"
+    target: "assignment" | "submissionFile" | "submissionAudio"
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Nếu là audio thì kiểm tra định dạng trước khi upload
+    if (target === "submissionAudio") {
+      const allowedExt = [
+        "flac",
+        "m4a",
+        "mp3",
+        "mp4",
+        "mpeg",
+        "mpga",
+        "oga",
+        "ogg",
+        "wav",
+        "webm",
+      ];
+      const ext = file.name.split(".").pop()?.toLowerCase() || "";
+      if (!allowedExt.includes(ext)) {
+        toast.error(
+          "Định dạng audio không được hỗ trợ. Vui lòng chọn file mp3, m4a, wav, ogg, webm..."
+        );
+        return;
+      }
+    }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
@@ -113,8 +278,15 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
 
       if (target === "assignment") {
         setAssignmentData((prev) => ({ ...prev, fileUrl }));
-      } else {
+      } else if (target === "submissionFile") {
         setSubmissionData((prev) => ({ ...prev, fileUrl }));
+      } else if (target === "submissionAudio") {
+        setSubmissionData((prev) => ({
+          ...prev,
+          audioUrl: fileUrl,
+          fileUrl: prev.fileUrl || fileUrl,
+        }));
+        await transcribeAudioToText(fileUrl);
       }
 
       toast.success("Tải file lên thành công!");
@@ -151,6 +323,8 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
           description: assignmentData.description,
           deadline: assignmentData.deadline,
           fileUrl: assignmentData.fileUrl || undefined,
+          templateId: assignmentData.templateId || undefined,
+          rubricId: assignmentData.rubricId || undefined,
         }
       );
 
@@ -165,6 +339,8 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
         description: "",
         deadline: "",
         fileUrl: "",
+        templateId: undefined,
+        rubricId: undefined,
       });
 
       // Đảm bảo lần mở tiếp theo sẽ vào tab xem bài tập
@@ -177,6 +353,24 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       toast.error(error.response?.data?.message || "Giao bài tập thất bại");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEvaluateWithAI = async (assignmentId: string) => {
+    setAiEvaluatingAssignmentId(assignmentId);
+    try {
+      const response = await attendanceService.evaluateHomeworkAI(
+        session.classId,
+        session.sessionNumber,
+        assignmentId
+      );
+      toast.success(response.message || "Đã chấm AI cho bài viết!");
+      await onSuccess();
+    } catch (error: any) {
+      console.error("AI evaluation failed:", error);
+      toast.error(error.response?.data?.message || "Không thể chấm điểm AI");
+    } finally {
+      setAiEvaluatingAssignmentId(null);
     }
   };
 
@@ -200,6 +394,8 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
           assignmentId: selectedSubmitAssignmentId,
           fileUrl: submissionData.fileUrl,
           notes: submissionData.notes || undefined,
+          textAnswer: submissionData.textAnswer || undefined,
+          audioUrl: submissionData.audioUrl || undefined,
         }
       );
 
@@ -212,6 +408,8 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
       setSubmissionData({
         fileUrl: "",
         notes: "",
+        textAnswer: "",
+        audioUrl: "",
       });
 
       // Đảm bảo lần mở tiếp theo sẽ vào tab xem bài tập
@@ -302,11 +500,11 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   };
 
   const tabs = getTabs();
-  const canSubmitAssignments = tabs.some((tab) => tab.id === "submit");
+  const hasSubmitTab = tabs.some((tab) => tab.id === "submit");
   const canGradeAssignments = tabs.some((tab) => tab.id === "grade");
 
   const handleOpenSubmitTab = (assignmentId?: string) => {
-    if (!assignmentId || !canSubmitAssignments) return;
+    if (!assignmentId || !hasSubmitTab) return;
     setSelectedSubmitAssignmentId(assignmentId);
     setActiveTab("submit");
   };
@@ -423,6 +621,16 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                             { locale: vi }
                           )
                         : "N/A";
+                      const aiEvaluation = assignment.aiEvaluation;
+                      const aiPercent =
+                        aiEvaluation && aiEvaluation.maxScore
+                          ? Math.round(
+                              (aiEvaluation.totalScore /
+                                aiEvaluation.maxScore) *
+                                100
+                            )
+                          : null;
+                      const aiScoreOn10 = calculateAiScoreOn10(aiEvaluation);
                       return (
                         <div
                           key={assignment.id || `assignment-${index}`}
@@ -489,6 +697,193 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                               </a>
                             )}
                           </div>
+
+                          {/* AI Grading Button - for TUTOR */}
+                          {userRole === "TUTOR" && assignment.submission && (
+                            <div className="mt-4">
+                              {assignment.rubricId &&
+                              assignment.submission?.textAnswer ? (
+                                // Has rubric + textAnswer => can use AI
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    onClick={() =>
+                                      handleEvaluateWithAI(assignment.id)
+                                    }
+                                    disabled={
+                                      aiEvaluatingAssignmentId === assignment.id
+                                    }
+                                    className="inline-flex items-center px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    {aiEvaluatingAssignmentId ===
+                                    assignment.id ? (
+                                      <>
+                                        <span className="mr-2 inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Đang chấm AI...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <SparklesIcon className="w-4 h-4 mr-1" />
+                                        {aiEvaluation
+                                          ? "Chấm lại bằng AI"
+                                          : "Chấm bằng AI (beta)"}
+                                      </>
+                                    )}
+                                  </button>
+                                  {!aiEvaluation && (
+                                    <span className="text-xs text-gray-500">
+                                      AI dựa trên rubric để đề xuất điểm tham
+                                      khảo.
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                // Missing rubric or textAnswer => show why AI is not available
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                  <p className="text-xs text-gray-600">
+                                    <span className="font-medium">
+                                      💡 Không thể chấm AI vì:
+                                    </span>
+                                    {!assignment.rubricId && (
+                                      <span className="block mt-1">
+                                        • Bài tập chưa được gán rubric tiêu chí
+                                        chấm điểm
+                                      </span>
+                                    )}
+                                    {assignment.rubricId &&
+                                      !assignment.submission?.textAnswer && (
+                                        <span className="block mt-1">
+                                          • Học viên chưa nhập nội dung text
+                                          (chỉ upload file)
+                                        </span>
+                                      )}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {aiEvaluation && (
+                            <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-4">
+                              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                                    <SparklesIcon className="w-4 h-4" />
+                                    AI đánh giá theo rubric
+                                  </p>
+                                  <p className="text-xs text-purple-600">
+                                    Tổng: {aiEvaluation.totalScore}/
+                                    {aiEvaluation.maxScore} điểm
+                                    {aiPercent !== null
+                                      ? ` (${aiPercent}%)`
+                                      : ""}
+                                  </p>
+                                </div>
+                                {aiScoreOn10 !== null && (
+                                  <div className="text-right">
+                                    <p className="text-[11px] uppercase tracking-wide text-purple-500">
+                                      Quy đổi tham khảo
+                                    </p>
+                                    <p className="text-2xl font-bold text-purple-700">
+                                      {aiScoreOn10}/10
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {aiEvaluation.criteria?.length > 0 && (
+                                <div className="mt-3 space-y-2">
+                                  {aiEvaluation.criteria.map(
+                                    (criterion, idx) => {
+                                      const percent =
+                                        criterion.maxScore > 0
+                                          ? Math.round(
+                                              (criterion.score /
+                                                criterion.maxScore) *
+                                                100
+                                            )
+                                          : 0;
+                                      return (
+                                        <div
+                                          key={`${criterion.label}-${idx}`}
+                                          className="bg-white rounded-md p-3 shadow-sm"
+                                        >
+                                          <div className="flex justify-between text-sm font-medium text-gray-800">
+                                            <span>{criterion.label}</span>
+                                            <span>
+                                              {criterion.score}/
+                                              {criterion.maxScore} điểm
+                                            </span>
+                                          </div>
+                                          <div className="mt-2 h-2 bg-purple-100 rounded-full overflow-hidden">
+                                            <div
+                                              className="h-2 bg-purple-500"
+                                              style={{
+                                                width: `${Math.min(
+                                                  100,
+                                                  Math.max(0, percent)
+                                                )}%`,
+                                              }}
+                                            />
+                                          </div>
+                                          {criterion.feedback && (
+                                            <p className="mt-2 text-xs text-gray-600">
+                                              {criterion.feedback}
+                                            </p>
+                                          )}
+                                        </div>
+                                      );
+                                    }
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                {aiEvaluation.strengths &&
+                                  aiEvaluation.strengths.length > 0 && (
+                                    <div>
+                                      <p className="font-semibold text-green-700 mb-2">
+                                        Điểm mạnh
+                                      </p>
+                                      <ul className="space-y-1 text-green-900 text-sm list-disc list-inside">
+                                        {aiEvaluation.strengths
+                                          .slice(0, 3)
+                                          .map((item, idx) => (
+                                            <li key={`strength-${idx}`}>
+                                              {item}
+                                            </li>
+                                          ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                {aiEvaluation.improvements &&
+                                  aiEvaluation.improvements.length > 0 && (
+                                    <div>
+                                      <p className="font-semibold text-orange-700 mb-2">
+                                        Đề xuất cải thiện
+                                      </p>
+                                      <ul className="space-y-1 text-orange-900 text-sm list-disc list-inside">
+                                        {aiEvaluation.improvements
+                                          .slice(0, 3)
+                                          .map((item, idx) => (
+                                            <li key={`improve-${idx}`}>
+                                              {item}
+                                            </li>
+                                          ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                              </div>
+
+                              {aiEvaluation.summary && (
+                                <p className="mt-4 text-sm text-gray-700">
+                                  <span className="font-semibold text-gray-800">
+                                    Tổng kết:
+                                  </span>{" "}
+                                  {aiEvaluation.summary}
+                                </p>
+                              )}
+                            </div>
+                          )}
 
                           <div className="mt-4 flex flex-wrap items-center gap-3">
                             {userRole === "STUDENT" &&
@@ -584,6 +979,16 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                                       </p>
                                     </div>
                                   )}
+                                  {assignment.submission.textAnswer && (
+                                    <div>
+                                      <span className="font-medium text-gray-700">
+                                        Bài viết:
+                                      </span>
+                                      <p className="mt-1 text-gray-700 whitespace-pre-line bg-white border border-green-100 rounded-md p-3">
+                                        {assignment.submission.textAnswer}
+                                      </p>
+                                    </div>
+                                  )}
                                   <div className="flex items-center text-gray-600">
                                     <ClockIcon className="w-4 h-4 mr-1" />
                                     <span>
@@ -651,10 +1056,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     type="text"
                     value={assignmentData.title}
                     onChange={(e) =>
-                      setAssignmentData({
-                        ...assignmentData,
+                      setAssignmentData((prev) => ({
+                        ...prev,
                         title: e.target.value,
-                      })
+                      }))
                     }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="VD: Bài tập ôn tập chương 1"
@@ -668,10 +1073,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                   <textarea
                     value={assignmentData.description}
                     onChange={(e) =>
-                      setAssignmentData({
-                        ...assignmentData,
+                      setAssignmentData((prev) => ({
+                        ...prev,
                         description: e.target.value,
-                      })
+                      }))
                     }
                     rows={4}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -687,10 +1092,10 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     type="datetime-local"
                     value={assignmentData.deadline}
                     onChange={(e) =>
-                      setAssignmentData({
-                        ...assignmentData,
+                      setAssignmentData((prev) => ({
+                        ...prev,
                         deadline: e.target.value,
-                      })
+                      }))
                     }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
@@ -729,6 +1134,37 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                       </a>
                     </div>
                   )}
+                </div>
+
+                {/* Chọn từ kho bài tập & rubric */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kho bài tập & rubric
+                  </label>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <button
+                      type="button"
+                      onClick={handleOpenTemplatePicker}
+                      className="inline-flex items-center px-3 py-2 border border-purple-500 text-purple-600 text-sm font-medium rounded-lg hover:bg-purple-50"
+                    >
+                      <DocumentTextIcon className="w-4 h-4 mr-1" />
+                      Chọn từ kho bài tập
+                    </button>
+                    {assignmentData.templateId && (
+                      <span className="inline-flex items-center px-3 py-1 text-xs rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                        Đã chọn template
+                      </span>
+                    )}
+                    {assignmentData.rubricId && (
+                      <span className="inline-flex items-center px-3 py-1 text-xs rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                        Đã gắn rubric
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Bạn có thể chọn bài tập mẫu để tự động điền tiêu đề và đề
+                    bài, đồng thời gắn sẵn rubric chấm điểm.
+                  </p>
                 </div>
 
                 <div className="pt-4 border-t border-gray-200 flex justify-end space-x-3">
@@ -771,9 +1207,35 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                   <p className="text-sm text-yellow-800">
                     <strong>Lưu ý:</strong> Hãy kiểm tra kỹ bài làm trước khi
-                    nộp. Bạn chỉ có thể nộp một lần!
+                    nộp. Nếu bạn đã nộp trước đó, bài nộp mới sẽ thay thế bài
+                    cũ.
                   </p>
                 </div>
+
+                {/* AI Grading Hint - show when selected assignment has rubric */}
+                {(() => {
+                  const selectedAssignment = canSubmitAssignments.find(
+                    (a) => a.id === selectedSubmitAssignmentId
+                  );
+                  return selectedAssignment?.rubricId ? (
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-start space-x-2">
+                        <SparklesIcon className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-purple-800">
+                            Bài tập này có hỗ trợ chấm điểm AI!
+                          </p>
+                          <p className="text-xs text-purple-700 mt-1">
+                            Để AI có thể chấm điểm tự động theo rubric, vui lòng
+                            nhập nội dung bài làm vào ô
+                            <strong> "Bài viết dạng text"</strong> bên dưới
+                            (ngoài việc upload file).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -786,14 +1248,22 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
-                    {pendingSubmissionAssignments.map((assignment, index) => (
-                      <option
-                        key={assignment.id || `pending-${index}`}
-                        value={assignment.id}
-                      >
-                        {assignment.title || `Bài tập ${index + 1}`}
-                      </option>
-                    ))}
+                    {canSubmitAssignments.map((assignment, index) => {
+                      const status = !assignment.submission
+                        ? ""
+                        : assignment.grade
+                        ? ` (Nộp lại - Điểm cũ: ${assignment.grade.score}/10)`
+                        : " (Nộp lại - Chờ chấm)";
+                      return (
+                        <option
+                          key={assignment.id || `pending-${index}`}
+                          value={assignment.id}
+                        >
+                          {assignment.title || `Bài tập ${index + 1}`}
+                          {status}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -805,7 +1275,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     <label className="flex-1">
                       <input
                         type="file"
-                        onChange={(e) => handleFileUpload(e, "submission")}
+                        onChange={(e) => handleFileUpload(e, "submissionFile")}
                         className="hidden"
                         disabled={uploadingFile}
                       />
@@ -830,6 +1300,76 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                       </a>
                     </div>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bài nói (audio){" "}
+                    <span className="text-xs text-gray-500">
+                      (tùy chọn, cho speaking)
+                    </span>
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <label className="flex-1">
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => handleFileUpload(e, "submissionAudio")}
+                        className="hidden"
+                        disabled={uploadingFile}
+                      />
+                      <div className="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 cursor-pointer transition-colors flex items-center justify-center space-x-2 text-gray-600 hover:text-purple-600">
+                        <CloudArrowUpIcon className="w-5 h-5" />
+                        <span>
+                          {uploadingFile ? "Đang tải..." : "Chọn file audio"}
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Hệ thống sẽ dùng dịch vụ Speech-to-Text để chuyển giọng nói
+                    thành văn bản (sử dụng cho AI chấm điểm).
+                  </p>
+                  {transcribingAudio && (
+                    <p className="mt-1 text-xs text-purple-600">
+                      Đang chuyển đổi audio thành văn bản, vui lòng đợi...
+                    </p>
+                  )}
+                  {submissionData.audioUrl && (
+                    <div className="mt-2 flex items-center space-x-2 text-sm text-green-600">
+                      <CheckCircleIcon className="w-4 h-4" />
+                      <a
+                        href={submissionData.audioUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
+                        File audio đã tải lên
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bài viết dạng text (khuyến khích, để AI chấm chính xác hơn)
+                  </label>
+                  <textarea
+                    value={submissionData.textAnswer}
+                    onChange={(e) =>
+                      setSubmissionData((prev) => ({
+                        ...prev,
+                        textAnswer: e.target.value,
+                      }))
+                    }
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Nhập nội dung bài viết tại đây..."
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    AI sẽ dùng nội dung này cùng với rubric để chấm điểm tự
+                    động.
+                  </p>
                 </div>
 
                 <div>
@@ -862,6 +1402,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     disabled={
                       loading ||
                       uploadingFile ||
+                      transcribingAudio ||
                       !submissionData.fileUrl ||
                       !selectedSubmitAssignmentId
                     }
@@ -914,6 +1455,54 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
                     ))}
                   </select>
                 </div>
+
+                {selectedGradeAssignment?.aiEvaluation && (
+                  <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 text-sm">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div>
+                        <p className="text-indigo-700 font-semibold flex items-center gap-2">
+                          <SparklesIcon className="w-4 h-4" />
+                          Gợi ý từ AI
+                        </p>
+                        <p className="text-indigo-600 mt-1">
+                          {selectedGradeAssignment.aiEvaluation.totalScore}/
+                          {selectedGradeAssignment.aiEvaluation.maxScore} điểm
+                          theo rubric
+                        </p>
+                      </div>
+                      {calculateAiScoreOn10(
+                        selectedGradeAssignment.aiEvaluation
+                      ) !== null && (
+                        <div className="text-right">
+                          <p className="text-[11px] uppercase tracking-wide text-indigo-500">
+                            Quy đổi tham khảo
+                          </p>
+                          <p className="text-2xl font-bold text-indigo-700">
+                            {calculateAiScoreOn10(
+                              selectedGradeAssignment.aiEvaluation
+                            )}
+                            /10
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={handleApplyAiScore}
+                        className="inline-flex items-center px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition-colors"
+                      >
+                        <SparklesIcon className="w-4 h-4 mr-1" />
+                        Dùng điểm AI
+                      </button>
+                      {selectedGradeAssignment.aiEvaluation.summary && (
+                        <p className="text-indigo-700 text-sm">
+                          {selectedGradeAssignment.aiEvaluation.summary}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -980,6 +1569,144 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
           </AnimatePresence>
         </div>
       </motion.div>
+
+      {/* Template Picker Modal */}
+      <AnimatePresence>
+        {showTemplatePicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+            onClick={() => setShowTemplatePicker(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col m-4"
+            >
+              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4 text-white">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold">Chọn bài tập từ kho</h3>
+                  <button
+                    onClick={() => setShowTemplatePicker(false)}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6">
+                {loadingLibrary ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                  </div>
+                ) : availableTemplates.length === 0 ? (
+                  <div className="text-center py-12">
+                    <DocumentTextIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">
+                      Kho bài tập của bạn đang trống
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowTemplatePicker(false);
+                        navigate("/tutor/exercise-bank");
+                      }}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                    >
+                      Thêm bài tập mới
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {availableTemplates.map((template) => {
+                      const rubric = availableRubrics.find(
+                        (r) => r.id === template.rubricId
+                      );
+                      return (
+                        <div
+                          key={template.id}
+                          className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:bg-purple-50 transition-all cursor-pointer"
+                          onClick={() => handleSelectTemplate(template)}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 mb-1">
+                                {template.title}
+                              </h4>
+                              <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                                {template.description ||
+                                  template.content?.prompt ||
+                                  "Không có mô tả"}
+                              </p>
+                              <div className="flex flex-wrap gap-2 items-center">
+                                {template.subjectId && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-700 border border-blue-200">
+                                    {template.subjectId}
+                                  </span>
+                                )}
+                                {template.difficulty && (
+                                  <span
+                                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs border ${
+                                      template.difficulty === "EASY"
+                                        ? "bg-green-50 text-green-700 border-green-200"
+                                        : template.difficulty === "MEDIUM"
+                                        ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                        : "bg-red-50 text-red-700 border-red-200"
+                                    }`}
+                                  >
+                                    {template.difficulty === "EASY"
+                                      ? "Dễ"
+                                      : template.difficulty === "MEDIUM"
+                                      ? "Trung bình"
+                                      : "Khó"}
+                                  </span>
+                                )}
+                                {rubric && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-50 text-purple-700 border border-purple-200">
+                                    <SparklesIcon className="w-3 h-3 mr-1" />
+                                    {rubric.name}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectTemplate(template);
+                              }}
+                              className="ml-4 px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                              Chọn
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-gray-600">
+                    Tìm thấy {availableTemplates.length} bài tập trong kho
+                  </p>
+                  <button
+                    onClick={() => setShowTemplatePicker(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

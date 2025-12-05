@@ -8,7 +8,6 @@ import {
   MapPinIcon,
   BookOpenIcon,
   AcademicCapIcon,
-  SparklesIcon,
 } from "@heroicons/react/24/outline";
 
 const DetailItem: React.FC<{ icon: React.ReactNode; label: string; value: React.ReactNode }> = ({
@@ -92,22 +91,15 @@ const TutorStudentPostDetailPage: React.FC = () => {
           </div>
           <div className="flex-shrink-0 flex items-center gap-2 flex-wrap">
             <Link
-              to={`/tutor/ai-recommendations`}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-md hover:from-purple-700 hover:to-pink-700 flex items-center gap-2"
-            >
-              <SparklesIcon className="w-5 h-5" />
-              <span>Gợi ý học viên thông minh</span>
-            </Link>
-            <Link
               to={`/tutor/posts/student/${id}/request`}
               state={{ tutorPostId: (routerLocation.state as any)?.tutorPostId }}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 font-medium shadow-md hover:shadow-lg transition-all"
             >
               Gửi đề nghị dạy
             </Link>
             <button
               onClick={() => navigate(-1)}
-              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
             >
               <ArrowLeftIcon className="w-5 h-5 inline mr-2" />
               Quay lại

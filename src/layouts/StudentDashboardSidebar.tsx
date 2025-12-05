@@ -364,11 +364,10 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
                   // ✅ Item với children - clickable để expand/collapse
                   <button
                     onClick={() => toggleExpanded(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${
-                      isActive || hasActiveChildren(item)
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${isActive || hasActiveChildren(item)
                         ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
                         : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 hover:shadow-sm"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center space-x-3">
                       {getIcon(item.icon, isActive || hasActiveChildren(item))}
@@ -384,9 +383,8 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
                     </div>
                     {!collapsed && hasChildren && (
                       <ChevronDownIcon
-                        className={`w-4 h-4 transition-transform duration-200 ${
-                          isExpanded ? "transform rotate-180" : ""
-                        }`}
+                        className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? "transform rotate-180" : ""
+                          }`}
                       />
                     )}
                   </button>
@@ -394,11 +392,10 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
                   // ✅ Item thường - Link
                   <Link
                     to={item.path}
-                    className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${
-                      isActive
+                    className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${isActive
                         ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-105"
                         : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-600 hover:shadow-sm"
-                    }`}
+                      }`}
                   >
                     {getIcon(item.icon, isActive)}
                     {!collapsed && (
@@ -410,11 +407,10 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
                         <span className="font-medium">{item.label}</span>
                         {item.badge && (
                           <span
-                            className={`px-2 py-1 text-xs font-bold rounded-full ${
-                              isActive
+                            className={`px-2 py-1 text-xs font-bold rounded-full ${isActive
                                 ? "bg-white/20 text-white backdrop-blur-sm"
                                 : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm"
-                            }`}
+                              }`}
                           >
                             {item.badge}
                           </span>
@@ -442,11 +438,10 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
                             <Link
                               key={child.id}
                               to={child.path}
-                              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ${
-                                isChildActive
+                              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ${isChildActive
                                   ? "bg-blue-100 text-blue-700 font-medium"
                                   : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                              }`}
+                                }`}
                             >
                               <div className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
                               <span>{child.label}</span>

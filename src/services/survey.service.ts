@@ -40,9 +40,9 @@ class SurveyService {
   /**
    * Get student's current survey
    */
-  static async getSurvey(): Promise<ApiResponse<StudentSurvey>> {
+  static async getSurvey(): Promise<ApiResponse<SurveySubmitResponse>> {
     try {
-      const response = await axiosClient.get<StudentSurvey>('/ai/survey');
+      const response = await axiosClient.get<SurveySubmitResponse>('/ai/survey');
       return response;
     } catch (error: any) {
       console.error('❌ Get survey error:', error);
@@ -79,6 +79,14 @@ class SurveyService {
     } catch (error) {
       return true; // Show survey if error
     }
+  }
+
+  /**
+   * Gợi ý bài tập phù hợp dựa trên survey
+   */
+  static async getExerciseRecommendations() {
+    const response = await axiosClient.get('/ai/survey/exercises');
+    return response;
   }
 }
 

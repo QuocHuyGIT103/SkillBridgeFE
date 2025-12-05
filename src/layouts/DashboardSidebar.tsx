@@ -131,6 +131,41 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           label: "Quản lý bài tập",
           path: "/tutor/assignments",
         },
+        {
+          id: "academics-exercise-bank",
+          label: "Kho bài tập",
+          path: "/tutor/exercise-bank",
+        },
+        {
+          id: "academics-rubrics",
+          label: "Rubric chấm điểm",
+          path: "/tutor/rubrics",
+        },
+        {
+          id: "academics-curriculum",
+          label: "Lập kế hoạch giảng dạy",
+          path: "/tutor/academics/curriculum",
+        },
+        {
+          id: "academics-materials",
+          label: "Tài liệu học tập",
+          path: "/tutor/academics/materials",
+        },
+        {
+          id: "academics-assessments",
+          label: "Đánh giá & Chấm điểm",
+          path: "/tutor/academics/assessments",
+        },
+        {
+          id: "academics-progress",
+          label: "Tiến độ học sinh",
+          path: "/tutor/academics/progress",
+        },
+        {
+          id: "academics-reports",
+          label: "Báo cáo & Phân tích",
+          path: "/tutor/academics/reports",
+        },
       ],
     },
     {

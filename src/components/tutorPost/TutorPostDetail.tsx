@@ -257,7 +257,7 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Back Button */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
@@ -277,15 +277,6 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
             </svg>
             Quay lại
           </button>
-          {isOwnPost && (
-            <Link
-              to={`/tutor/ai-recommendations?tutorPostId=${currentPost._id || currentPost.id}`}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 flex items-center space-x-2 shadow-md hover:shadow-lg transition-all"
-            >
-              <SparklesIcon className="w-5 h-5" />
-              <span>Gợi ý học viên thông minh</span>
-            </Link>
-          )}
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">

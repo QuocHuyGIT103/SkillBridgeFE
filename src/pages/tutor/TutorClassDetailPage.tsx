@@ -87,15 +87,24 @@ const TutorClassDetailPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header: Title + Back Button */}
-        <div className="mb-6 flex justify-between items-center">
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Chi tiết lớp học</h1>
-          <button
-            onClick={() => navigate("/tutor/classes")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 shadow-sm transition-colors"
-          >
-            <ArrowLeftIcon className="h-4 w-4" />
-            Quay lại
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/tutor/schedule/calendar")}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-blue-700 transition-colors"
+            >
+              <CalendarDaysIcon className="h-5 w-5" />
+              Xem lịch
+            </button>
+            <button
+              onClick={() => navigate("/tutor/classes")}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 shadow-sm transition-colors"
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+              Quay lại
+            </button>
+          </div>
         </div>
 
         {/* Main Content Card */}

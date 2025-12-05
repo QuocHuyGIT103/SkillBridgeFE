@@ -278,6 +278,8 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
     typeof rawId === 'string' ? rawId : rawId?.toString?.() || '';
   const statusKey = request.status ?? 'PENDING';
   const statusLabel = (REQUEST_STATUS_LABELS as any)[statusKey] ?? statusKey;
+  const hasLearningClass = Boolean(request.learningClass?.id);
+  const displayStatusLabel = hasLearningClass ? 'Đã tạo lớp học' : statusLabel;
   const statusStyles: Record<string, { accentBar: string; iconBg: string; iconText: string; chip: string; chipText: string; gradient: string; subtle: string }> = {
     PENDING: {
       accentBar: 'from-blue-400/80 to-blue-500/60',
@@ -344,14 +346,24 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
                     : (tutorPost?.title ?? 'Yêu cầu học tập')}
                 </h3>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${style.chip} ${style.chipText}`}>
-                  {statusLabel}
+                  {displayStatusLabel}
                 </span>
+                {/* Badge phân biệt loại request */}
+                {request.initiatedBy === 'TUTOR' ? (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                    📤 Đề nghị dạy của bạn
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                    📥 Yêu cầu từ học viên
+                  </span>
+                )}
               </div>
               <p className="text-sm text-gray-500 mt-1">
                 {request.initiatedBy === 'TUTOR' ? 'Gửi lúc' : 'Nhận lúc'} {formatDate(request.createdAt)}
               </p>
               <p className={`text-xs mt-2 ${style.subtle}`}>
-                Học viên: {studentName}
+                {request.initiatedBy === 'TUTOR' ? 'Đề nghị gửi đến' : 'Học viên'}: {studentName}
               </p>
             </div>
           </div>
@@ -365,7 +377,7 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
               <EyeIcon className="w-4 h-4" />
               Xem chi tiết
             </Link>
-            {statusKey === 'ACCEPTED' && requestId && (
+            {statusKey === 'ACCEPTED' && requestId && !hasLearningClass && (
               <button
                 onClick={() => onCreateClass(request)}
                 className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-blue-700 transition-transform"
@@ -373,13 +385,28 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
                 Tạo lớp học
               </button>
             )}
-            {statusKey === 'PENDING' && requestId && (
+            {hasLearningClass && request.learningClass?.id && (
+              <Link
+                to={`/tutor/classes/${request.learningClass.id}`}
+                className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-emerald-700 transition-transform"
+              >
+                Xem lớp học
+              </Link>
+            )}
+            {/* Chỉ hiển thị button phản hồi khi request được học viên gửi tới, không phải khi gia sư tự gửi */}
+            {statusKey === 'PENDING' && requestId && request.initiatedBy !== 'TUTOR' && (
               <button
                 onClick={() => onResponse(request)}
                 className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-emerald-700 transition-transform"
               >
                 Phản hồi ngay
               </button>
+            )}
+            {/* Hiển thị thông báo khi request do gia sư gửi */}
+            {statusKey === 'PENDING' && request.initiatedBy === 'TUTOR' && (
+              <span className="inline-flex items-center gap-2 rounded-2xl bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200">
+                Đang chờ học viên phản hồi
+              </span>
             )}
           </div>
         </div>
@@ -443,6 +470,8 @@ const TutorRequestCard: React.FC<TutorRequestCardProps> = ({
             ⏰ Yêu cầu đã hết hạn vào {formatDate(request.expiresAt)}. Hãy phản hồi để tránh mất cơ hội hoặc chờ yêu cầu mới.
           </div>
         )}
+
+        {/* Thông tin lớp học đã chuyển vào trang lớp học, không hiển thị tại đây */}
       </div>
     </div>
   );

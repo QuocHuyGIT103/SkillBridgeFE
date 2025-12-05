@@ -41,50 +41,109 @@ const CreateTeachRequestPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tutorPostIdFromState]);
 
-  // Build subject options using subject IDs as value and names as label
+  // Build subject options - if no tutorPostId selected, show all subjects from all posts
   const subjectOptions = useMemo(() => {
     const postSubjectNames: string[] = ((selectedPost?.subjects || []) as any)
       .map((s: any) => (typeof s === "string" ? s : s?.name || ""))
       .filter(Boolean);
 
-    const myPost = myPosts?.find((p) => (p.id || p._id) === tutorPostId);
-    const mySubjects = (myPost?.subjects || []).map((s: any) => {
-      const id = typeof s === "string" ? s : s?._id || s?.id || "";
-      const nameCandidate =
-        typeof s === "string"
-          ? activeSubjects?.find((as) => as._id === s)?.name
-          : s?.name;
-      const name = nameCandidate || id;
-      return { id, name };
-    });
+    // If tutorPostId is selected, use subjects from that post
+    if (tutorPostId) {
+      const myPost = myPosts?.find((p) => (p.id || p._id) === tutorPostId);
+      const mySubjects = (myPost?.subjects || []).map((s: any) => {
+        const id = typeof s === "string" ? s : s?._id || s?.id || "";
+        const nameCandidate =
+          typeof s === "string"
+            ? activeSubjects?.find((as) => as._id === s)?.name
+            : s?.name;
+        const name = nameCandidate || id;
+        return { id, name };
+      });
 
-    const filtered =
-      postSubjectNames.length > 0
-        ? mySubjects.filter((ms) => postSubjectNames.includes(ms.name))
-        : mySubjects;
+      const filtered =
+        postSubjectNames.length > 0
+          ? mySubjects.filter((ms) => postSubjectNames.includes(ms.name))
+          : mySubjects;
 
-    // Auto-select first subject if available and not already set
-    if (!subject && filtered.length > 0) {
-      setSubject(filtered[0].id);
+      // Auto-select first subject if available and not already set
+      if (!subject && filtered.length > 0) {
+        setSubject(filtered[0].id);
+      }
+      return filtered;
+    } else {
+      // No tutorPostId selected - show all subjects from all tutor posts
+      const allSubjectsMap = new Map<string, { id: string; name: string }>();
+      
+      myPosts?.forEach((post) => {
+        (post.subjects || []).forEach((s: any) => {
+          const id = typeof s === "string" ? s : s?._id || s?.id || "";
+          const nameCandidate =
+            typeof s === "string"
+              ? activeSubjects?.find((as) => as._id === s)?.name
+              : s?.name;
+          const name = nameCandidate || id;
+          
+          if (id && name && !allSubjectsMap.has(id)) {
+            allSubjectsMap.set(id, { id, name });
+          }
+        });
+      });
+
+      // Filter by student post subjects if available
+      const allSubjects = Array.from(allSubjectsMap.values());
+      const filtered =
+        postSubjectNames.length > 0
+          ? allSubjects.filter((s) => postSubjectNames.includes(s.name))
+          : allSubjects;
+
+      // Auto-select first subject if available and not already set
+      if (!subject && filtered.length > 0) {
+        setSubject(filtered[0].id);
+      }
+      return filtered;
     }
-    return filtered;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPost, tutorPostId, myPosts, activeSubjects]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tutorPostId) {
-      toast.error("Hãy chọn bài đăng của bạn.");
-      return;
-    }
+    
     if (!subject) {
       toast.error("Hãy chọn môn học.");
       return;
     }
-    const myPost = myPosts?.find((p) => (p.id || p._id) === tutorPostId);
+
+    // If no tutorPostId selected, find the first post that has this subject
+    let finalTutorPostId = tutorPostId;
+    if (!finalTutorPostId) {
+      const subjectName = activeSubjects?.find((s) => s._id === subject)?.name || "";
+      const matchingPost = myPosts?.find((post) => {
+        const postSubjects = (post.subjects || []).map((s: any) => {
+          if (typeof s === "string") {
+            return activeSubjects?.find((as) => as._id === s)?.name || s;
+          }
+          return s?.name || "";
+        });
+        return postSubjects.includes(subjectName);
+      });
+
+      if (matchingPost) {
+        finalTutorPostId = matchingPost.id || matchingPost._id;
+      } else {
+        toast.error("Không tìm thấy bài đăng có môn học này. Vui lòng chọn bài đăng hoặc tạo bài đăng mới.");
+        return;
+      }
+    }
+
+    const myPost = myPosts?.find((p) => (p.id || p._id) === finalTutorPostId);
+    if (!myPost) {
+      toast.error("Không tìm thấy bài đăng của bạn.");
+      return;
+    }
+
     try {
       await createTeachRequestFromTutor({
-        tutorPostId,
+        tutorPostId: finalTutorPostId,
         studentPostId: studentPostId!,
         // Send SUBJECT ID as backend expects IDs
         subject,
@@ -127,16 +186,23 @@ const CreateTeachRequestPage: React.FC = () => {
                   {isFromAIRecommendations && tutorPostId && (
                     <span className="ml-2 text-xs text-blue-600 font-normal">(Đã tự động chọn từ gợi ý AI)</span>
                   )}
+                  {!isFromAIRecommendations && (
+                    <span className="ml-2 text-xs text-gray-500 font-normal">(Tùy chọn - sẽ tự động chọn bài đăng có môn học đã chọn)</span>
+                  )}
                 </label>
                 <select
                   value={tutorPostId}
-                  onChange={(e) => setTutorPostId(e.target.value)}
+                  onChange={(e) => {
+                    setTutorPostId(e.target.value);
+                    // Reset subject when tutor post changes
+                    setSubject("");
+                  }}
                   disabled={isFromAIRecommendations && !!tutorPostId}
                   className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary ${
                     isFromAIRecommendations && tutorPostId ? 'bg-gray-100 cursor-not-allowed' : ''
                   }`}
                 >
-                  <option value="">{loadingMyPosts ? "Đang tải..." : "— Chọn bài đăng —"}</option>
+                  <option value="">{loadingMyPosts ? "Đang tải..." : "— Chọn bài đăng (tùy chọn) —"}</option>
                   {myPosts?.map((p) => (
                     <option key={p.id || p._id} value={p.id || p._id}>
                       {p.title || "Bài đăng không tiêu đề"}

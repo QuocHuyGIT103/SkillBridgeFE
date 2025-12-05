@@ -23,7 +23,8 @@ class AxiosClient {
     // Request interceptor
     this.instance.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem("access_token");
+        // Check both possible token keys for compatibility
+        const token = localStorage.getItem("token") || localStorage.getItem("access_token");
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -37,13 +38,6 @@ class AxiosClient {
     // Response interceptor
     this.instance.interceptors.response.use(
       (response: AxiosResponse) => {
-        // ✅ Log response để debug
-        console.log("✅ API Response:", {
-          status: response.status,
-          url: response.config.url,
-          data: response.data,
-        });
-
         // Any status code that lies within the range of 2xx
         return response.data;
       },

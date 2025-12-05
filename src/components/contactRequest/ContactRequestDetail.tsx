@@ -142,6 +142,7 @@ const ContactRequestDetail: React.FC = () => {
   const isStudent = user?.id === currentRequest.studentId;
   const initiatedBy = (currentRequest as any).initiatedBy as 'STUDENT' | 'TUTOR' | undefined;
   const currentStatus = currentRequest.status || 'PENDING';
+  const hasLearningClass = Boolean(currentRequest.learningClass?.id);
 
 
 
@@ -329,11 +330,12 @@ const ContactRequestDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Tutor Response */}
+            {/* Response - Hiển thị đúng người phản hồi dựa trên initiatedBy */}
             {currentRequest.tutorResponse && (
               <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 md:p-7">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Phản hồi từ gia sư
+                  {/* Nếu initiatedBy === 'TUTOR', thì tutorResponse là phản hồi từ học viên, ngược lại là từ gia sư */}
+                  {initiatedBy === 'TUTOR' ? 'Phản hồi từ học viên' : 'Phản hồi từ gia sư'}
                 </h2>
 
                 <div
@@ -554,11 +556,14 @@ const ContactRequestDetail: React.FC = () => {
               <div className="rounded-3xl border border-emerald-200 bg-emerald-50/80 p-6 shadow-sm">
                 <h4 className="font-semibold text-emerald-900 mb-3 flex items-center gap-2">
                   <CheckCircleIcon className="w-5 h-5 text-emerald-500" />
-                  Bạn đã chấp nhận yêu cầu!
+                  {hasLearningClass ? 'Lớp học đã được tạo' : 'Bạn đã chấp nhận yêu cầu!'}
                 </h4>
                 <p className="text-sm text-emerald-800 mb-5">
-                  Vui lòng tạo lớp học để bắt đầu; thông tin liên hệ trực tiếp được ẩn để đảm bảo an toàn.
+                  {hasLearningClass
+                    ? 'Bạn có thể xem và quản lý lớp học ngay bây giờ.'
+                    : 'Vui lòng tạo lớp học để bắt đầu; thông tin liên hệ trực tiếp được ẩn để đảm bảo an toàn.'}
                 </p>
+                {!hasLearningClass ? (
                 <div className="space-y-2">
                   <button
                     onClick={handleCreateClass}
@@ -567,6 +572,14 @@ const ContactRequestDetail: React.FC = () => {
                     Tạo lớp học
                   </button>
                 </div>
+                ) : (
+                  <button
+                    onClick={() => currentRequest.learningClass?.id && navigate(`/tutor/classes/${currentRequest.learningClass.id}`)}
+                    className="w-full inline-flex items-center justify-center px-4 py-3 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 transition-colors text-sm font-semibold shadow-sm"
+                  >
+                    Xem lớp học
+                  </button>
+                )}
               </div>
             )}
           </div>

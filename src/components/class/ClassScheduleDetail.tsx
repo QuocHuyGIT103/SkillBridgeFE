@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import HomeworkModal from "../modals/HomeworkModal";
 import CancelSessionModal from "../modals/CancelSessionModal";
+import RespondCancelSessionModal from "../modals/RespondCancelSessionModal";
 import { attendanceService } from "../../services/attendance.service";
 import type { WeeklySession } from "../../types/attendance";
 import toast from "react-hot-toast";
@@ -42,6 +43,8 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
   );
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [sessionToCancel, setSessionToCancel] = useState<any>(null);
+  const [respondingSession, setRespondingSession] = useState<any>(null);
+  const [showRespondModal, setShowRespondModal] = useState(false);
 
   useEffect(() => {
     fetchClassSchedule(classId);
@@ -129,9 +132,9 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
       meetingLink: classData.onlineInfo?.meetingLink,
       location: classData.location
         ? {
-            type: "address",
-            details: classData.location.address,
-          }
+          type: "address",
+          details: classData.location.address,
+        }
         : undefined,
       attendance: session.attendance || {
         tutorAttended: false,
@@ -200,15 +203,6 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
     sessionNumber: number,
     action: "APPROVE" | "REJECT"
   ) => {
-    const message =
-      action === "APPROVE"
-        ? "Bạn có chắc chắn muốn chấp nhận huỷ buổi học này?"
-        : "Bạn có chắc chắn muốn từ chối yêu cầu huỷ buổi học?";
-
-    if (!window.confirm(message)) {
-      return;
-    }
-
     setCancellingSession(sessionNumber);
     try {
       await attendanceService.respondToCancellationRequest(
@@ -222,6 +216,9 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
           : "Đã từ chối yêu cầu huỷ buổi học"
       );
       await fetchClassSchedule(classId); // Refresh
+      // Đóng modal phản hồi sau khi xử lý xong
+      setShowRespondModal(false);
+      setRespondingSession(null);
     } catch (error: any) {
       console.error("Respond to cancellation failed:", error);
       toast.error(
@@ -433,11 +430,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                         >
                           <DocumentTextIcon className="w-4 h-4" />
                           <span>
-                            {userRole === "TUTOR"
-                              ? hasSessionAssignments
-                                ? "Quản lý bài tập"
-                                : "Giao bài tập"
-                              : hasSessionAssignments
+                            {hasSessionAssignments
                               ? "Xem bài tập"
                               : "Chưa có bài tập"}
                           </span>
@@ -448,22 +441,22 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                     {(session.status === "COMPLETED" ||
                       (session.attendance?.tutorAttended &&
                         session.attendance?.studentAttended)) && (
-                      <button
-                        onClick={() => handleOpenHomework(session)}
-                        className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
-                      >
-                        <DocumentTextIcon className="w-4 h-4" />
-                        <span>
-                          {userRole === "TUTOR"
-                            ? session.homework?.assignment
-                              ? "Quản lý bài tập"
-                              : "Giao bài tập"
-                            : session.homework?.assignment
-                            ? "Xem bài tập"
-                            : "Chưa có bài tập"}
-                        </span>
-                      </button>
-                    )}
+                        <button
+                          onClick={() => handleOpenHomework(session)}
+                          className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                        >
+                          <DocumentTextIcon className="w-4 h-4" />
+                          <span>
+                            {userRole === "TUTOR"
+                              ? hasSessionAssignments
+                                ? "Quản lý bài tập"
+                                : "Giao bài tập"
+                              : hasSessionAssignments
+                                ? "Xem bài tập"
+                                : "Chưa có bài tập"}
+                          </span>
+                        </button>
+                      )}
 
                     {/* Cancel Request Button - For scheduled sessions */}
                     {session.status === "SCHEDULED" && (
@@ -491,41 +484,25 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                       session.cancellationRequest && (
                         <div className="flex-1">
                           {session.cancellationRequest.requestedBy ===
-                          userRole ? (
+                            userRole ? (
                             // User who requested cancellation
                             <div className="text-sm text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
                               ⏳ Đang chờ phê duyệt yêu cầu huỷ buổi học
                             </div>
                           ) : (
-                            // Other party - show approve/reject buttons
+                            // Other party - single respond button opens modal
                             <div className="flex items-center space-x-2">
                               <button
-                                onClick={() =>
-                                  handleRespondToCancellation(
-                                    session.sessionNumber,
-                                    "APPROVE"
-                                  )
-                                }
+                                onClick={() => {
+                                  setRespondingSession(session);
+                                  setShowRespondModal(true);
+                                }}
                                 disabled={
                                   cancellingSession === session.sessionNumber
                                 }
-                                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                                className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
                               >
-                                ✓ Chấp nhận
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleRespondToCancellation(
-                                    session.sessionNumber,
-                                    "REJECT"
-                                  )
-                                }
-                                disabled={
-                                  cancellingSession === session.sessionNumber
-                                }
-                                className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
-                              >
-                                ✗ Từ chối
+                                Phản hồi yêu cầu
                               </button>
                             </div>
                           )}
@@ -607,12 +584,52 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
             )} - ${format(
               new Date(
                 new Date(sessionToCancel.scheduledDate).getTime() +
-                  sessionToCancel.duration * 60000
+                sessionToCancel.duration * 60000
               ),
               "HH:mm"
             )}`,
           }}
           isLoading={cancellingSession === sessionToCancel.sessionNumber}
+        />
+      )}
+
+      {/* Respond Cancel Session Modal */}
+      {respondingSession && respondingSession.cancellationRequest && (
+        <RespondCancelSessionModal
+          isOpen={showRespondModal}
+          onClose={() => {
+            if (cancellingSession === null) {
+              setShowRespondModal(false);
+              setRespondingSession(null);
+            }
+          }}
+          onConfirm={(action) =>
+            handleRespondToCancellation(respondingSession.sessionNumber, action)
+          }
+          isLoading={cancellingSession === respondingSession.sessionNumber}
+          sessionInfo={{
+            sessionNumber: respondingSession.sessionNumber,
+            date: format(
+              new Date(respondingSession.scheduledDate),
+              "EEEE, dd/MM/yyyy",
+              { locale: vi }
+            ),
+            time: `${format(
+              new Date(respondingSession.scheduledDate),
+              "HH:mm"
+            )} - ${format(
+              new Date(
+                new Date(respondingSession.scheduledDate).getTime() +
+                respondingSession.duration * 60000
+              ),
+              "HH:mm"
+            )}`,
+            requestedByLabel:
+              respondingSession.cancellationRequest.requestedBy === "TUTOR"
+                ? "Gia sư"
+                : "Học viên",
+            reason: respondingSession.cancellationRequest.reason,
+          }}
         />
       )}
     </div>
