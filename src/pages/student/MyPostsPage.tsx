@@ -384,60 +384,104 @@ const MyPostsPage: React.FC = () => {
                     className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex flex-col"
                   >
                     {/* Status Bar */}
-                    <div className={`h-1.5 bg-gradient-to-r ${getStatusBarColor(post.status)}`}></div>
+                    <div className={`h-2 bg-gradient-to-r ${getStatusBarColor(post.status)}`}></div>
                     
-                    <div className="p-5 flex flex-col flex-1">
+                    <div className="p-6 flex flex-col flex-1">
                       {/* Header: Title + Status */}
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <h2 className="font-bold text-base text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors flex-1 leading-snug">
+                      <div className="flex items-start justify-between gap-3 mb-5">
+                        <h2 className="font-bold text-lg text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors flex-1 leading-tight">
                           {post.title}
                         </h2>
-                        <StatusBadge status={post.status} size="sm" />
+                        <StatusBadge status={post.status} size="md" />
                       </div>
                       
-                      {/* Key Info - Highlighted */}
-                      <div className="grid grid-cols-2 gap-2 mb-4">
-                        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-3 border border-purple-100">
-                          <div className="flex items-center gap-2 mb-1">
-                            <AcademicCapIcon className="w-4 h-4 text-purple-600"/>
-                            <span className="text-xs font-medium text-purple-600">Lớp</span>
+                      {/* Key Info - Highlighted - 2 columns */}
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        {/* Cấp học */}
+                        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-3.5 border border-purple-100">
+                          <div className="flex items-center gap-2 mb-2">
+                            <AcademicCapIcon className="w-5 h-5 text-purple-600"/>
+                            <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Cấp học</span>
                           </div>
-                          <p className="text-sm font-bold text-gray-900 truncate">
+                          <p className="text-sm font-bold text-gray-900 line-clamp-1">
                             {post.grade_levels?.join(', ') || 'Chưa rõ'}
                           </p>
                         </div>
-                        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 border border-blue-100">
-                          <div className="flex items-center gap-2 mb-1">
-                            <BookOpenIcon className="w-4 h-4 text-blue-600"/>
-                            <span className="text-xs font-medium text-blue-600">Môn học</span>
+                        
+                        {/* Môn học */}
+                        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3.5 border border-blue-100">
+                          <div className="flex items-center gap-2 mb-2">
+                            <BookOpenIcon className="w-5 h-5 text-blue-600"/>
+                            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Môn học</span>
                           </div>
-                          <p className="text-sm font-bold text-gray-900 truncate">
+                          <p className="text-sm font-bold text-gray-900 line-clamp-1">
                             {post.subjects?.join(', ') || 'Chưa rõ'}
                           </p>
                         </div>
                       </div>
+
+                      {/* Additional Info - Price & Mode */}
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        {/* Học phí */}
+                        {post.hourly_rate && (
+                          <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3.5 border border-emerald-100">
+                            <div className="flex items-center gap-2 mb-2">
+                              <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Học phí</span>
+                            </div>
+                            <p className="text-sm font-bold text-gray-900">
+                              {post.hourly_rate.min?.toLocaleString('vi-VN')} - {post.hourly_rate.max?.toLocaleString('vi-VN')} đ
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* Hình thức */}
+                        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3.5 border border-amber-100">
+                          <div className="flex items-center gap-2 mb-2">
+                            <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Hình thức</span>
+                          </div>
+                          <p className="text-sm font-bold text-gray-900">
+                            {post.is_online ? '💻 Trực tuyến' : '🏠 Tại nhà'}
+                          </p>
+                        </div>
+                      </div>
                       
-                      {/* Date */}
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                        <CalendarDaysIcon className="w-4 h-4"/>
-                        <span>Ngày tạo: <span className="font-medium text-gray-700">{new Date(post.created_at).toLocaleDateString('vi-VN')}</span></span>
+                      {/* Meta Info */}
+                      <div className="flex items-center gap-4 text-xs text-gray-500 mb-4 pb-4 border-b border-gray-100">
+                        <div className="flex items-center gap-1.5">
+                          <CalendarDaysIcon className="w-4 h-4"/>
+                          <span>Tạo: <span className="font-medium text-gray-700">{new Date(post.created_at).toLocaleDateString('vi-VN')}</span></span>
+                        </div>
+                        {post.expiry_date && (
+                          <div className="flex items-center gap-1.5">
+                            <ClockIcon className="w-4 h-4"/>
+                            <span>Hết hạn: <span className="font-medium text-gray-700">{new Date(post.expiry_date).toLocaleDateString('vi-VN')}</span></span>
+                          </div>
+                        )}
                       </div>
                       
                       {/* Content Preview */}
                       {post.content && (
-                        <p className="text-gray-600 text-sm line-clamp-2 mb-4 leading-relaxed flex-1">
-                          {post.content}
-                        </p>
+                        <div className="mb-4">
+                          <p className="text-gray-700 text-sm line-clamp-3 leading-relaxed">
+                            {post.content}
+                          </p>
+                        </div>
                       )}
                       
                       {/* Rejection Note */}
                       {post.status === 'rejected' && post.admin_note && (
-                        <div className="mb-4 p-3 bg-red-50 rounded-xl border border-red-100">
+                        <div className="mb-4 p-4 bg-red-50 rounded-xl border border-red-200">
                           <div className="flex items-start gap-2">
-                            <InformationCircleIcon className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5"/>
-                            <div className="text-xs">
-                              <p className="font-bold text-red-700 mb-0.5">Lý do từ chối:</p>
-                              <p className="text-red-600 line-clamp-2">{post.admin_note}</p>
+                            <InformationCircleIcon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"/>
+                            <div className="text-sm">
+                              <p className="font-bold text-red-700 mb-1">Lý do từ chối:</p>
+                              <p className="text-red-600 leading-relaxed">{post.admin_note}</p>
                             </div>
                           </div>
                         </div>
@@ -448,39 +492,39 @@ const MyPostsPage: React.FC = () => {
                       
                       {/* AI Button for approved posts */}
                       {post.status === 'approved' && (
-                        <div className="mb-3">
+                        <div className="mb-4">
                           <AISmartSearchButton 
                             postId={post.id}
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             fullWidth
                           />
                         </div>
                       )}
                       
                       {/* Action Buttons */}
-                      <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+                      <div className="flex items-center gap-3">
                         <Link 
                           to={`/student/posts/${post.id}`} 
-                          className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 text-xs bg-gray-50 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 hover:border-gray-300 transition-all font-medium"
+                          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all font-medium shadow-sm"
                         >
-                          <EyeIcon className="w-3.5 h-3.5" />
+                          <EyeIcon className="w-4 h-4" />
                           Chi tiết
                         </Link>
 
                         <Link 
                           to={`/student/posts/edit/${post.id}`} 
-                          className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 text-xs bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-all font-medium"
+                          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-blue-50 border border-blue-200 text-blue-700 rounded-xl hover:bg-blue-100 hover:border-blue-300 transition-all font-medium shadow-sm"
                         >
-                          <PencilIcon className="w-3.5 h-3.5" />
+                          <PencilIcon className="w-4 h-4" />
                           Sửa
                         </Link>
 
                         <button 
                           onClick={() => handleDelete(post.id)} 
-                          className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-2 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 hover:border-red-300 transition-all font-medium"
+                          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-red-50 border border-red-200 text-red-700 rounded-xl hover:bg-red-100 hover:border-red-300 transition-all font-medium shadow-sm"
                         >
-                          <TrashIcon className="w-3.5 h-3.5" />
+                          <TrashIcon className="w-4 h-4" />
                           Xóa
                         </button>
                       </div>

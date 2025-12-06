@@ -11,12 +11,16 @@ import {
   StarIcon,
   PaperAirplaneIcon,
   XMarkIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import type { SmartRecommendation, TutorInfo, MatchDetails } from '../../services/ai.service';
+import { AIService } from '../../services/ai.service';
 import TutorReviewsModal from '../tutorPost/TutorReviewsModal';
 import ContactRequestForm from '../student/ContactRequestForm';
 import { useAuthStore } from '../../store/auth.store';
+import toast from 'react-hot-toast';
 
 interface SmartRecommendationCardProps {
   recommendation: SmartRecommendation;
@@ -37,6 +41,11 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
   const { user } = useAuthStore();
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  
+  // On-demand explanation states
+  const [isExplanationExpanded, setIsExplanationExpanded] = useState(false);
+  const [onDemandExplanation, setOnDemandExplanation] = useState<string | null>(null);
+  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
 
   const handleCardClick = () => {
     if (onClick) {
@@ -47,6 +56,49 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
     const postId = tutorPost.id || tutorPost._id;
     if (postId) {
       navigate(`/tutors/${postId}`);
+    }
+  };
+
+  // Fetch on-demand explanation when user clicks
+  const handleToggleExplanation = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // If already expanded with explanation, just collapse
+    if (isExplanationExpanded && (explanation || onDemandExplanation)) {
+      setIsExplanationExpanded(false);
+      return;
+    }
+    
+    // If auto-generated explanation exists, show it
+    if (explanation) {
+      setIsExplanationExpanded(true);
+      return;
+    }
+    
+    // If already fetched, show it
+    if (onDemandExplanation) {
+      setIsExplanationExpanded(true);
+      return;
+    }
+    
+    // Otherwise, fetch from API
+    if (!postId) {
+      toast.error('Thiếu thông tin bài đăng');
+      return;
+    }
+    
+    setIsLoadingExplanation(true);
+    setIsExplanationExpanded(true);
+    
+    try {
+      const response = await AIService.getOnDemandExplanation(recommendation.tutorId, postId);
+      setOnDemandExplanation(response.data.explanation);
+    } catch (error: any) {
+      console.error('Failed to fetch explanation:', error);
+      toast.error(error.response?.data?.message || 'Không thể tạo giải thích AI');
+      setIsExplanationExpanded(false);
+    } finally {
+      setIsLoadingExplanation(false);
     }
   };
 
@@ -272,26 +324,55 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
           </div>
         </div>
 
-        {/* AI Explanation - Compact */}
-        {explanation && (
-          <div className={`mb-3 p-2.5 rounded-lg border ${
-            isTopMatch
-              ? 'bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 border-purple-200'
-              : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100'
-          }`}>
-            <div className="flex items-start space-x-2">
-              <SparklesIcon className="w-4 h-4 flex-shrink-0 mt-0.5 text-purple-600" />
-              <div className="flex-1">
-                <p className="text-xs font-medium text-purple-900">
-                  Lý do AI gợi ý:
-                </p>
-                <p className="text-xs leading-relaxed text-purple-700 line-clamp-2">
-                  {explanation}
-                </p>
-              </div>
+        {/* AI Explanation - On-Demand Toggle Button */}
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={handleToggleExplanation}
+            className={`w-full flex items-center justify-between p-2 rounded-lg border transition-all ${
+              isTopMatch
+                ? 'bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 border-purple-200 hover:border-purple-300'
+                : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100 hover:border-purple-200'
+            }`}
+          >
+            <div className="flex items-center gap-1.5">
+              <SparklesIcon className="w-4 h-4 text-purple-600" />
+              <span className="text-xs font-semibold text-purple-900">
+                {isLoadingExplanation ? 'AI đang phân tích...' : 'Lý do AI gợi ý'}
+              </span>
             </div>
-          </div>
-        )}
+            {isLoadingExplanation ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent" />
+            ) : isExplanationExpanded ? (
+              <ChevronUpIcon className="w-4 h-4 text-purple-600" />
+            ) : (
+              <ChevronDownIcon className="w-4 h-4 text-purple-600" />
+            )}
+          </button>
+          
+          {/* Collapsible Explanation Content */}
+          <AnimatePresence>
+            {isExplanationExpanded && (explanation || onDemandExplanation) && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className={`mt-2 p-2.5 rounded-lg border ${
+                  isTopMatch
+                    ? 'bg-white/50 border-purple-200'
+                    : 'bg-white/50 border-purple-100'
+                }`}>
+                  <p className="text-xs leading-relaxed text-purple-700">
+                    {explanation || onDemandExplanation}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Tutor Post Info - Compact with highlighted important fields */}
         <div className="space-y-2.5 mb-3 flex-grow">

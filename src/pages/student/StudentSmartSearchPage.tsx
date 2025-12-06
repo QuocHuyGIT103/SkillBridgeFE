@@ -83,7 +83,7 @@ const StudentSmartSearchPage: React.FC = () => {
     ward: searchParams.get("ward") || undefined,
     search: searchParams.get("search") || undefined,
     page: 1,
-    limit: 12,
+    limit: 4,
     sortBy: "compatibility",
     sortOrder: "desc",
   }));
@@ -92,7 +92,7 @@ const StudentSmartSearchPage: React.FC = () => {
   const [myPostsLoaded, setMyPostsLoaded] = useState(false);
   
   // Pagination for survey mode
-  const ITEMS_PER_PAGE = 6;
+  const ITEMS_PER_PAGE = 4;
   const [surveyCurrentPage, setSurveyCurrentPage] = useState(1);
   
   const [allTutorsPagination, setAllTutorsPagination] = useState({
@@ -164,71 +164,11 @@ const StudentSmartSearchPage: React.FC = () => {
   const getFilteredSurveyResults = useMemo(() => {
     // Guard against null/undefined arrays
     const recommendations = surveyRecommendations || [];
-    const tutors = allTutors || [];
     
-    // Merge: recommendations first, then other tutors
-    const recommendedIds = new Set(recommendations.map(t => t._id || t.id));
-    const otherTutors = tutors.filter(t => !recommendedIds.has(t._id || t.id));
-    let results = [...recommendations, ...otherTutors];
-
-    // Apply client-side filters
-    if (currentFilters.subjects?.length) {
-      results = results.filter(tutor =>
-        tutor.subjects?.some(s =>
-          currentFilters.subjects?.includes(s._id || (s as any).id || s.name)
-        )
-      );
-    }
-
-    if (currentFilters.teachingMode) {
-      results = results.filter(
-        tutor =>
-          tutor.teachingMode === currentFilters.teachingMode ||
-          tutor.teachingMode === "BOTH"
-      );
-    }
-
-    if (currentFilters.studentLevel?.length) {
-      results = results.filter(tutor =>
-        tutor.studentLevel?.some(level =>
-          currentFilters.studentLevel?.includes(level)
-        )
-      );
-    }
-
-    if (currentFilters.priceMin !== undefined) {
-      results = results.filter(
-        tutor => tutor.pricePerSession >= (currentFilters.priceMin || 0)
-      );
-    }
-
-    if (currentFilters.priceMax !== undefined) {
-      results = results.filter(
-        tutor => tutor.pricePerSession <= (currentFilters.priceMax || Infinity)
-      );
-    }
-
-    if (currentFilters.province) {
-      results = results.filter(
-        tutor =>
-          tutor.address?.province === currentFilters.province ||
-          tutor.tutorId?.structured_address?.province_code === currentFilters.province
-      );
-    }
-
-    if (currentFilters.search?.trim()) {
-      const searchLower = currentFilters.search.toLowerCase();
-      results = results.filter(
-        tutor =>
-          tutor.title?.toLowerCase().includes(searchLower) ||
-          tutor.description?.toLowerCase().includes(searchLower) ||
-          tutor.tutorId?.full_name?.toLowerCase().includes(searchLower) ||
-          tutor.subjects?.some(s => s.name?.toLowerCase().includes(searchLower))
-      );
-    }
-
-    return results;
-  }, [surveyRecommendations, allTutors, currentFilters]);
+    // In survey mode, we ONLY show recommendations from the survey API
+    // NO filtering applied - keep the order and results from the AI recommendation
+    return recommendations;
+  }, [surveyRecommendations]);
 
   // Paginated results for survey mode
   const surveyPaginatedResults = useMemo(() => {
@@ -331,7 +271,7 @@ const StudentSmartSearchPage: React.FC = () => {
   const handleReset = useCallback(() => {
     const resetFilters: SmartSearchQuery = {
       page: 1,
-      limit: 12,
+      limit: 4,
       sortBy: "compatibility",
       sortOrder: "desc",
     };
@@ -397,19 +337,16 @@ const StudentSmartSearchPage: React.FC = () => {
     [currentFilters, updateURL, debouncedSmartSearch, clearSmartSearchResults]
   );
 
-  const handleLoadMore = useCallback(async () => {
-    if (searchMode === "post") {
-      if (!smartSearchPagination?.hasNext || !selectedPostId) return;
-      try {
-        const nextPage = (currentFilters.page || 1) + 1;
-        const nextFilters = { ...currentFilters, page: nextPage };
-        setCurrentFilters(nextFilters);
-        await loadMoreSmartSearchResults(selectedPostId, nextFilters);
-      } catch {
-        toast.error("Không thể tải thêm gia sư");
-      }
+  // Post mode pagination handler
+  const handlePostPageChange = useCallback((page: number) => {
+    if (searchMode === "post" && selectedPostId) {
+      const newFilters = { ...currentFilters, page };
+      setCurrentFilters(newFilters);
+      updateURL(newFilters, selectedPostId, "post");
+      debouncedSmartSearch(selectedPostId, newFilters);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [searchMode, currentFilters, selectedPostId, smartSearchPagination, loadMoreSmartSearchResults]);
+  }, [searchMode, selectedPostId, currentFilters, updateURL, debouncedSmartSearch]);
 
   const handleTutorClick = useCallback(
     (tutorId: string) => {
@@ -668,27 +605,25 @@ const StudentSmartSearchPage: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* ==================== FILTERS ==================== */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 relative z-10"
-        >
-          <TutorPostFilter
-            filters={currentFilters}
-            onFiltersChange={handleFiltersChange}
-            onSearch={handleSearch}
-            onReset={handleReset}
-            isLoading={displayLoading}
-            disabled={false}
-            isSmartSearchMode={searchMode === "post" && !!selectedPostId}
-            resultCount={
-              searchMode === "survey"
-                ? (getFilteredSurveyResults?.length || 0)
-                : smartSearchPagination?.totalItems
-            }
-          />
-        </motion.div>
+        {/* ==================== FILTERS (Only in POST mode) ==================== */}
+        {searchMode === "post" && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 relative z-10"
+          >
+            <TutorPostFilter
+              filters={currentFilters}
+              onFiltersChange={handleFiltersChange}
+              onSearch={handleSearch}
+              onReset={handleReset}
+              isLoading={displayLoading}
+              disabled={false}
+              isSmartSearchMode={searchMode === "post" && !!selectedPostId}
+              resultCount={smartSearchPagination?.totalItems}
+            />
+          </motion.div>
+        )}
 
         {/* ==================== RESULTS ==================== */}
         <AnimatePresence mode="wait">
@@ -739,28 +674,67 @@ const StudentSmartSearchPage: React.FC = () => {
             </motion.div>
           )}
 
-          {/* Post Mode - No Post Selected */}
+          {/* Post Mode - No Post Selected: Show latest tutors */}
           {!isInitialLoading && searchMode === "post" && !selectedPostId && (
             <motion.div
               key="no-post"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center"
             >
-              <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center">
-                <span className="text-4xl">📝</span>
+              {/* Info Banner */}
+              <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 rounded-2xl shadow-sm border border-purple-200 p-6 mb-6 text-center">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-md">
+                    <span className="text-2xl">📝</span>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-bold text-purple-900">Chọn bài đăng để tìm gia sư phù hợp</h3>
+                    <p className="text-sm text-purple-700">
+                      Hệ thống sẽ phân tích bài đăng và gợi ý gia sư phù hợp nhất với yêu cầu của bạn
+                    </p>
+                  </div>
+                </div>
+                {(myStudentPosts?.filter((p: any) => p.status === "approved")?.length || 0) === 0 && (
+                  <button
+                    onClick={() => navigate("/student/posts/create")}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2.5 rounded-xl font-medium transition-all shadow-md"
+                  >
+                    Tạo bài đăng ngay
+                  </button>
+                )}
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Chọn bài đăng để tìm kiếm</h3>
-              <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-                Chọn bài đăng của bạn ở phía trên để tìm gia sư phù hợp
-              </p>
-              {(myStudentPosts?.filter((p: any) => p.status === "approved")?.length || 0) === 0 && (
-                <button
-                  onClick={() => navigate("/student/posts/create")}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2.5 rounded-xl font-medium transition-all shadow-md"
-                >
-                  Tạo bài đăng
-                </button>
+
+              {/* Show Latest Tutors as Preview */}
+              {allTutors && allTutors.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Gia sư mới đăng ký gần đây
+                    </h3>
+                    <span className="text-sm text-gray-500">
+                      {allTutors.length} gia sư
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {allTutors.slice(0, 4).map((tutor: TutorPost) => (
+                      <TutorPostCard
+                        key={tutor.id || tutor._id}
+                        tutorPost={tutor}
+                        onOpenContactForm={(post) => {
+                          if (!isAuthenticated) {
+                            toast.error("Vui lòng đăng nhập để gửi yêu cầu");
+                            navigate("/login");
+                            return;
+                          }
+                          setSelectedTutorPost(post);
+                          setShowContactModal(true);
+                        }}
+                        currentUser={user}
+                        matchDetails={undefined}
+                      />
+                    ))}
+                  </div>
+                </div>
               )}
             </motion.div>
           )}
@@ -797,40 +771,96 @@ const StudentSmartSearchPage: React.FC = () => {
             <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               {/* Results Grid - 2 columns */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {displayResults.map((post: any, index: number) => (
-                  <motion.div
-                    key={post.id || post._id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.05, 0.3) }}
-                  >
-                    <TutorPostCard
-                      post={post}
-                      showCompatibility={false}
-                      onClick={() => handleTutorClick(post.id || post._id)}
-                      onSendRequest={canSendRequest ? handleSendRequest : undefined}
-                    />
-                  </motion.div>
-                ))}
+                {displayResults.map((post: any, index: number) => {
+                  // Check if this is a survey recommendation
+                  const isSurveyRecommendation = searchMode === "survey" && 
+                    (post.compatibility !== undefined || post.matchScore !== undefined);
+                  
+                  return (
+                    <motion.div
+                      key={post.id || post._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(index * 0.05, 0.3) }}
+                    >
+                      <TutorPostCard
+                        post={post}
+                        showCompatibility={isSurveyRecommendation}
+                        onClick={() => handleTutorClick(post.id || post._id)}
+                        onSendRequest={canSendRequest ? handleSendRequest : undefined}
+                      />
+                    </motion.div>
+                  );
+                })}
               </div>
 
-              {/* Load More (Post mode) */}
-              {searchMode === "post" && smartSearchPagination?.hasNext && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center pt-4">
-                  <button
-                    onClick={handleLoadMore}
-                    disabled={smartSearchLoading}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-8 py-3 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg disabled:cursor-not-allowed"
-                  >
-                    {smartSearchLoading ? (
-                      <span className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                        Đang tải...
-                      </span>
-                    ) : (
-                      "Xem thêm gia sư"
-                    )}
-                  </button>
+              {/* Pagination (Post mode) */}
+              {searchMode === "post" && smartSearchPagination && smartSearchPagination.totalPages > 1 && (
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  className="flex flex-col items-center gap-3 pt-4"
+                >
+                  {/* Pagination Controls */}
+                  <div className="flex items-center gap-1.5 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => handlePostPageChange((smartSearchPagination.currentPage || 1) - 1)}
+                      disabled={!smartSearchPagination.currentPage || smartSearchPagination.currentPage <= 1 || smartSearchLoading}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    >
+                      ← Trước
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: smartSearchPagination.totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          const current = smartSearchPagination.currentPage || 1;
+                          const total = smartSearchPagination.totalPages;
+                          return page === 1 || 
+                                 page === total || 
+                                 (page >= current - 1 && page <= current + 1);
+                        })
+                        .map((page, index, array) => {
+                          const showEllipsisBefore = index > 0 && page - array[index - 1] > 1;
+                          return (
+                            <React.Fragment key={page}>
+                              {showEllipsisBefore && (
+                                <span className="px-1.5 text-gray-400 text-sm">...</span>
+                              )}
+                              <button
+                                onClick={() => handlePostPageChange(page)}
+                                disabled={smartSearchLoading}
+                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                                  page === (smartSearchPagination.currentPage || 1)
+                                    ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm"
+                                    : "text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => handlePostPageChange((smartSearchPagination.currentPage || 1) + 1)}
+                      disabled={!smartSearchPagination.hasNext || smartSearchLoading}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    >
+                      Sau →
+                    </button>
+                  </div>
+
+                  {/* Pagination Info */}
+                  <span className="text-xs text-gray-500">
+                    Trang {smartSearchPagination.currentPage || 1} / {smartSearchPagination.totalPages}
+                    {" • "}
+                    {smartSearchPagination.totalItems} gia sư phù hợp
+                  </span>
                 </motion.div>
               )}
 
@@ -901,15 +931,6 @@ const StudentSmartSearchPage: React.FC = () => {
                     {surveyPaginatedResults.pagination.totalItems} gia sư
                   </span>
                 </motion.div>
-              )}
-
-              {/* Pagination Info (Post mode) */}
-              {searchMode === "post" && smartSearchPagination && (
-                <div className="text-center pt-4">
-                  <span className="text-sm text-gray-500">
-                    Trang {smartSearchPagination?.currentPage || 1} / {smartSearchPagination?.totalPages || 1}
-                  </span>
-                </div>
               )}
             </motion.div>
           )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FunnelIcon,
@@ -159,6 +159,23 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
     error,
     clearError,
   } = useTutorPostStore();
+
+  // Ref for click outside detection
+  const filterContainerRef = useRef<HTMLDivElement>(null);
+
+  // Click outside handler to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterContainerRef.current && !filterContainerRef.current.contains(event.target as Node)) {
+        closeAllDropdowns();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (localFilters.search && localFilters.search.trim() !== "") {
@@ -402,6 +419,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
   return (
     <motion.div
+      ref={filterContainerRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-visible relative ${className} ${disabled ? "opacity-50 pointer-events-none" : ""
@@ -522,8 +540,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
-                  style={{ zIndex: 50 }}
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
+                  style={{ zIndex: 50, minWidth: '300px' }}
                 >
                   <SubjectSelector
                     selectedSubjects={localFilters.subjects || []}
@@ -532,7 +550,6 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                         "subjects",
                         subjects.length > 0 ? subjects : undefined
                       );
-                      closeAllDropdowns();
                     }}
                     placeholder="Chọn môn học..."
                     multiple={true}
@@ -570,8 +587,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-64"
-                  style={{ zIndex: 50 }}
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
+                  style={{ zIndex: 50, minWidth: '250px' }}
                 >
                   <div className="grid grid-cols-1 gap-2">
                     {STUDENT_LEVELS.map((level) => {
@@ -642,8 +659,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-56"
-                  style={{ zIndex: 50 }}
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
+                  style={{ zIndex: 50, minWidth: '280px' }}
                 >
                   <div className="space-y-2">
                     {TEACHING_MODES.map((mode) => {
@@ -657,7 +674,6 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                               "teachingMode",
                               isSelected ? undefined : (mode.value as any)
                             );
-                            closeAllDropdowns();
                           }}
                           className={`w-full p-2.5 rounded text-left transition-colors flex items-center gap-3 ${isSelected
                               ? "bg-purple-50 border border-purple-200 text-purple-700"
@@ -710,8 +726,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80"
-                  style={{ zIndex: 50 }}
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4"
+                  style={{ zIndex: 50, minWidth: '320px' }}
                 >
                   {/* Price Presets */}
                   <div className="mb-3">
@@ -782,8 +798,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80"
-                  style={{ zIndex: 50 }}
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4"
+                  style={{ zIndex: 50, minWidth: '320px' }}
                 >
                   <div className="space-y-4">
                     <div>
@@ -802,7 +818,6 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                                   "minRating",
                                   isSelected ? undefined : preset.value
                                 );
-                                closeAllDropdowns();
                               }}
                               className={`px-3 py-2 rounded-lg text-base border transition-colors ${isSelected
                                   ? "border-yellow-500 bg-yellow-50 text-yellow-800"
@@ -856,17 +871,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                         onClick={() => {
                           updateFilter("minRating", undefined);
                           updateFilter("minReviews", undefined);
-                          closeAllDropdowns();
                         }}
                         className="text-sm text-gray-500 underline"
                       >
                         Xóa tất cả
-                      </button>
-                      <button
-                        onClick={() => closeAllDropdowns()}
-                        className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-semibold"
-                      >
-                        Áp dụng
                       </button>
                     </div>
                   </div>
@@ -902,8 +910,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-64"
-                  style={{ zIndex: 50 }}
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
+                  style={{ zIndex: 50, minWidth: '280px' }}
                 >
                   <div className="space-y-3">
                     <div>
@@ -976,8 +984,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-2 w-48"
-                  style={{ zIndex: 50 }}
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-2"
+                  style={{ zIndex: 50, minWidth: '200px' }}
                 >
                   <div className="space-y-1">
                     {SORT_OPTIONS.map((option, index) => {

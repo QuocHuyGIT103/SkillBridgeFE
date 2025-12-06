@@ -263,9 +263,16 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
     >
       {/* ✅ Fixed Height Container */}
       <div className="p-5 flex flex-col h-full">
-        {/* ✅ Compatibility Score Badge - Top Priority */}
+        {/* ✅ Survey Recommendation Badge & Compatibility Score */}
         {showCompatibility && post.compatibility !== undefined && (
-          <div className="mb-4 flex-shrink-0">
+          <div className="mb-4 flex-shrink-0 space-y-2">
+            {/* Survey Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-100 via-pink-100 to-rose-100 text-purple-800 rounded-full text-xs font-bold border-2 border-purple-200 shadow-sm">
+              <span className="text-sm">✨</span>
+              <span>Đề xuất từ khảo sát của bạn</span>
+            </div>
+            
+            {/* Compatibility Score */}
             <div className={`inline-flex items-center px-3 py-2 rounded-xl text-sm font-bold border-2 shadow-sm ${getCompatibilityColor(post.compatibility)}`}>
               <span className="mr-2 text-base">{getCompatibilityIcon(post.compatibility)}</span>
               <span className="font-semibold">{getCompatibilityText(post.compatibility)}: {post.compatibility}%</span>

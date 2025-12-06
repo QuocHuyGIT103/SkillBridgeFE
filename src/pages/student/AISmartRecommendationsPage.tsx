@@ -27,10 +27,11 @@ const AISmartRecommendationsPage: React.FC = () => {
   const [aiAvailable, setAiAvailable] = useState(true);
 
   // Query parameters - minScore 0 để hiển thị tất cả gia sư được gợi ý
+  // includeExplanations: false để tiết kiệm chi phí (dùng on-demand thày vì)
   const [query, setQuery] = useState<SmartRecommendationQuery>({
     limit: 10,
     minScore: 0,
-    includeExplanations: true,
+    includeExplanations: false, // ⭐ CHANGED: Dùng on-demand API thay vì auto-generate
   });
 
   // Fetch student post details
@@ -123,6 +124,9 @@ const AISmartRecommendationsPage: React.FC = () => {
               </h3>
               <p className="text-xs text-purple-700 mt-1">
                 Được hỗ trợ bởi Google Gemini AI - Tìm kiếm ngữ nghĩa thông minh với độ chính xác cao
+              </p>
+              <p className="text-xs text-purple-600 mt-1 font-medium">
+                💸 Tiết kiệm 90% chi phí với on-demand explanations
               </p>
             </div>
           </div>
@@ -274,19 +278,6 @@ const AISmartRecommendationsPage: React.FC = () => {
                 <option value={0.7}>70% - Tốt</option>
                 <option value={0.8}>80% - Rất tốt</option>
               </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="includeExplanations"
-                checked={query.includeExplanations}
-                onChange={(e) => handleQueryChange({ includeExplanations: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="includeExplanations" className="text-sm text-gray-600">
-                Hiện giải thích AI
-              </label>
             </div>
           </div>
         </div>
