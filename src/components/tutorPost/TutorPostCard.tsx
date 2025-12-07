@@ -251,18 +251,22 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      whileHover={{ y: -8, scale: 1.02 }}
       onClick={handleViewDetails}
       className={`
-        group cursor-pointer bg-white rounded-2xl shadow-sm border hover:shadow-xl 
+        group cursor-pointer bg-white rounded-2xl shadow-lg border-2 hover:shadow-2xl 
         transition-all duration-300 overflow-hidden h-full flex flex-col
+        relative
         ${showCompatibility && post.compatibility && post.compatibility >= 80
-          ? 'border-blue-300 ring-2 ring-blue-100 shadow-blue-100'
-          : 'border-gray-200 hover:border-gray-300'
+          ? 'border-blue-400 ring-4 ring-blue-100 shadow-blue-200'
+          : 'border-gray-200 hover:border-blue-300 hover:ring-2 hover:ring-blue-50'
         }
       `}
     >
+      {/* Gradient overlay on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 via-purple-50/0 to-pink-50/0 group-hover:from-blue-50/30 group-hover:via-purple-50/30 group-hover:to-pink-50/30 transition-all duration-500 pointer-events-none" />
       {/* ✅ Fixed Height Container */}
-      <div className="p-5 flex flex-col h-full">
+      <div className="p-6 flex flex-col h-full relative z-10">
         {/* ✅ Survey Recommendation Badge & Compatibility Score */}
         {showCompatibility && post.compatibility !== undefined && (
           <div className="mb-4 flex-shrink-0 space-y-2">
@@ -284,29 +288,29 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
         )}
 
         {/* Header with Avatar and Basic Info - Fixed Height */}
-        <div className="flex items-start space-x-4 mb-4 flex-shrink-0">
+        <div className="flex items-start space-x-4 mb-5 flex-shrink-0">
           {/* Avatar */}
           <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ring-2 ring-white">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-full flex items-center justify-center shadow-lg flex-shrink-0 ring-4 ring-white group-hover:ring-blue-100 transition-all duration-300 transform group-hover:scale-110">
               {post.tutorId.avatar_url ? (
                 <img
                   src={post.tutorId.avatar_url}
                   alt="Avatar"
-                  className="w-16 h-16 rounded-full object-cover"
+                  className="w-20 h-20 rounded-full object-cover"
                 />
               ) : (
-                <span className="text-gray-600 font-bold text-xl">
+                <span className="text-white font-bold text-2xl">
                   {post.tutorId.full_name?.charAt(0).toUpperCase() || "U"}
                 </span>
               )}
             </div>
-            {/* Online status indicator */}
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+            {/* Online status indicator with pulse */}
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white shadow-md animate-pulse"></div>
           </div>
 
           {/* Tutor Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-gray-900 mb-1 truncate group-hover:text-blue-600 transition-colors">
+            <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2 truncate group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
               {post.tutorId.full_name || "Gia sư"}
             </h3>
             <div className="space-y-1">
@@ -386,40 +390,42 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
         />
 
         {/* Title - Fixed Height */}
-        <div className="mb-3 flex-shrink-0">
-          <h2 className="text-base font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+        <div className="mb-4 flex-shrink-0">
+          <h2 className="text-lg font-bold text-gray-900 line-clamp-2 leading-tight group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">
             {post.title}
           </h2>
         </div>
 
         {/* Description - Fixed Height */}
-        <div className="mb-4 flex-shrink-0">
-          <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
+        <div className="mb-5 flex-shrink-0">
+          <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
             {truncateText(
               post.tutorId.profile?.introduction || post.description,
-              100
+              120
             )}
           </p>
         </div>
 
         {/* Subjects - Fixed Height */}
-        <div className="mb-4 flex-shrink-0">
-          <div className="flex items-center mb-2">
-            <BookOpenIcon className="w-4 h-4 text-blue-500 mr-1 flex-shrink-0" />
-            <span className="text-sm font-semibold text-gray-700">Môn học:</span>
+        <div className="mb-5 flex-shrink-0">
+          <div className="flex items-center mb-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md mr-2 group-hover:scale-110 transition-transform duration-300">
+              <BookOpenIcon className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-sm font-bold text-gray-800">Môn học</span>
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {post.subjects.slice(0, 3).map((subject, index) => (
               <span
                 key={subject._id || subject.name || index}
-                className="px-2 py-1 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 text-xs rounded-lg font-medium border border-blue-200"
+                className="px-3 py-1.5 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 text-blue-700 text-xs rounded-full font-semibold border-2 border-blue-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200"
               >
                 {subject.name}
               </span>
             ))}
             {post.subjects.length > 3 && (
-              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-lg font-medium">
-                +{post.subjects.length - 3}
+              <span className="px-3 py-1.5 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 text-xs rounded-full font-semibold border-2 border-gray-300 shadow-sm">
+                +{post.subjects.length - 3} môn
               </span>
             )}
           </div>
@@ -429,59 +435,67 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
         <div className="flex-1"></div>
 
         {/* Price and Duration - Fixed at Bottom */}
-        <div className="flex items-center justify-between mb-4 flex-shrink-0">
+        <div className="flex items-center justify-between mb-5 flex-shrink-0">
           <div className="flex items-center">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1.5 rounded-lg">
-              <div className="flex items-center text-sm font-bold">
-                <CurrencyDollarIcon className="w-4 h-4 mr-1" />
+            <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center text-base font-extrabold">
+                <CurrencyDollarIcon className="w-5 h-5 mr-1.5" />
                 <span>{formatPrice(post.pricePerSession)}</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">
-            <ClockIcon className="w-4 h-4 mr-1" />
-            <span>{post.sessionDuration}min</span>
+          <div className="flex items-center text-sm font-semibold text-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 px-3 py-2 rounded-lg border-2 border-gray-200 shadow-sm">
+            <ClockIcon className="w-4 h-4 mr-1.5 text-blue-500" />
+            <span>{post.sessionDuration} phút</span>
           </div>
         </div>
 
         {/* Stats - Fixed at Bottom */}
-        <div className="flex items-center justify-between text-xs text-gray-500 mb-4 flex-shrink-0">
+        <div className="flex items-center justify-between text-sm font-medium text-gray-600 mb-5 flex-shrink-0 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border border-blue-100">
           <div className="flex items-center">
-            <EyeIcon className="w-3 h-3 mr-1" />
-            <span>{post.viewCount} lượt xem</span>
+            <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center mr-2">
+              <EyeIcon className="w-4 h-4 text-blue-600" />
+            </div>
+            <span className="font-semibold">{post.viewCount.toLocaleString()}</span>
           </div>
           <div className="flex items-center">
-            <PhoneIcon className="w-3 h-3 mr-1" />
-            <span>{post.contactCount} liên hệ</span>
+            <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center mr-2">
+              <PhoneIcon className="w-4 h-4 text-green-600" />
+            </div>
+            <span className="font-semibold">{post.contactCount.toLocaleString()}</span>
           </div>
         </div>
 
         {/* Action Buttons - Fixed at Bottom */}
-        <div className="flex-shrink-0 flex gap-2">
+        <div className="flex-shrink-0 flex gap-3">
           {onSendRequest && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={(e) => {
                 e.stopPropagation();
                 onSendRequest(post);
               }}
-              className="flex-1 px-4 py-3 rounded-xl transition-all duration-200 font-semibold text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transform hover:scale-[1.02] flex items-center justify-center"
+              className="flex-1 px-5 py-3.5 rounded-xl transition-all duration-300 font-bold text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-2xl flex items-center justify-center group/btn"
             >
-              <PaperAirplaneIcon className="w-4 h-4 mr-2" />
+              <PaperAirplaneIcon className="w-5 h-5 mr-2 group-hover/btn:rotate-45 transition-transform duration-300" />
               Gửi yêu cầu
-            </button>
+            </motion.button>
           )}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={(e) => {
-              e.stopPropagation(); // Ngăn sự kiện chạy 2 lần
+              e.stopPropagation();
               handleViewDetails();
             }}
             className={`
-              ${onSendRequest ? 'flex-1' : 'w-full'} px-4 py-3 rounded-xl transition-all duration-200 font-semibold text-sm
-              bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transform hover:scale-[1.02]
+              ${onSendRequest ? 'flex-1' : 'w-full'} px-5 py-3.5 rounded-xl transition-all duration-300 font-bold text-sm
+              bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900 text-white hover:from-gray-800 hover:via-gray-900 hover:to-black shadow-lg hover:shadow-2xl
             `}
           >
-            Xem chi tiết
-          </button>
+            👁️ Xem chi tiết
+          </motion.button>
         </div>
 
         {/* Match Details - Expandable */}

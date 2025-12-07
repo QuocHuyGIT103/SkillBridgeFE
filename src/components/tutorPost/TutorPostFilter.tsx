@@ -551,12 +551,23 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl"
-                  style={{ zIndex: 50, minWidth: '300px', maxHeight: '400px' }}
+                  style={{ 
+                    zIndex: 9999, 
+                    minWidth: '300px', 
+                    maxHeight: '400px',
+                    pointerEvents: 'auto'
+                  }}
                   onClick={(e) => e.stopPropagation()}
+                  onWheel={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
                 >
                   <div 
-                    className="p-3 max-h-96 overflow-y-auto"
-                    onWheel={(e) => e.stopPropagation()}
+                    className="p-3 overflow-y-scroll"
+                    style={{ 
+                      maxHeight: '380px',
+                      overflowY: 'scroll',
+                      WebkitOverflowScrolling: 'touch'
+                    }}
                   >
                     <div className="space-y-2">
                       {activeSubjects && activeSubjects.length > 0 ? (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { motion } from 'framer-motion';
 import {
   ClockIcon,
@@ -57,10 +58,12 @@ const StudentContactRequestsPage: React.FC = () => {
         await cancelRequest(requestId);
         getStudentRequests();
       } catch (error) {
-        // Error handled in store
+        console.error('Error canceling request:', error);
       }
     }
   };
+
+
 
   const getStatusIcon = (status: string): React.ReactElement<{ className?: string }> => {
     switch (status) {
@@ -441,8 +444,15 @@ const StudentRequestCard: React.FC<StudentRequestCardProps> = ({
                 {/* Chỉ hiển thị button hủy khi học viên tự gửi request */}
                 {canCancel && request.initiatedBy !== 'TUTOR' && (
               <button
-                onClick={() => requestId && onCancel(requestId)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:bg-rose-600 hover:shadow-lg active:scale-95"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Cancel button clicked, requestId:', requestId);
+                  if (requestId) {
+                    onCancel(requestId);
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:bg-rose-600 hover:shadow-lg active:scale-95 cursor-pointer"
               >
                 Hủy yêu cầu
               </button>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useTutorPostStore } from "../store/tutorPost.store";
+import { useAuthStore } from "../store/auth.store";
 import TutorPostCard from "../components/tutorPost/TutorPostCard";
 import TutorPostFilter from "../components/tutorPost/TutorPostFilter";
 import { debounce } from "../utils/tutorUtils";
@@ -40,6 +41,8 @@ const TutorSearchPage: React.FC = () => {
     clearError,
   } = useTutorPostStore();
 
+  const { isAuthenticated, user } = useAuthStore();
+
   const [currentFilters, setCurrentFilters] = useState<TutorPostSearchQuery>(
     () => {
       const urlFilters: TutorPostSearchQuery = {
@@ -57,7 +60,7 @@ const TutorSearchPage: React.FC = () => {
         ward: searchParams.get("ward") || undefined,
         search: searchParams.get("search") || undefined,
         page: searchParams.get("page") ? Number(searchParams.get("page")) : 1,
-        limit: 12,
+        limit: 6,
         sortBy: (searchParams.get("sortBy") as any) || "createdAt",
         sortOrder: (searchParams.get("sortOrder") as any) || "desc",
         featured: searchParams.get("featured") === "true",
@@ -118,7 +121,7 @@ const TutorSearchPage: React.FC = () => {
   const handleReset = useCallback(() => {
     const resetFilters: TutorPostSearchQuery = {
       page: 1,
-      limit: 12,
+      limit: 6,
       sortBy: "createdAt",
       sortOrder: "desc",
     };
@@ -128,18 +131,17 @@ const TutorSearchPage: React.FC = () => {
     debouncedSearch(resetFilters);
   }, [clearPosts, updateURL, debouncedSearch]);
 
-  const handleLoadMore = useCallback(async () => {
-    if (!pagination?.hasNext) return;
-    try {
-      const nextPage = (currentFilters.page || 1) + 1;
-      const nextFilters = { ...currentFilters, page: nextPage };
+  const handlePageChange = useCallback(
+    (page: number) => {
+      const nextFilters = { ...currentFilters, page };
       setCurrentFilters(nextFilters);
-      await loadMorePosts(nextFilters);
-    } catch (error: any) {
-      console.error("Load more error:", error);
-      toast.error("Không thể tải thêm gia sư");
-    }
-  }, [currentFilters, pagination, loadMorePosts]);
+      updateURL(nextFilters);
+      debouncedSearch(nextFilters);
+      // Scroll to top of results
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [currentFilters, updateURL, debouncedSearch]
+  );
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -161,6 +163,29 @@ const TutorSearchPage: React.FC = () => {
       navigate(`/tutors/${tutorId}`);
     },
     [navigate]
+  );
+
+  const handleSendRequest = useCallback(
+    (post: any) => {
+      if (!isAuthenticated) {
+        toast.error("Vui lòng đăng nhập để gửi yêu cầu học tập");
+        navigate("/login", {
+          state: { from: `/tutors/${post._id || post.id}` },
+        });
+        return;
+      }
+
+      if (user?.role !== "STUDENT" && user?.role !== "PARENT") {
+        toast.error("Chỉ học viên và phụ huynh mới có thể gửi yêu cầu học tập");
+        return;
+      }
+
+      // Navigate to tutor detail page to send request
+      navigate(`/tutors/${post._id || post.id}`, {
+        state: { openRequestModal: true },
+      });
+    },
+    [isAuthenticated, user, navigate]
   );
 
   const getTotalText = () => {
@@ -344,8 +369,8 @@ const TutorSearchPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Results Grid - More columns with horizontal layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {/* Results Grid - 3 columns max for better card size */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {posts.map((post: any, index: number) => (
                     <motion.div
                       key={post.id || post._id}
@@ -358,43 +383,91 @@ const TutorSearchPage: React.FC = () => {
                         post={post}
                         showCompatibility={false}
                         onClick={() => handleTutorClick(post.id || post._id)}
+                        onSendRequest={handleSendRequest}
                       />
                     </motion.div>
                   ))}
                 </div>
 
-                {/* Load More */}
-                {pagination?.hasNext && (
+                {/* Pagination */}
+                {pagination && pagination.totalPages > 1 && (
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center pt-8"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-center gap-2 pt-8"
                   >
+                    {/* Previous Button */}
                     <button
-                      onClick={handleLoadMore}
-                      disabled={searchLoading}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-10 py-4 rounded-xl font-bold transition-all duration-200 shadow-lg transform hover:scale-105 disabled:transform-none min-w-[200px]"
+                      onClick={() =>
+                        handlePageChange((currentFilters.page || 1) - 1)
+                      }
+                      disabled={!pagination.hasPrev || searchLoading}
+                      className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500 disabled:hover:bg-white disabled:hover:border-gray-300 shadow-sm"
                     >
-                      {searchLoading ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
-                          Đang tải thêm...
-                        </div>
-                      ) : (
-                        "📚 Xem thêm gia sư"
-                      )}
+                      ← Trước
                     </button>
-                  </motion.div>
-                )}
 
-                {/* Pagination Info */}
-                {pagination && (
-                  <div className="text-center bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-white/50">
-                    <span className="text-sm text-gray-600 font-medium">
-                      Trang {pagination.currentPage || 1} /{" "}
-                      {pagination.totalPages || 1}
-                    </span>
-                  </div>
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-2">
+                      {Array.from(
+                        { length: pagination.totalPages },
+                        (_, i) => i + 1
+                      )
+                        .filter((page) => {
+                          const current = pagination.currentPage || 1;
+                          // Show first page, last page, current page, and pages around current
+                          return (
+                            page === 1 ||
+                            page === pagination.totalPages ||
+                            Math.abs(page - current) <= 1
+                          );
+                        })
+                        .map((page, index, array) => {
+                          // Add ellipsis
+                          const prevPage = array[index - 1];
+                          const showEllipsis = prevPage && page - prevPage > 1;
+
+                          return (
+                            <React.Fragment key={page}>
+                              {showEllipsis && (
+                                <span className="px-2 text-gray-500">...</span>
+                              )}
+                              <button
+                                onClick={() => handlePageChange(page)}
+                                disabled={searchLoading}
+                                className={`min-w-[40px] h-10 rounded-lg font-semibold transition-all duration-200 shadow-sm
+                                  ${
+                                    page === (pagination.currentPage || 1)
+                                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-2 border-blue-600 scale-110"
+                                      : "bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500"
+                                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              >
+                                {page}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() =>
+                        handlePageChange((currentFilters.page || 1) + 1)
+                      }
+                      disabled={!pagination.hasNext || searchLoading}
+                      className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500 disabled:hover:bg-white disabled:hover:border-gray-300 shadow-sm"
+                    >
+                      Sau →
+                    </button>
+
+                    {/* Page Info */}
+                    <div className="ml-4 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200 shadow-sm">
+                      <span className="text-sm text-gray-600 font-medium">
+                        Trang {pagination.currentPage || 1} /{" "}
+                        {pagination.totalPages}
+                      </span>
+                    </div>
+                  </motion.div>
                 )}
               </motion.div>
             )}
