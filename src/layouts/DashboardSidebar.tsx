@@ -328,7 +328,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/')}
+            title="Về trang chủ"
           >
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <AcademicCapIcon className="w-5 h-5 text-white" />

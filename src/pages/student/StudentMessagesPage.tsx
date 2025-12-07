@@ -19,8 +19,9 @@ const StudentMessagesPage: React.FC = () => {
 
   const [searchParams] = useSearchParams();
   const contactRequestId = searchParams.get('contactRequestId');
+  const classId = searchParams.get('classId');
 
-  const { fetchConversations, setSelectedConversation: setStoreSelectedConversation, createConversation } = useMessageStore();
+  const { fetchConversations, setSelectedConversation: setStoreSelectedConversation, createConversation, getConversationByContactRequest, getOrCreateConversationByClass } = useMessageStore();
 
   // Connect socket and preload conversations
   useEffect(() => {
@@ -35,12 +36,26 @@ const StudentMessagesPage: React.FC = () => {
     };
   }, [currentUserId]);
 
-  // Auto-create/select conversation when coming from contact request
+  // Auto-create/select conversation when coming from class or contact request
   useEffect(() => {
     const init = async () => {
-      if (!contactRequestId) return;
+      if (!classId && !contactRequestId) return;
+      
       try {
-        const conversation = await createConversation(contactRequestId);
+        let conversation = null;
+        
+        // Priority: classId > contactRequestId
+        if (classId) {
+          conversation = await getOrCreateConversationByClass(classId);
+        } else if (contactRequestId) {
+          conversation = await getConversationByContactRequest(contactRequestId);
+          
+          // If not found, create new one
+          if (!conversation) {
+            conversation = await createConversation(contactRequestId);
+          }
+        }
+        
         await fetchConversations();
         if (conversation) {
           setSelectedConversation(conversation);
@@ -52,7 +67,7 @@ const StudentMessagesPage: React.FC = () => {
       }
     };
     init();
-  }, [contactRequestId]);
+  }, [classId, contactRequestId]);
 
   const handleSelectConversation = (conversation: ConversationData) => {
     setSelectedConversation(conversation);

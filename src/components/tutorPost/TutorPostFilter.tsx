@@ -15,6 +15,7 @@ import {
 import SubjectSelector from "./SubjectSelector";
 import PriceInput from "./PriceInput";
 import { useTutorPostStore } from "../../store/tutorPost.store";
+import { useSubjectStore } from "../../store/subject.store";
 import type { TutorPostSearchQuery } from "../../services/tutorPost.service";
 
 interface TutorPostFilterProps {
@@ -160,6 +161,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
     clearError,
   } = useTutorPostStore();
 
+  // Subject store
+  const { activeSubjects, getActiveSubjects, isLoading: subjectsLoading } = useSubjectStore();
+
   // Ref for click outside detection
   const filterContainerRef = useRef<HTMLDivElement>(null);
 
@@ -203,6 +207,12 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
       console.error("Failed to load filter options:", err);
     });
   }, [getFilterOptions]);
+
+  useEffect(() => {
+    if (activeSubjects.length === 0) {
+      getActiveSubjects();
+    }
+  }, [activeSubjects.length, getActiveSubjects]);
 
   useEffect(() => {
     setLocalFilters(filters);
@@ -540,21 +550,51 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
-                  style={{ zIndex: 50, minWidth: '300px' }}
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl"
+                  style={{ zIndex: 50, minWidth: '300px', maxHeight: '400px' }}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <SubjectSelector
-                    selectedSubjects={localFilters.subjects || []}
-                    onChange={(subjects) => {
-                      updateFilter(
-                        "subjects",
-                        subjects.length > 0 ? subjects : undefined
-                      );
-                    }}
-                    placeholder="Chọn môn học..."
-                    multiple={true}
-                    disabled={disabled || filterLoading}
-                  />
+                  <div 
+                    className="p-3 max-h-96 overflow-y-auto"
+                    onWheel={(e) => e.stopPropagation()}
+                  >
+                    <div className="space-y-2">
+                      {activeSubjects && activeSubjects.length > 0 ? (
+                        activeSubjects.map((subject: any) => {
+                          const isSelected = (localFilters.subjects || []).includes(subject._id);
+                          return (
+                            <label
+                              key={subject._id}
+                              className={`flex items-center p-2 rounded cursor-pointer transition-colors ${
+                                isSelected
+                                  ? "bg-blue-50 border border-blue-200"
+                                  : "hover:bg-gray-50"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  const currentSubjects = localFilters.subjects || [];
+                                  const newSubjects = e.target.checked
+                                    ? [...currentSubjects, subject._id]
+                                    : currentSubjects.filter((id) => id !== subject._id);
+                                  updateFilter(
+                                    "subjects",
+                                    newSubjects.length > 0 ? newSubjects : undefined
+                                  );
+                                }}
+                                className="mr-2 h-4 w-4"
+                              />
+                              <span className="text-sm">{subject.name}</span>
+                            </label>
+                          );
+                        })
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-2">Không có môn học</p>
+                      )}
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -589,6 +629,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
                   style={{ zIndex: 50, minWidth: '250px' }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className="grid grid-cols-1 gap-2">
                     {STUDENT_LEVELS.map((level) => {
@@ -661,6 +702,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
                   style={{ zIndex: 50, minWidth: '280px' }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-2">
                     {TEACHING_MODES.map((mode) => {
@@ -728,6 +770,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4"
                   style={{ zIndex: 50, minWidth: '320px' }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {/* Price Presets */}
                   <div className="mb-3">
@@ -800,6 +843,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4"
                   style={{ zIndex: 50, minWidth: '320px' }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-4">
                     <div>
@@ -910,49 +954,75 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3 max-h-96 overflow-y-auto"
                   style={{ zIndex: 50, minWidth: '280px' }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-3">
                     <div>
-                      {/* ✅ TĂNG CỠ CHỮ */}
-                      <label className="block text-base font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Tỉnh/Thành phố
                       </label>
-                      <select
-                        value={localFilters.province || ""}
-                        onChange={(e) => handleProvinceChange(e.target.value)}
-                        // ✅ TĂNG CỠ CHỮ
-                        className="w-full px-2 py-1.5 text-base border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
-                      >
-                        <option value="">Tất cả tỉnh/thành</option>
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        <button
+                          onClick={() => {
+                            updateFilter("province", undefined);
+                            updateFilter("district", undefined);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                            !localFilters.province
+                              ? "bg-blue-50 text-blue-700 font-medium"
+                              : "hover:bg-gray-50"
+                          }`}
+                        >
+                          Tất cả tỉnh/thành
+                        </button>
                         {provinces.map((province) => (
-                          <option key={province.code} value={province.code}>
+                          <button
+                            key={province.code}
+                            onClick={() => handleProvinceChange(province.code)}
+                            className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                              localFilters.province === province.code
+                                ? "bg-blue-50 text-blue-700 font-medium"
+                                : "hover:bg-gray-50"
+                            }`}
+                          >
                             {province.name}
-                          </option>
+                          </button>
                         ))}
-                      </select>
+                      </div>
                     </div>
 
-                    {localFilters.province && (
+                    {localFilters.province && districts.length > 0 && (
                       <div>
-                        {/* ✅ TĂNG CỠ CHỮ */}
-                        <label className="block text-base font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Quận/Huyện
                         </label>
-                        <select
-                          value={localFilters.district || ""}
-                          onChange={(e) => handleDistrictChange(e.target.value)}
-                          // ✅ TĂNG CỠ CHỮ
-                          className="w-full px-2 py-1.5 text-base border border-gray-200 rounded focus:ring-1 focus:ring-blue-500"
-                        >
-                          <option value="">Tất cả quận/huyện</option>
+                        <div className="space-y-1 max-h-48 overflow-y-auto">
+                          <button
+                            onClick={() => updateFilter("district", undefined)}
+                            className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                              !localFilters.district
+                                ? "bg-blue-50 text-blue-700 font-medium"
+                                : "hover:bg-gray-50"
+                            }`}
+                          >
+                            Tất cả quận/huyện
+                          </button>
                           {districts.map((district) => (
-                            <option key={district.code} value={district.code}>
+                            <button
+                              key={district.code}
+                              onClick={() => handleDistrictChange(district.code)}
+                              className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                                localFilters.district === district.code
+                                  ? "bg-blue-50 text-blue-700 font-medium"
+                                  : "hover:bg-gray-50"
+                              }`}
+                            >
                               {district.name}
-                            </option>
+                            </button>
                           ))}
-                        </select>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -986,6 +1056,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-2"
                   style={{ zIndex: 50, minWidth: '200px' }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-1">
                     {SORT_OPTIONS.map((option, index) => {

@@ -32,6 +32,22 @@ export interface SmartSearchQuery {
 
 type SearchMode = "survey" | "post";
 
+// ==================== CACHE KEYS ====================
+const CACHE_KEYS = {
+  SURVEY_RECOMMENDATIONS: 'smart_search_survey_recommendations',
+  ALL_TUTORS: 'smart_search_all_tutors',
+  SMART_SEARCH_RESULTS: 'smart_search_results',
+  FILTERS: 'smart_search_filters',
+  MODE: 'smart_search_mode',
+  SELECTED_POST_ID: 'smart_search_selected_post_id',
+  SCROLL_POSITION: 'smart_search_scroll_position',
+  SURVEY_PAGE: 'smart_search_survey_page',
+  ALL_TUTORS_PAGE: 'smart_search_all_tutors_page',
+  CACHE_TIMESTAMP: 'smart_search_cache_timestamp',
+};
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 // ==================== COMPONENT ====================
 const StudentSmartSearchPage: React.FC = () => {
   const navigate = useNavigate();
@@ -63,6 +79,7 @@ const StudentSmartSearchPage: React.FC = () => {
   // Survey-based results
   const [surveyRecommendations, setSurveyRecommendations] = useState<TutorPost[]>([]);
   const [allTutors, setAllTutors] = useState<TutorPost[]>([]);
+  const [allTutorsLoading, setAllTutorsLoading] = useState(false);
   const [surveyLoading, setSurveyLoading] = useState(true);
   const [hasSurvey, setHasSurvey] = useState(false);
 
@@ -93,7 +110,9 @@ const StudentSmartSearchPage: React.FC = () => {
   
   // Pagination for survey mode
   const ITEMS_PER_PAGE = 4;
+  const ALL_TUTORS_PER_PAGE = 2;
   const [surveyCurrentPage, setSurveyCurrentPage] = useState(1);
+  const [allTutorsCurrentPage, setAllTutorsCurrentPage] = useState(1);
   
   const [allTutorsPagination, setAllTutorsPagination] = useState({
     currentPage: 1,
@@ -110,6 +129,36 @@ const StudentSmartSearchPage: React.FC = () => {
   const canSendRequest = Boolean(
     isAuthenticated && user?.role === "STUDENT"
   );
+
+  // ==================== CACHE HELPERS ====================
+  const saveToCache = useCallback((key: string, data: any) => {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(data));
+      sessionStorage.setItem(CACHE_KEYS.CACHE_TIMESTAMP, Date.now().toString());
+    } catch (error) {
+      console.error('Cache save error:', error);
+    }
+  }, []);
+
+  const loadFromCache = useCallback((key: string) => {
+    try {
+      const timestamp = sessionStorage.getItem(CACHE_KEYS.CACHE_TIMESTAMP);
+      if (timestamp && Date.now() - parseInt(timestamp) < CACHE_DURATION) {
+        const data = sessionStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Cache load error:', error);
+      return null;
+    }
+  }, []);
+
+  const clearCache = useCallback(() => {
+    Object.values(CACHE_KEYS).forEach(key => {
+      sessionStorage.removeItem(key);
+    });
+  }, []);
 
   // Handle send request click
   const handleSendRequest = useCallback((post: any) => {
@@ -216,6 +265,55 @@ const StudentSmartSearchPage: React.FC = () => {
     [setSearchParams, searchMode]
   );
 
+  // ==================== FETCH ALL TUTORS WITH FILTERS ====================
+  const fetchAllTutorsWithFilters = useCallback(
+    async (filters: SmartSearchQuery = {}) => {
+      setAllTutorsLoading(true);
+      try {
+        // Map sortBy field - "compatibility" only works with smart search
+        // For regular search, use valid fields like "createdAt", "pricePerSession", "viewCount", etc.
+        let sortBy = filters.sortBy || "createdAt";
+        if (sortBy === "compatibility") {
+          sortBy = "createdAt"; // Default to createdAt for all tutors listing
+        }
+
+        const searchQuery = {
+          page: filters.page || 1,
+          limit: 50,
+          sortBy: sortBy,
+          sortOrder: filters.sortOrder || "desc",
+          ...(filters.subjects?.length && { subjects: filters.subjects }),
+          ...(filters.teachingMode && { teachingMode: filters.teachingMode }),
+          ...(filters.studentLevel?.length && { studentLevel: filters.studentLevel }),
+          ...(filters.priceMin !== undefined && { priceMin: filters.priceMin }),
+          ...(filters.priceMax !== undefined && { priceMax: filters.priceMax }),
+          ...(filters.province && { province: filters.province }),
+          ...(filters.district && { district: filters.district }),
+          ...(filters.ward && { ward: filters.ward }),
+          ...(filters.search?.trim() && { search: filters.search.trim() }),
+        };
+
+        const tutorsResponse = await TutorPostService.searchTutorPosts(searchQuery);
+        if (tutorsResponse.success && tutorsResponse.data) {
+          setAllTutors(tutorsResponse.data.posts || []);
+          setAllTutorsPagination({
+            currentPage: tutorsResponse.data.pagination?.currentPage || 1,
+            totalPages: tutorsResponse.data.pagination?.totalPages || 1,
+            totalItems: tutorsResponse.data.pagination?.totalItems || 0,
+            hasNext: tutorsResponse.data.pagination?.hasNext || false,
+          });
+          setAllTutorsCurrentPage(1); // Reset to page 1 when filters change
+        }
+      } catch (error: any) {
+        console.error("Fetch all tutors error:", error);
+        toast.error("Không thể tải danh sách gia sư");
+      } finally {
+        setAllTutorsLoading(false);
+      }
+    },
+    []
+  );
+
   // ==================== DEBOUNCED SEARCH (for post mode) ====================
   const debouncedSmartSearch = useCallback(
     debounce(async (postId: string, query: SmartSearchQuery = {}) => {
@@ -254,25 +352,31 @@ const StudentSmartSearchPage: React.FC = () => {
       if (searchMode === "post" && selectedPostId) {
         updateURL(updatedFilters, selectedPostId, "post");
         debouncedSmartSearch(selectedPostId, updatedFilters);
+      } else if (searchMode === "post" && !selectedPostId) {
+        // Post mode but no post selected - apply filters to all tutors
+        updateURL(updatedFilters, null, "post");
+        fetchAllTutorsWithFilters(updatedFilters);
       } else {
         updateURL(updatedFilters, null, "survey");
       }
     },
-    [searchMode, selectedPostId, updateURL, debouncedSmartSearch]
+    [searchMode, selectedPostId, updateURL, debouncedSmartSearch, fetchAllTutorsWithFilters]
   );
 
   const handleSearch = useCallback(() => {
     setSurveyCurrentPage(1); // Reset page on search
     if (searchMode === "post" && selectedPostId) {
       debouncedSmartSearch(selectedPostId, currentFilters);
+    } else if (searchMode === "post" && !selectedPostId) {
+      fetchAllTutorsWithFilters(currentFilters);
     }
-  }, [searchMode, selectedPostId, currentFilters, debouncedSmartSearch]);
+  }, [searchMode, selectedPostId, currentFilters, debouncedSmartSearch, fetchAllTutorsWithFilters]);
 
   const handleReset = useCallback(() => {
     const resetFilters: SmartSearchQuery = {
       page: 1,
       limit: 4,
-      sortBy: "compatibility",
+      sortBy: searchMode === "post" && !selectedPostId ? "createdAt" : "compatibility",
       sortOrder: "desc",
     };
 
@@ -282,6 +386,9 @@ const StudentSmartSearchPage: React.FC = () => {
     if (searchMode === "post" && selectedPostId) {
       updateURL(resetFilters, selectedPostId, "post");
       debouncedSmartSearch(selectedPostId, resetFilters);
+    } else if (searchMode === "post" && !selectedPostId) {
+      updateURL(resetFilters, null, "post");
+      fetchAllTutorsWithFilters(resetFilters);
     } else {
       updateURL(resetFilters, null, "survey");
     }
@@ -291,6 +398,12 @@ const StudentSmartSearchPage: React.FC = () => {
   // Pagination handlers for survey mode
   const handleSurveyPageChange = useCallback((page: number) => {
     setSurveyCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Pagination handler for all tutors (post mode, no post selected)
+  const handleAllTutorsPageChange = useCallback((page: number) => {
+    setAllTutorsCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
@@ -350,12 +463,49 @@ const StudentSmartSearchPage: React.FC = () => {
 
   const handleTutorClick = useCallback(
     (tutorId: string) => {
+      // Save current state to cache before navigating
+      saveToCache(CACHE_KEYS.SCROLL_POSITION, window.scrollY);
+      saveToCache(CACHE_KEYS.MODE, searchMode);
+      saveToCache(CACHE_KEYS.SELECTED_POST_ID, selectedPostId);
+      saveToCache(CACHE_KEYS.FILTERS, currentFilters);
+      saveToCache(CACHE_KEYS.SURVEY_PAGE, surveyCurrentPage);
+      saveToCache(CACHE_KEYS.ALL_TUTORS_PAGE, allTutorsCurrentPage);
+      
+      if (searchMode === 'survey') {
+        saveToCache(CACHE_KEYS.SURVEY_RECOMMENDATIONS, surveyRecommendations);
+      } else if (searchMode === 'post' && !selectedPostId) {
+        saveToCache(CACHE_KEYS.ALL_TUTORS, allTutors);
+      }
+      
       navigate(`/tutors/${tutorId}`);
     },
-    [navigate]
+    [navigate, searchMode, selectedPostId, currentFilters, surveyCurrentPage, allTutorsCurrentPage, surveyRecommendations, allTutors, saveToCache]
   );
 
   // ==================== EFFECTS ====================
+  // Restore from cache on mount
+  useEffect(() => {
+    const cachedMode = loadFromCache(CACHE_KEYS.MODE);
+    const cachedFilters = loadFromCache(CACHE_KEYS.FILTERS);
+    const cachedPostId = loadFromCache(CACHE_KEYS.SELECTED_POST_ID);
+    const cachedSurveyPage = loadFromCache(CACHE_KEYS.SURVEY_PAGE);
+    const cachedAllTutorsPage = loadFromCache(CACHE_KEYS.ALL_TUTORS_PAGE);
+    
+    if (cachedMode) setSearchMode(cachedMode);
+    if (cachedFilters) setCurrentFilters(cachedFilters);
+    if (cachedPostId) setSelectedPostId(cachedPostId);
+    if (cachedSurveyPage) setSurveyCurrentPage(cachedSurveyPage);
+    if (cachedAllTutorsPage) setAllTutorsCurrentPage(cachedAllTutorsPage);
+    
+    // Restore scroll position
+    const cachedScroll = loadFromCache(CACHE_KEYS.SCROLL_POSITION);
+    if (cachedScroll) {
+      setTimeout(() => {
+        window.scrollTo(0, cachedScroll);
+      }, 100);
+    }
+  }, [loadFromCache]);
+
   // Load initial data
   useEffect(() => {
     let isMounted = true;
@@ -366,6 +516,17 @@ const StudentSmartSearchPage: React.FC = () => {
 
       // 1. Fetch survey recommendations
       try {
+        // Check cache first
+        const cachedSurveyData = loadFromCache(CACHE_KEYS.SURVEY_RECOMMENDATIONS);
+        if (cachedSurveyData && cachedSurveyData.length > 0) {
+          if (isMounted) {
+            setSurveyRecommendations(cachedSurveyData);
+            setHasSurvey(true);
+            setSurveyLoading(false);
+          }
+          // Still fetch in background to update cache
+        }
+
         const surveyResponse = await SurveyService.getSurvey();
         if (isMounted && surveyResponse.success && surveyResponse.data) {
           // API có thể trả về data.recommendations hoặc data trực tiếp là mảng
@@ -432,6 +593,7 @@ const StudentSmartSearchPage: React.FC = () => {
           
           setSurveyRecommendations(transformedRecommendations);
           setHasSurvey(transformedRecommendations.length > 0 || !!responseData.survey);
+          saveToCache(CACHE_KEYS.SURVEY_RECOMMENDATIONS, transformedRecommendations);
         }
       } catch {
         if (isMounted) setHasSurvey(false);
@@ -439,6 +601,14 @@ const StudentSmartSearchPage: React.FC = () => {
 
       // 2. Fetch all tutors
       try {
+        // Check cache first
+        const cachedAllTutors = loadFromCache(CACHE_KEYS.ALL_TUTORS);
+        if (cachedAllTutors && cachedAllTutors.length > 0) {
+          if (isMounted) {
+            setAllTutors(cachedAllTutors);
+          }
+        }
+
         const tutorsResponse = await TutorPostService.searchTutorPosts({
           page: 1,
           limit: 50,
@@ -447,6 +617,7 @@ const StudentSmartSearchPage: React.FC = () => {
         });
         if (isMounted && tutorsResponse.success && tutorsResponse.data) {
           setAllTutors(tutorsResponse.data.posts || []);
+          saveToCache(CACHE_KEYS.ALL_TUTORS, tutorsResponse.data.posts || []);
           setAllTutorsPagination({
             currentPage: 1,
             totalPages: tutorsResponse.data.pagination?.totalPages || 1,
@@ -477,7 +648,18 @@ const StudentSmartSearchPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [fetchMyPosts]);
+  }, [fetchMyPosts, loadFromCache, saveToCache]);
+
+  // Clear cache when navigating away (except to tutor detail)
+  useEffect(() => {
+    return () => {
+      // Only clear cache if not going to tutor detail page
+      const isTutorDetailNavigation = window.location.pathname.includes('/tutors/');
+      if (!isTutorDetailNavigation) {
+        clearCache();
+      }
+    };
+  }, [clearCache]);
 
   // Handle URL post mode on mount
   useEffect(() => {
@@ -705,35 +887,130 @@ const StudentSmartSearchPage: React.FC = () => {
               </div>
 
               {/* Show Latest Tutors as Preview */}
-              {allTutors && allTutors.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">
-                      Gia sư mới đăng ký gần đây
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                      {allTutors.length} gia sư
-                    </span>
+              {allTutorsLoading ? (
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100/50 p-12">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="relative mb-6">
+                      <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-100"></div>
+                      <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-500 border-t-transparent absolute top-0"></div>
+                    </div>
+                    <span className="text-gray-600 font-medium">Đang tải danh sách gia sư...</span>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {allTutors.slice(0, 4).map((tutor: TutorPost) => (
-                      <TutorPostCard
-                        key={tutor.id || tutor._id}
-                        tutorPost={tutor}
-                        onOpenContactForm={(post) => {
-                          if (!isAuthenticated) {
-                            toast.error("Vui lòng đăng nhập để gửi yêu cầu");
-                            navigate("/login");
-                            return;
-                          }
-                          setSelectedTutorPost(post);
-                          setShowContactModal(true);
-                        }}
-                        currentUser={user}
-                        matchDetails={undefined}
-                      />
-                    ))}
+                </div>
+              ) : allTutors && allTutors.length > 0 ? (() => {
+                const totalItems = allTutors.length;
+                const totalPages = Math.ceil(totalItems / ALL_TUTORS_PER_PAGE);
+                const startIndex = (allTutorsCurrentPage - 1) * ALL_TUTORS_PER_PAGE;
+                const endIndex = startIndex + ALL_TUTORS_PER_PAGE;
+                const paginatedTutors = allTutors.slice(startIndex, endIndex);
+                
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-gray-900">
+                        Gia sư mới đăng ký gần đây
+                      </h3>
+                      <span className="text-sm text-gray-500">
+                        {allTutors.length} gia sư
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {paginatedTutors.map((tutor: TutorPost) => (
+                        <TutorPostCard
+                          key={tutor.id || tutor._id}
+                          post={tutor}
+                          showCompatibility={false}
+                          onClick={() => handleTutorClick(tutor.id || tutor._id)}
+                          onSendRequest={canSendRequest ? handleSendRequest : undefined}
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* Pagination Controls for All Tutors */}
+                    {totalPages > 1 && (
+                      <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        className="flex flex-col items-center gap-3 pt-6 mt-6 border-t border-gray-100"
+                      >
+                        <div className="flex items-center gap-1.5 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100">
+                          {/* Previous Button */}
+                          <button
+                            onClick={() => handleAllTutorsPageChange(allTutorsCurrentPage - 1)}
+                            disabled={allTutorsCurrentPage <= 1}
+                            className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          >
+                            ← Trước
+                          </button>
+
+                          {/* Page Numbers */}
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                              .filter(page => {
+                                const current = allTutorsCurrentPage;
+                                return page === 1 || 
+                                       page === totalPages || 
+                                       (page >= current - 1 && page <= current + 1);
+                              })
+                              .map((page, index, array) => {
+                                const showEllipsisBefore = index > 0 && page - array[index - 1] > 1;
+                                return (
+                                  <React.Fragment key={page}>
+                                    {showEllipsisBefore && (
+                                      <span className="px-1.5 text-gray-400 text-sm">...</span>
+                                    )}
+                                    <button
+                                      onClick={() => handleAllTutorsPageChange(page)}
+                                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                                        page === allTutorsCurrentPage
+                                          ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm"
+                                          : "text-gray-600 hover:bg-gray-100"
+                                      }`}
+                                    >
+                                      {page}
+                                    </button>
+                                  </React.Fragment>
+                                );
+                              })}
+                          </div>
+
+                          {/* Next Button */}
+                          <button
+                            onClick={() => handleAllTutorsPageChange(allTutorsCurrentPage + 1)}
+                            disabled={allTutorsCurrentPage >= totalPages}
+                            className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          >
+                            Sau →
+                          </button>
+                        </div>
+
+                        {/* Pagination Info */}
+                        <span className="text-xs text-gray-500">
+                          Trang {allTutorsCurrentPage} / {totalPages}
+                          {" • "}
+                          {totalItems} gia sư
+                        </span>
+                      </motion.div>
+                    )}
                   </div>
+                );
+              })() : (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                    <span className="text-3xl">🔍</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    Không tìm thấy gia sư
+                  </h3>
+                  <p className="text-gray-500 mb-5 text-sm max-w-sm mx-auto">
+                    Thử điều chỉnh bộ lọc để tìm thấy nhiều gia sư hơn
+                  </p>
+                  <button
+                    onClick={handleReset}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-lg font-medium transition-all"
+                  >
+                    Đặt lại bộ lọc
+                  </button>
                 </div>
               )}
             </motion.div>
