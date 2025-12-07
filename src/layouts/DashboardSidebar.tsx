@@ -175,6 +175,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           label: "Tất cả cuộc hội thoại",
           path: "/tutor/messages/conversations",
         },
+        {
+          id: "chat-students",
+          label: "Tin nhắn học sinh",
+          path: "/tutor/messages/students",
+          badge: 3,
+        },
       ],
     },
     {
