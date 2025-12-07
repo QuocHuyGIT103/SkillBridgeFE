@@ -442,8 +442,7 @@ const StudentRequestCard: React.FC<StudentRequestCardProps> = ({
                 {canCancel && request.initiatedBy !== 'TUTOR' && (
               <button
                 onClick={() => requestId && onCancel(requestId)}
-                disabled={!requestId}
-                className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:bg-rose-600"
+                className="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform duration-200 hover:bg-rose-600 hover:shadow-lg active:scale-95"
               >
                 Hủy yêu cầu
               </button>
@@ -692,6 +691,7 @@ const StudentResponseButtons: React.FC<StudentResponseButtonsProps> = ({ request
           </div>
         </div>
       )}
+
     </>
   );
 };

@@ -10,6 +10,7 @@ import {
   MapPinIcon,
   DocumentTextIcon,
   TrashIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import { useClassStore } from "../../store/class.store";
 import { format } from "date-fns";
@@ -229,18 +230,35 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
     }
   };
 
+  const handleContactChat = () => {
+    // Navigate to messages page with classId to auto-open conversation
+    const messagesPath = userRole === "STUDENT" ? "/student/messages" : "/tutor/messages";
+    navigate(`${messagesPath}?classId=${classId}`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {classData.title}
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            {classData.subject.name} •{" "}
-            {classData.learningMode === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {classData.title}
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {classData.subject.name} •{" "}
+              {classData.learningMode === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}
+            </p>
+          </div>
+          
+          {/* Contact Button */}
+          <button
+            onClick={handleContactChat}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+          >
+            <ChatBubbleLeftRightIcon className="w-5 h-5" />
+            Liên hệ {userRole === "STUDENT" ? "gia sư" : "học viên"}
+          </button>
         </div>
       </div>
 

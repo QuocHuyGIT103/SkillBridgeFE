@@ -100,7 +100,10 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({
           ${isOpen ? "border-blue-500 ring-1 ring-blue-500" : ""}
           transition-colors duration-200
         `}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!disabled) setIsOpen(!isOpen);
+        }}
       >
         <div className="flex items-center justify-between">
           <span
@@ -139,7 +142,10 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({
 
       {/* Dropdown */}
       {isOpen && !disabled && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-hidden">
+        <div 
+          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Search */}
           <div className="p-3 border-b border-gray-200">
             <input

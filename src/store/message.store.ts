@@ -51,6 +51,9 @@ interface MessageState {
   getConversationByContactRequest: (
     contactRequestId: string
   ) => Promise<ConversationData | null>;
+  getOrCreateConversationByClass: (
+    classId: string
+  ) => Promise<ConversationData | null>;
 
   // Socket actions
   joinConversation: (conversationId: string) => void;
@@ -269,6 +272,19 @@ const useMessageStore = create<MessageState>((set, get) => ({
     } catch (error: any) {
       set({ error: error.message });
       toast.error(error.message);
+    }
+  },
+
+  // Get or create conversation by class ID
+  getOrCreateConversationByClass: async (classId: string) => {
+    try {
+      const conversation = await messageService.getOrCreateConversationByClass(
+        classId
+      );
+      return conversation;
+    } catch (error: any) {
+      set({ error: error.message });
+      return null;
     }
   },
 

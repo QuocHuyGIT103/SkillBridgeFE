@@ -10,7 +10,6 @@ export interface ExerciseTemplate {
   gradeLevels: string[];
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
   tags: string[];
-  rubricId?: string;
   content: {
     prompt: string;
     sampleAnswer?: string;
@@ -19,24 +18,6 @@ export interface ExerciseTemplate {
   };
   isPublic: boolean;
   usageCount: number;
-}
-
-export interface RubricCriterion {
-  _id: string;
-  label: string;
-  description?: string;
-  weight: number;
-  maxScore: number;
-}
-
-export interface Rubric {
-  id: string;
-  ownerId: string;
-  subjectId?: string;
-  name: string;
-  description?: string;
-  criteria: RubricCriterion[];
-  isPublic: boolean;
 }
 
 export interface ExerciseTemplateFilters {
@@ -76,31 +57,6 @@ const ExerciseLibraryService = {
     const response = await axiosClient.delete(
       `/assignments/templates/${templateId}`
     );
-    return response;
-  },
-
-  async listRubrics(subjectId?: string) {
-    const params: any = {};
-    if (subjectId) params.subjectId = subjectId;
-    const response = await axiosClient.get('/assignments/rubrics', { params });
-    return response;
-  },
-
-  async createRubric(payload: Partial<Rubric>) {
-    const response = await axiosClient.post('/assignments/rubrics', payload);
-    return response;
-  },
-
-  async updateRubric(rubricId: string, payload: Partial<Rubric>) {
-    const response = await axiosClient.put(
-      `/assignments/rubrics/${rubricId}`,
-      payload
-    );
-    return response;
-  },
-
-  async deleteRubric(rubricId: string) {
-    const response = await axiosClient.delete(`/assignments/rubrics/${rubricId}`);
     return response;
   },
 };

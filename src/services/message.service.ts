@@ -464,6 +464,19 @@ class MessageService {
     }
   }
 
+  // Get or create conversation by class ID
+  async getOrCreateConversationByClass(classId: string): Promise<ConversationData> {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/messages/conversations/class/${classId}`,
+        { headers: this.getAuthHeaders() }
+      );
+      return normalizeConversation(response.data.data);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Lỗi khi lấy cuộc trò chuyện');
+    }
+  }
+
   // Get conversation by contact request ID
   async getConversationByContactRequest(
     contactRequestId: string

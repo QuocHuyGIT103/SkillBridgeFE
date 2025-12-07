@@ -18,19 +18,14 @@ const TutorMessagesPage: React.FC = () => {
 
   const [searchParams] = useSearchParams();
   const contactRequestId = searchParams.get("contactRequestId");
-  const userId = searchParams.get("userId");
   const classId = searchParams.get("classId");
-
-  // Refs to prevent duplicate API calls
-  const contactRequestProcessedRef = useRef<string | null>(null);
-  const classIdProcessedRef = useRef<string | null>(null);
 
   const {
     fetchConversations,
     setSelectedConversation: setStoreSelectedConversation,
     createConversation,
-    createConversationFromClass,
-    conversations,
+    getConversationByContactRequest,
+    getOrCreateConversationByClass,
   } = useMessageStore();
 
   // Connect socket and join global chat room for this user
@@ -48,18 +43,29 @@ const TutorMessagesPage: React.FC = () => {
     };
   }, [currentUserId]); // Remove fetchConversations from dependencies
 
-  // Auto-create/select conversation when coming from contact request
+  // Auto-create/select conversation when coming from class or contact request
   useEffect(() => {
     const init = async () => {
-      if (
-        !contactRequestId ||
-        contactRequestProcessedRef.current === contactRequestId
-      )
-        return;
-      contactRequestProcessedRef.current = contactRequestId;
+      if (!classId && !contactRequestId) return;
 
       try {
-        const conversation = await createConversation(contactRequestId);
+        let conversation = null;
+
+        // Priority: classId > contactRequestId
+        if (classId) {
+          conversation = await getOrCreateConversationByClass(classId);
+        } else if (contactRequestId) {
+          conversation = await getConversationByContactRequest(
+            contactRequestId
+          );
+
+          // If not found, create new one
+          if (!conversation) {
+            conversation = await createConversation(contactRequestId);
+          }
+        }
+
+        await fetchConversations();
         if (conversation) {
           setSelectedConversation(conversation);
           setStoreSelectedConversation(conversation);
@@ -70,7 +76,7 @@ const TutorMessagesPage: React.FC = () => {
       }
     };
     init();
-  }, [contactRequestId]);
+  }, [classId, contactRequestId]);
 
   // Handle userId parameter - find existing conversation with that user
   useEffect(() => {

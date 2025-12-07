@@ -22,26 +22,6 @@ export interface HomeworkGrade {
   gradedAt: Date | string;
 }
 
-export interface AIEvaluationCriterion {
-  label: string;
-  description?: string;
-  score: number;
-  maxScore: number;
-  feedback?: string;
-}
-
-export interface AIEvaluationResult {
-  rubricId: string;
-  totalScore: number;
-  maxScore: number;
-  model?: string;
-  generatedAt: Date | string;
-  strengths?: string[];
-  improvements?: string[];
-  summary?: string;
-  criteria: AIEvaluationCriterion[];
-}
-
 export type SessionAssignmentStatus = 'pending' | 'submitted' | 'graded';
 
 export interface SessionAssignment {
@@ -54,8 +34,6 @@ export interface SessionAssignment {
   submission?: HomeworkSubmission;
   grade?: HomeworkGrade;
   templateId?: string;
-  rubricId?: string;
-  aiEvaluation?: AIEvaluationResult;
   status: SessionAssignmentStatus;
   isLate: boolean;
   isLegacy?: boolean;
@@ -137,7 +115,6 @@ export interface AssignHomeworkRequest {
   fileUrl?: string;
   deadline: string; // ISO date string
   templateId?: string;
-  rubricId?: string;
 }
 
 export interface SubmitHomeworkRequest {

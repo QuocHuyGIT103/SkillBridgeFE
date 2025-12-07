@@ -26,11 +26,12 @@ const AISmartRecommendationsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [aiAvailable, setAiAvailable] = useState(true);
 
-  // Query parameters
+  // Query parameters - minScore 0 để hiển thị tất cả gia sư được gợi ý
+  // includeExplanations: false để tiết kiệm chi phí (dùng on-demand thày vì)
   const [query, setQuery] = useState<SmartRecommendationQuery>({
     limit: 10,
-    minScore: 0.5,
-    includeExplanations: true,
+    minScore: 0,
+    includeExplanations: false, // ⭐ CHANGED: Dùng on-demand API thay vì auto-generate
   });
 
   // Fetch student post details
@@ -123,6 +124,9 @@ const AISmartRecommendationsPage: React.FC = () => {
               </h3>
               <p className="text-xs text-purple-700 mt-1">
                 Được hỗ trợ bởi Google Gemini AI - Tìm kiếm ngữ nghĩa thông minh với độ chính xác cao
+              </p>
+              <p className="text-xs text-purple-600 mt-1 font-medium">
+                💸 Tiết kiệm 90% chi phí với on-demand explanations
               </p>
             </div>
           </div>
@@ -275,19 +279,6 @@ const AISmartRecommendationsPage: React.FC = () => {
                 <option value={0.8}>80% - Rất tốt</option>
               </select>
             </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="includeExplanations"
-                checked={query.includeExplanations}
-                onChange={(e) => handleQueryChange({ includeExplanations: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="includeExplanations" className="text-sm text-gray-600">
-                Hiện giải thích AI
-              </label>
-            </div>
           </div>
         </div>
 
@@ -298,9 +289,9 @@ const AISmartRecommendationsPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Recommendations Grid */}
+        {/* Recommendations Grid - 2 columns for better visibility */}
         {recommendations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AnimatePresence>
               {(() => {
                 // Calculate max score once
@@ -324,6 +315,7 @@ const AISmartRecommendationsPage: React.FC = () => {
                         recommendation={rec} 
                         rank={index + 1}
                         isTopMatch={isTopMatch}
+                        postId={postId}
                       />
                     </motion.div>
                   );

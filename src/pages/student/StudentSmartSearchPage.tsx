@@ -1,13 +1,19 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import usePostStore from "../../store/post.store";
-import TutorPostCardHorizontal from "../../components/tutorPost/TutorPostCardHorizontal";
+import TutorPostCard from "../../components/tutorPost/TutorPostCard";
 import TutorPostFilter from "../../components/tutorPost/TutorPostFilter";
+import ContactRequestForm from "../../components/student/ContactRequestForm";
 import { debounce } from "../../utils/tutorUtils";
 import toast from "react-hot-toast";
 import { validate as validateUUID } from "uuid";
+import SurveyService from "../../services/survey.service";
+import TutorPostService from "../../services/tutorPost.service";
+import type { TutorPost, TutorPostSearchQuery } from "../../services/tutorPost.service";
+import { useAuthStore } from "../../store/auth.store";
 
+// ==================== TYPES ====================
 export interface SmartSearchQuery {
   subjects?: string[];
   teachingMode?: "ONLINE" | "OFFLINE" | "BOTH";
@@ -24,10 +30,33 @@ export interface SmartSearchQuery {
   sortOrder?: "desc" | "asc";
 }
 
+type SearchMode = "survey" | "post";
+
+// ==================== CACHE KEYS ====================
+const CACHE_KEYS = {
+  SURVEY_RECOMMENDATIONS: 'smart_search_survey_recommendations',
+  ALL_TUTORS: 'smart_search_all_tutors',
+  SMART_SEARCH_RESULTS: 'smart_search_results',
+  FILTERS: 'smart_search_filters',
+  MODE: 'smart_search_mode',
+  SELECTED_POST_ID: 'smart_search_selected_post_id',
+  SCROLL_POSITION: 'smart_search_scroll_position',
+  SURVEY_PAGE: 'smart_search_survey_page',
+  ALL_TUTORS_PAGE: 'smart_search_all_tutors_page',
+  CACHE_TIMESTAMP: 'smart_search_cache_timestamp',
+};
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// ==================== COMPONENT ====================
 const StudentSmartSearchPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Auth store for checking if user can send request
+  const { user, isAuthenticated } = useAuthStore();
+
+  // Store states
   const {
     posts: myStudentPosts,
     fetchMyPosts,
@@ -36,41 +65,137 @@ const StudentSmartSearchPage: React.FC = () => {
     smartSearchPagination,
     smartSearchLoading,
     smartSearchError,
-    smartSearchAiAnalysis,
     loadMoreSmartSearchResults,
     clearSmartSearchResults,
     setSmartSearchError,
   } = usePostStore();
 
-  const [currentFilters, setCurrentFilters] = useState<SmartSearchQuery>(() => {
-    const urlFilters: SmartSearchQuery = {
-      subjects: searchParams.getAll("subjects").filter(Boolean),
-      teachingMode: (searchParams.get("teachingMode") as any) || undefined,
-      studentLevel: searchParams.getAll("studentLevel").filter(Boolean),
-      priceMin: searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined,
-      priceMax: searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined,
-      province: searchParams.get("province") || undefined,
-      district: searchParams.get("district") || undefined,
-      ward: searchParams.get("ward") || undefined,
-      search: searchParams.get("search") || undefined,
-      page: searchParams.get("page") ? Number(searchParams.get("page")) : 1,
-      limit: 12,
-      sortBy: "compatibility",
-      sortOrder: "desc",
-    };
-    return urlFilters;
+  // ==================== STATES ====================
+  // Search mode: "survey" (default) or "post" (by student post)
+  const [searchMode, setSearchMode] = useState<SearchMode>(() => {
+    return searchParams.get("mode") === "post" ? "post" : "survey";
   });
 
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(searchParams.get("postId") || null);
+  // Survey-based results
+  const [surveyRecommendations, setSurveyRecommendations] = useState<TutorPost[]>([]);
+  const [allTutors, setAllTutors] = useState<TutorPost[]>([]);
+  const [allTutorsLoading, setAllTutorsLoading] = useState(false);
+  const [surveyLoading, setSurveyLoading] = useState(true);
+  const [hasSurvey, setHasSurvey] = useState(false);
+
+  // Post-based search
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(
+    searchParams.get("postId") || null
+  );
+
+  // Common states
+  const [currentFilters, setCurrentFilters] = useState<SmartSearchQuery>(() => ({
+    subjects: searchParams.getAll("subjects").filter(Boolean),
+    teachingMode: (searchParams.get("teachingMode") as any) || undefined,
+    studentLevel: searchParams.getAll("studentLevel").filter(Boolean),
+    priceMin: searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined,
+    priceMax: searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined,
+    province: searchParams.get("province") || undefined,
+    district: searchParams.get("district") || undefined,
+    ward: searchParams.get("ward") || undefined,
+    search: searchParams.get("search") || undefined,
+    page: 1,
+    limit: 4,
+    sortBy: "compatibility",
+    sortOrder: "desc",
+  }));
+
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [hasSearched, setHasSearched] = useState(false);
   const [myPostsLoaded, setMyPostsLoaded] = useState(false);
   
-  // ✅ THÊM: Track xem đã hiện thông báo lần đầu chưa
-  const [hasShownInitialToast, setHasShownInitialToast] = useState(false);
-  const [isFirstSearch, setIsFirstSearch] = useState(true);
+  // Pagination for survey mode
+  const ITEMS_PER_PAGE = 4;
+  const ALL_TUTORS_PER_PAGE = 2;
+  const [surveyCurrentPage, setSurveyCurrentPage] = useState(1);
+  const [allTutorsCurrentPage, setAllTutorsCurrentPage] = useState(1);
+  
+  const [allTutorsPagination, setAllTutorsPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    hasNext: false,
+  });
 
-  // ✅ Check if has active filters
+  // Contact Request Modal states
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [selectedTutorPost, setSelectedTutorPost] = useState<TutorPost | null>(null);
+
+  // Check if user can send contact request
+  const canSendRequest = Boolean(
+    isAuthenticated && user?.role === "STUDENT"
+  );
+
+  // ==================== CACHE HELPERS ====================
+  const saveToCache = useCallback((key: string, data: any) => {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(data));
+      sessionStorage.setItem(CACHE_KEYS.CACHE_TIMESTAMP, Date.now().toString());
+    } catch (error) {
+      console.error('Cache save error:', error);
+    }
+  }, []);
+
+  const loadFromCache = useCallback((key: string) => {
+    try {
+      const timestamp = sessionStorage.getItem(CACHE_KEYS.CACHE_TIMESTAMP);
+      if (timestamp && Date.now() - parseInt(timestamp) < CACHE_DURATION) {
+        const data = sessionStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Cache load error:', error);
+      return null;
+    }
+  }, []);
+
+  const clearCache = useCallback(() => {
+    Object.values(CACHE_KEYS).forEach(key => {
+      sessionStorage.removeItem(key);
+    });
+  }, []);
+
+  // Handle send request click
+  const handleSendRequest = useCallback((post: any) => {
+    if (!canSendRequest) {
+      toast.error("Bạn cần đăng nhập với tài khoản học viên để gửi yêu cầu");
+      return;
+    }
+    
+    // Convert the card's post format to TutorPost format for ContactRequestForm
+    const tutorPost: TutorPost = {
+      _id: post._id || post.id,
+      id: post.id || post._id,
+      title: post.title,
+      description: post.description,
+      subjects: post.subjects,
+      pricePerSession: post.pricePerSession,
+      sessionDuration: post.sessionDuration,
+      teachingMode: post.teachingMode,
+      tutorId: post.tutorId,
+      viewCount: post.viewCount,
+      contactCount: post.contactCount,
+      createdAt: post.createdAt,
+      status: 'active',
+    };
+    
+    setSelectedTutorPost(tutorPost);
+    setShowContactModal(true);
+  }, [canSendRequest]);
+
+  // Handle contact request success
+  const handleContactSuccess = useCallback(() => {
+    setShowContactModal(false);
+    setSelectedTutorPost(null);
+    toast.success("Gửi yêu cầu học tập thành công!");
+  }, []);
+
+  // ==================== COMPUTED ====================
   const hasActiveFilters = useCallback(() => {
     return !!(
       currentFilters.subjects?.length ||
@@ -84,40 +209,120 @@ const StudentSmartSearchPage: React.FC = () => {
     );
   }, [currentFilters]);
 
-  // ✅ Update URL function
+  // ==================== FILTER LOGIC FOR SURVEY MODE ====================
+  const getFilteredSurveyResults = useMemo(() => {
+    // Guard against null/undefined arrays
+    const recommendations = surveyRecommendations || [];
+    
+    // In survey mode, we ONLY show recommendations from the survey API
+    // NO filtering applied - keep the order and results from the AI recommendation
+    return recommendations;
+  }, [surveyRecommendations]);
+
+  // Paginated results for survey mode
+  const surveyPaginatedResults = useMemo(() => {
+    const allResults = getFilteredSurveyResults || [];
+    const totalItems = allResults.length;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+    const startIndex = (surveyCurrentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedItems = allResults.slice(startIndex, endIndex);
+    
+    return {
+      items: paginatedItems,
+      pagination: {
+        currentPage: surveyCurrentPage,
+        totalPages,
+        totalItems,
+        hasNext: surveyCurrentPage < totalPages,
+        hasPrev: surveyCurrentPage > 1,
+      },
+    };
+  }, [getFilteredSurveyResults, surveyCurrentPage, ITEMS_PER_PAGE]);
+
+  // ==================== URL UPDATE ====================
   const updateURL = useCallback(
-    (filters: SmartSearchQuery, postId?: string | null) => {
+    (filters: SmartSearchQuery, postId?: string | null, mode?: SearchMode) => {
       const params = new URLSearchParams();
-      
+
+      params.set("mode", mode || searchMode);
+      if (mode === "post" && postId) {
+        params.set("postId", postId);
+      }
+
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "") {
+        if (value !== undefined && value !== null && value !== "" && !["page", "limit", "sortBy", "sortOrder"].includes(key)) {
           if (Array.isArray(value) && value.length > 0) {
-            value.forEach((v) => params.append(key, v.toString()));
+            value.forEach(v => params.append(key, v.toString()));
           } else if (!Array.isArray(value)) {
             params.set(key, value.toString());
           }
         }
       });
-      
-      if (postId) {
-        params.set("postId", postId);
-      }
+
       setSearchParams(params);
     },
-    [setSearchParams]
+    [setSearchParams, searchMode]
   );
 
-  // ✅ FIXED: Enhanced debounced search - CHỈ HIỆN TOAST LẦN ĐẦU
+  // ==================== FETCH ALL TUTORS WITH FILTERS ====================
+  const fetchAllTutorsWithFilters = useCallback(
+    async (filters: SmartSearchQuery = {}) => {
+      setAllTutorsLoading(true);
+      try {
+        // Map sortBy field - "compatibility" only works with smart search
+        // For regular search, use valid fields like "createdAt", "pricePerSession", "viewCount", etc.
+        let sortBy = filters.sortBy || "createdAt";
+        if (sortBy === "compatibility") {
+          sortBy = "createdAt"; // Default to createdAt for all tutors listing
+        }
+
+        const searchQuery = {
+          page: filters.page || 1,
+          limit: 50,
+          sortBy: sortBy,
+          sortOrder: filters.sortOrder || "desc",
+          ...(filters.subjects?.length && { subjects: filters.subjects }),
+          ...(filters.teachingMode && { teachingMode: filters.teachingMode }),
+          ...(filters.studentLevel?.length && { studentLevel: filters.studentLevel }),
+          ...(filters.priceMin !== undefined && { priceMin: filters.priceMin }),
+          ...(filters.priceMax !== undefined && { priceMax: filters.priceMax }),
+          ...(filters.province && { province: filters.province }),
+          ...(filters.district && { district: filters.district }),
+          ...(filters.ward && { ward: filters.ward }),
+          ...(filters.search?.trim() && { search: filters.search.trim() }),
+        };
+
+        const tutorsResponse = await TutorPostService.searchTutorPosts(searchQuery);
+        if (tutorsResponse.success && tutorsResponse.data) {
+          setAllTutors(tutorsResponse.data.posts || []);
+          setAllTutorsPagination({
+            currentPage: tutorsResponse.data.pagination?.currentPage || 1,
+            totalPages: tutorsResponse.data.pagination?.totalPages || 1,
+            totalItems: tutorsResponse.data.pagination?.totalItems || 0,
+            hasNext: tutorsResponse.data.pagination?.hasNext || false,
+          });
+          setAllTutorsCurrentPage(1); // Reset to page 1 when filters change
+        }
+      } catch (error: any) {
+        console.error("Fetch all tutors error:", error);
+        toast.error("Không thể tải danh sách gia sư");
+      } finally {
+        setAllTutorsLoading(false);
+      }
+    },
+    []
+  );
+
+  // ==================== DEBOUNCED SEARCH (for post mode) ====================
   const debouncedSmartSearch = useCallback(
-    debounce(async (postId: string, query: SmartSearchQuery = {}, showToast: boolean = false) => {
+    debounce(async (postId: string, query: SmartSearchQuery = {}) => {
       try {
         const smartQuery = {
           page: query.page || 1,
           limit: query.limit || 12,
           sortBy: query.sortBy || "compatibility",
           sortOrder: query.sortOrder || "desc",
-          
-          // ✅ Filters - chỉ gửi khi có giá trị
           ...(query.subjects?.length && { subjects: query.subjects }),
           ...(query.teachingMode && { teachingMode: query.teachingMode }),
           ...(query.studentLevel?.length && { studentLevel: query.studentLevel }),
@@ -128,554 +333,947 @@ const StudentSmartSearchPage: React.FC = () => {
           ...(query.ward && { ward: query.ward }),
           ...(query.search?.trim() && { search: query.search.trim() }),
         };
-                
+
         await smartSearchTutors(postId, smartQuery);
-        setHasSearched(true);
-        
-        // ✅ CHỈ HIỆN TOAST THEO YÊU CẦU
-        if (showToast) {
-          const filterCount = Object.keys(smartQuery).filter(key => 
-            !['page', 'limit', 'sortBy', 'sortOrder'].includes(key)
-          ).length;
-          
-          if (filterCount > 0) {
-            toast.success(`🤖 AI đã áp dụng ${filterCount} bộ lọc và tìm thấy gia sư phù hợp!`);
-          } else {
-            toast.success('🤖 AI đã phân tích và tìm thấy gia sư phù hợp cho bạn!');
-          }
-        }
-        
       } catch (error: any) {
-        if (error.message.includes('Post ID')) {
-          toast.error("Vui lòng chọn bài đăng hợp lệ để tìm kiếm");
-        } else if (error.message.includes('không tìm thấy')) {
-          toast.error("Không tìm thấy bài đăng. Vui lòng thử lại.");
-        } else {
-          toast.error("Lỗi AI: " + (error.message || "Không thể tìm kiếm"));
-        }
+        console.error("Smart search error:", error);
       }
     }, 300),
-    [smartSearchTutors] // ✅ REMOVED hasActiveFilters dependency
+    [smartSearchTutors]
   );
 
-  // ✅ Handle filters change - KHÔNG HIỆN TOAST
+  // ==================== HANDLERS ====================
   const handleFiltersChange = useCallback(
-    (newFilters: SmartSearchQuery) => {
-      const updatedFilters = { ...newFilters, page: 1 };
+    (newFilters: TutorPostSearchQuery) => {
+      const updatedFilters = { ...newFilters, page: 1 } as SmartSearchQuery;
       setCurrentFilters(updatedFilters);
-      
-      if (selectedPostId) {
-        updateURL(updatedFilters, selectedPostId);
-        // ✅ KHÔNG HIỆN TOAST khi filter change
-        debouncedSmartSearch(selectedPostId, updatedFilters, false);
+      setSurveyCurrentPage(1); // Reset page when filters change
+
+      if (searchMode === "post" && selectedPostId) {
+        updateURL(updatedFilters, selectedPostId, "post");
+        debouncedSmartSearch(selectedPostId, updatedFilters);
+      } else if (searchMode === "post" && !selectedPostId) {
+        // Post mode but no post selected - apply filters to all tutors
+        updateURL(updatedFilters, null, "post");
+        fetchAllTutorsWithFilters(updatedFilters);
+      } else {
+        updateURL(updatedFilters, null, "survey");
       }
     },
-    [selectedPostId, updateURL, debouncedSmartSearch]
+    [searchMode, selectedPostId, updateURL, debouncedSmartSearch, fetchAllTutorsWithFilters]
   );
 
-  // ✅ Handle search - CHỈ HIỆN TOAST KHI CLICK NÚT TÌM KIẾM
   const handleSearch = useCallback(() => {
-    if (selectedPostId) {
-      // ✅ HIỆN TOAST khi click nút tìm kiếm
-      debouncedSmartSearch(selectedPostId, currentFilters, true);
-    } else {
-      toast.error("Vui lòng chọn bài đăng để tìm kiếm thông minh");
+    setSurveyCurrentPage(1); // Reset page on search
+    if (searchMode === "post" && selectedPostId) {
+      debouncedSmartSearch(selectedPostId, currentFilters);
+    } else if (searchMode === "post" && !selectedPostId) {
+      fetchAllTutorsWithFilters(currentFilters);
     }
-  }, [selectedPostId, currentFilters, debouncedSmartSearch]);
+  }, [searchMode, selectedPostId, currentFilters, debouncedSmartSearch, fetchAllTutorsWithFilters]);
 
-  // ✅ Handle clear results - HIỆN TOAST KHI RESET
   const handleReset = useCallback(() => {
     const resetFilters: SmartSearchQuery = {
       page: 1,
-      limit: 12,
-      sortBy: "compatibility",
+      limit: 4,
+      sortBy: searchMode === "post" && !selectedPostId ? "createdAt" : "compatibility",
       sortOrder: "desc",
     };
-    
-    setCurrentFilters(resetFilters);
-    
-    if (selectedPostId) {
-      updateURL(resetFilters, selectedPostId);
-      // ✅ HIỆN TOAST khi reset
-      debouncedSmartSearch(selectedPostId, resetFilters, true);
-      toast("🔄 Đã đặt lại bộ lọc");
-    } else {
-      clearSmartSearchResults();
-    }
-  }, [selectedPostId, updateURL, debouncedSmartSearch, clearSmartSearchResults]);
 
-  // ✅ Post selection - CHỈ HIỆN TOAST LẦN ĐẦU
+    setCurrentFilters(resetFilters);
+    setSurveyCurrentPage(1); // Reset page on reset
+
+    if (searchMode === "post" && selectedPostId) {
+      updateURL(resetFilters, selectedPostId, "post");
+      debouncedSmartSearch(selectedPostId, resetFilters);
+    } else if (searchMode === "post" && !selectedPostId) {
+      updateURL(resetFilters, null, "post");
+      fetchAllTutorsWithFilters(resetFilters);
+    } else {
+      updateURL(resetFilters, null, "survey");
+    }
+    toast.success("Đã đặt lại bộ lọc");
+  }, [searchMode, selectedPostId, updateURL, debouncedSmartSearch]);
+
+  // Pagination handlers for survey mode
+  const handleSurveyPageChange = useCallback((page: number) => {
+    setSurveyCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Pagination handler for all tutors (post mode, no post selected)
+  const handleAllTutorsPageChange = useCallback((page: number) => {
+    setAllTutorsCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Switch mode handlers
+  const handleSwitchToSurveyMode = useCallback(() => {
+    setSearchMode("survey");
+    setSelectedPostId(null);
+    clearSmartSearchResults();
+    updateURL(currentFilters, null, "survey");
+  }, [currentFilters, updateURL, clearSmartSearchResults]);
+
+  const handleSwitchToPostMode = useCallback(() => {
+    const approvedPosts = myStudentPosts.filter((p: any) => p.status === "approved");
+    if (approvedPosts.length === 0) {
+      toast.error("Bạn chưa có bài đăng được duyệt");
+      return;
+    }
+    setSearchMode("post");
+    updateURL(currentFilters, null, "post");
+  }, [myStudentPosts, currentFilters, updateURL]);
+
+  // Post selection
   const handlePostSelect = useCallback(
     (postId: string | null) => {
       if (!postId || !postId.trim()) {
-        toast.error("Vui lòng chọn bài đăng hợp lệ");
+        setSelectedPostId(null);
+        clearSmartSearchResults();
         return;
       }
 
       const trimmedPostId = postId.trim();
       if (!validateUUID(trimmedPostId)) {
-        toast.error("ID bài đăng không đúng định dạng UUID");
+        toast.error("ID bài đăng không đúng định dạng");
         return;
       }
 
       setSelectedPostId(trimmedPostId);
-      setIsFirstSearch(true); // ✅ Reset first search flag
-      
-      const smartFilters = {
-        ...currentFilters,
-        page: 1,
-        sortBy: "compatibility" as const,
-        sortOrder: "desc" as const,
-      };
+      const smartFilters = { ...currentFilters, page: 1 };
       setCurrentFilters(smartFilters);
-      updateURL(smartFilters, trimmedPostId);
-      
-      // ✅ HIỆN TOAST khi chọn post
-      debouncedSmartSearch(trimmedPostId, smartFilters, true);
-      toast.success("🎯 Đã chọn bài đăng để tìm kiếm thông minh");
+      updateURL(smartFilters, trimmedPostId, "post");
+      debouncedSmartSearch(trimmedPostId, smartFilters);
+      toast.success("Đang tìm kiếm gia sư theo bài đăng...");
     },
-    [currentFilters, updateURL, debouncedSmartSearch]
+    [currentFilters, updateURL, debouncedSmartSearch, clearSmartSearchResults]
   );
 
-  // ✅ Handle load more - KHÔNG HIỆN TOAST
-  const handleLoadMore = useCallback(async () => {
-    if (!smartSearchPagination?.hasNext || !selectedPostId) return;
-    
-    try {
-      const nextPage = (currentFilters.page || 1) + 1;
-      const nextFilters = { 
-        ...currentFilters, 
-        page: nextPage,
-        sort_by: currentFilters.sortBy,
-        sort_order: currentFilters.sortOrder,
-      };
-      setCurrentFilters(nextFilters);
-      
-      // ✅ KHÔNG HIỆN TOAST khi load more
-      await loadMoreSmartSearchResults(selectedPostId, nextFilters);
-    } catch (error: any) {
-      toast.error("Không thể tải thêm gia sư");
+  // Post mode pagination handler
+  const handlePostPageChange = useCallback((page: number) => {
+    if (searchMode === "post" && selectedPostId) {
+      const newFilters = { ...currentFilters, page };
+      setCurrentFilters(newFilters);
+      updateURL(newFilters, selectedPostId, "post");
+      debouncedSmartSearch(selectedPostId, newFilters);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentFilters, selectedPostId, smartSearchPagination, loadMoreSmartSearchResults]);
-
-  // ✅ Auto search khi search text thay đổi - KHÔNG HIỆN TOAST
-  useEffect(() => {
-    if (selectedPostId && currentFilters.search !== undefined) {
-      const timer = setTimeout(() => {
-        // ✅ KHÔNG HIỆN TOAST cho auto search
-        debouncedSmartSearch(selectedPostId, currentFilters, false);
-      }, 800);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [currentFilters.search, selectedPostId, debouncedSmartSearch]);
-
-  // ✅ Load my posts ONLY ONCE at component mount
-  useEffect(() => {
-    let isMounted = true;
-    const loadMyPostsOnce = async () => {
-      if (myPostsLoaded) {
-        return;
-      }
-      
-      try {
-        setIsInitialLoading(true);
-        
-        await fetchMyPosts();
-        
-        if (isMounted) {
-          setMyPostsLoaded(true);
-        }
-      } catch (error: any) {
-        if (isMounted) {
-          toast.error("Không thể tải danh sách bài đăng của bạn");
-        }
-      } finally {
-        if (isMounted) {
-          setIsInitialLoading(false);
-        }
-      }
-    };
-    
-    loadMyPostsOnce();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // ✅ Handle URL postId AFTER my posts are loaded - CHỈ HIỆN TOAST LẦN ĐẦU
-  useEffect(() => {
-    if (!myPostsLoaded || !myStudentPosts.length) return;
-    
-    const urlPostId = searchParams.get('postId');
-    
-    if (urlPostId && urlPostId !== selectedPostId) {
-      if (!validateUUID(urlPostId)) {
-        toast.error("ID bài đăng trong URL không hợp lệ");
-        
-        const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.delete('postId');
-        setSearchParams(newSearchParams, { replace: true });
-        return;
-      }
-
-      const postExists = myStudentPosts.some(post => post.id === urlPostId);
-      
-      if (!postExists) {
-        toast.error("Bài đăng không tồn tại hoặc không thuộc về bạn");
-        
-        const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.delete('postId');
-        setSearchParams(newSearchParams, { replace: true });
-        return;
-      }
-
-      setSelectedPostId(urlPostId);
-      
-      // ✅ CHỈ HIỆN TOAST cho URL auto-load nếu chưa hiện lần nào
-      const shouldShowToast = !hasShownInitialToast;
-      if (shouldShowToast) {
-        setHasShownInitialToast(true);
-      }
-      
-      const urlFilters = currentFilters;
-      debouncedSmartSearch(urlPostId, urlFilters, shouldShowToast);
-    }
-  }, [myPostsLoaded, myStudentPosts.length, searchParams, selectedPostId, currentFilters, debouncedSmartSearch, setSearchParams, hasShownInitialToast]);
+  }, [searchMode, selectedPostId, currentFilters, updateURL, debouncedSmartSearch]);
 
   const handleTutorClick = useCallback(
     (tutorId: string) => {
+      // Save current state to cache before navigating
+      saveToCache(CACHE_KEYS.SCROLL_POSITION, window.scrollY);
+      saveToCache(CACHE_KEYS.MODE, searchMode);
+      saveToCache(CACHE_KEYS.SELECTED_POST_ID, selectedPostId);
+      saveToCache(CACHE_KEYS.FILTERS, currentFilters);
+      saveToCache(CACHE_KEYS.SURVEY_PAGE, surveyCurrentPage);
+      saveToCache(CACHE_KEYS.ALL_TUTORS_PAGE, allTutorsCurrentPage);
+      
+      if (searchMode === 'survey') {
+        saveToCache(CACHE_KEYS.SURVEY_RECOMMENDATIONS, surveyRecommendations);
+      } else if (searchMode === 'post' && !selectedPostId) {
+        saveToCache(CACHE_KEYS.ALL_TUTORS, allTutors);
+      }
+      
       navigate(`/tutors/${tutorId}`);
     },
-    [navigate]
+    [navigate, searchMode, selectedPostId, currentFilters, surveyCurrentPage, allTutorsCurrentPage, surveyRecommendations, allTutors, saveToCache]
   );
 
+  // ==================== EFFECTS ====================
+  // Restore from cache on mount
+  useEffect(() => {
+    const cachedMode = loadFromCache(CACHE_KEYS.MODE);
+    const cachedFilters = loadFromCache(CACHE_KEYS.FILTERS);
+    const cachedPostId = loadFromCache(CACHE_KEYS.SELECTED_POST_ID);
+    const cachedSurveyPage = loadFromCache(CACHE_KEYS.SURVEY_PAGE);
+    const cachedAllTutorsPage = loadFromCache(CACHE_KEYS.ALL_TUTORS_PAGE);
+    
+    if (cachedMode) setSearchMode(cachedMode);
+    if (cachedFilters) setCurrentFilters(cachedFilters);
+    if (cachedPostId) setSelectedPostId(cachedPostId);
+    if (cachedSurveyPage) setSurveyCurrentPage(cachedSurveyPage);
+    if (cachedAllTutorsPage) setAllTutorsCurrentPage(cachedAllTutorsPage);
+    
+    // Restore scroll position
+    const cachedScroll = loadFromCache(CACHE_KEYS.SCROLL_POSITION);
+    if (cachedScroll) {
+      setTimeout(() => {
+        window.scrollTo(0, cachedScroll);
+      }, 100);
+    }
+  }, [loadFromCache]);
+
+  // Load initial data
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadInitialData = async () => {
+      setIsInitialLoading(true);
+      setSurveyLoading(true);
+
+      // 1. Fetch survey recommendations
+      try {
+        // Check cache first
+        const cachedSurveyData = loadFromCache(CACHE_KEYS.SURVEY_RECOMMENDATIONS);
+        if (cachedSurveyData && cachedSurveyData.length > 0) {
+          if (isMounted) {
+            setSurveyRecommendations(cachedSurveyData);
+            setHasSurvey(true);
+            setSurveyLoading(false);
+          }
+          // Still fetch in background to update cache
+        }
+
+        const surveyResponse = await SurveyService.getSurvey();
+        if (isMounted && surveyResponse.success && surveyResponse.data) {
+          // API có thể trả về data.recommendations hoặc data trực tiếp là mảng
+          const responseData = surveyResponse.data;
+          let rawRecommendations: any[] = [];
+          
+          if (Array.isArray(responseData)) {
+            // data là mảng trực tiếp
+            rawRecommendations = responseData;
+          } else if (responseData.recommendations) {
+            // data có property recommendations
+            rawRecommendations = responseData.recommendations;
+          }
+          
+          // Transform survey recommendations to TutorPost format
+          // Survey format: { tutorId, tutor, tutorPost, matchScore, matchDetails }
+          // TutorPost format: { _id, id, title, tutorId: {...}, subjects, ... }
+          const transformedRecommendations: TutorPost[] = rawRecommendations.map((rec: any) => {
+            // Nếu đã có format TutorPost (có title trực tiếp)
+            if (rec.title && rec.tutorId && typeof rec.tutorId === 'object') {
+              return rec as TutorPost;
+            }
+            
+            // Nếu là format survey recommendation
+            if (rec.tutorPost && rec.tutor) {
+              return {
+                _id: rec.tutorPost._id || rec.tutorPost.id || rec.tutorId,
+                id: rec.tutorPost.id || rec.tutorPost._id || rec.tutorId,
+                title: rec.tutorPost.title || 'Bài đăng gia sư',
+                description: rec.tutorPost.description || '',
+                subjects: rec.tutorPost.subjects || [],
+                pricePerSession: rec.tutorPost.pricePerSession || 0,
+                sessionDuration: rec.tutorPost.sessionDuration || 60,
+                teachingMode: rec.tutorPost.teachingMode || 'ONLINE',
+                studentLevel: rec.tutorPost.studentLevel || [],
+                tutorId: {
+                  _id: rec.tutorId || rec.tutor._id,
+                  full_name: rec.tutor.name || rec.tutor.full_name || 'Gia sư',
+                  email: rec.tutor.email || '',
+                  avatar_url: rec.tutor.avatar || rec.tutor.avatar_url || '',
+                  rating: rec.tutor.rating || { average: 0, count: 0 },
+                  profile: {
+                    headline: rec.tutor.headline || '',
+                    introduction: rec.tutor.introduction || '',
+                  },
+                },
+                viewCount: 0,
+                contactCount: 0,
+                createdAt: new Date().toISOString(),
+                compatibility: rec.matchScore || 0,
+                matchDetails: rec.matchDetails ? {
+                  subjectMatch: rec.matchDetails.subjectMatch ? 100 : 0,
+                  locationMatch: 0,
+                  priceMatch: rec.matchDetails.priceMatch ? 100 : 0,
+                  scheduleMatch: rec.matchDetails.scheduleMatch ? 100 : 0,
+                  overallScore: rec.matchScore || 0,
+                } : undefined,
+              } as TutorPost;
+            }
+            
+            // Fallback - return as is
+            return rec as TutorPost;
+          }).filter(Boolean);
+          
+          setSurveyRecommendations(transformedRecommendations);
+          setHasSurvey(transformedRecommendations.length > 0 || !!responseData.survey);
+          saveToCache(CACHE_KEYS.SURVEY_RECOMMENDATIONS, transformedRecommendations);
+        }
+      } catch {
+        if (isMounted) setHasSurvey(false);
+      }
+
+      // 2. Fetch all tutors
+      try {
+        // Check cache first
+        const cachedAllTutors = loadFromCache(CACHE_KEYS.ALL_TUTORS);
+        if (cachedAllTutors && cachedAllTutors.length > 0) {
+          if (isMounted) {
+            setAllTutors(cachedAllTutors);
+          }
+        }
+
+        const tutorsResponse = await TutorPostService.searchTutorPosts({
+          page: 1,
+          limit: 50,
+          sortBy: "createdAt",
+          sortOrder: "desc",
+        });
+        if (isMounted && tutorsResponse.success && tutorsResponse.data) {
+          setAllTutors(tutorsResponse.data.posts || []);
+          saveToCache(CACHE_KEYS.ALL_TUTORS, tutorsResponse.data.posts || []);
+          setAllTutorsPagination({
+            currentPage: 1,
+            totalPages: tutorsResponse.data.pagination?.totalPages || 1,
+            totalItems: tutorsResponse.data.pagination?.totalItems || 0,
+            hasNext: tutorsResponse.data.pagination?.hasNext || false,
+          });
+        }
+      } catch {
+        if (isMounted) toast.error("Không thể tải danh sách gia sư");
+      }
+
+      // 3. Fetch my posts
+      try {
+        await fetchMyPosts();
+        if (isMounted) setMyPostsLoaded(true);
+      } catch {
+        if (isMounted) toast.error("Không thể tải danh sách bài đăng của bạn");
+      }
+
+      if (isMounted) {
+        setSurveyLoading(false);
+        setIsInitialLoading(false);
+      }
+    };
+
+    loadInitialData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchMyPosts, loadFromCache, saveToCache]);
+
+  // Clear cache when navigating away (except to tutor detail)
+  useEffect(() => {
+    return () => {
+      // Only clear cache if not going to tutor detail page
+      const isTutorDetailNavigation = window.location.pathname.includes('/tutors/');
+      if (!isTutorDetailNavigation) {
+        clearCache();
+      }
+    };
+  }, [clearCache]);
+
+  // Handle URL post mode on mount
+  useEffect(() => {
+    if (!myPostsLoaded) return;
+
+    const mode = searchParams.get("mode");
+    const postId = searchParams.get("postId");
+
+    if (mode === "post" && postId && validateUUID(postId)) {
+      const postExists = myStudentPosts.some((p: any) => p.id === postId);
+      if (postExists) {
+        setSearchMode("post");
+        setSelectedPostId(postId);
+        debouncedSmartSearch(postId, currentFilters);
+      }
+    }
+  }, [myPostsLoaded, myStudentPosts, searchParams, currentFilters, debouncedSmartSearch]);
+
+  // ==================== COMPUTED RESULTS ====================
+  // Use paginated results for survey mode
+  const displayResults = searchMode === "survey" 
+    ? surveyPaginatedResults.items 
+    : (smartSearchResults || []);
+  const displayLoading = searchMode === "survey" ? surveyLoading : smartSearchLoading;
+
   const getTotalText = () => {
-    if (!smartSearchPagination) return "Chưa tìm kiếm";
-    const total = smartSearchPagination.totalItems || smartSearchPagination.total || 0;
-    return `Tìm thấy ${total.toLocaleString()} gia sư phù hợp`;
+    if (searchMode === "survey") {
+      const { pagination } = surveyPaginatedResults;
+      return `${pagination.totalItems} gia sư`;
+    }
+    return `${smartSearchPagination?.totalItems || displayResults?.length || 0} gia sư phù hợp`;
   };
 
-  // ✅ Sắp xếp kết quả
-  const sortedSmartSearchResults = React.useMemo(() => {
-    if (!smartSearchResults || smartSearchResults.length === 0) return [];
-    
-    return [...smartSearchResults].sort((a, b) => {
-      const scoreA = a.compatibility || 0;
-      const scoreB = b.compatibility || 0;
-      return scoreB - scoreA;
-    });
-  }, [smartSearchResults]);
-
-
+  // ==================== RENDER ====================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
         
-        {/* TOP SECTION */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mb-6" style={{ zIndex: 5 }}>
-          
-          {/* Post Selection */}
-          <div className="xl:col-span-1">
+        {/* ==================== HEADER - Compact & Modern ==================== */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100/50 p-5 mb-5"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <span className="text-2xl">🎯</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Tìm gia sư phù hợp</h1>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {searchMode === "survey"
+                    ? "Gia sư được đề xuất dựa trên khảo sát của bạn"
+                    : "Tìm gia sư theo yêu cầu từ bài đăng"}
+                </p>
+              </div>
+            </div>
+
+            {/* Mode Switcher - Modern Pills */}
+            <div className="flex items-center">
+              <div className="bg-gray-100 rounded-full p-1 flex gap-1">
+                <button
+                  onClick={handleSwitchToSurveyMode}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    searchMode === "survey"
+                      ? "bg-white text-blue-600 shadow-md"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  📊 Theo khảo sát
+                </button>
+                <button
+                  onClick={handleSwitchToPostMode}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    searchMode === "post"
+                      ? "bg-white text-purple-600 shadow-md"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  📝 Theo bài đăng
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ==================== POST SELECTOR (Post mode only) ==================== */}
+        <AnimatePresence>
+          {searchMode === "post" && (
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-md border border-white/60"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100 p-4 mb-5 overflow-hidden"
             >
-              <div className="flex items-center mb-3">
-                <div className="w-7 h-7 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mr-2.5 flex-shrink-0">
-                  <span className="text-white text-sm">🤖</span>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
+                  <span className="text-lg">📝</span>
                 </div>
-                <h3 className="font-bold text-gray-900 text-sm">Tìm kiếm gia sư thông minh</h3>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Chọn bài đăng tìm gia sư
+                  </label>
+                  <select
+                    value={selectedPostId || ""}
+                    onChange={e => handlePostSelect(e.target.value || null)}
+                    className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm bg-white transition-all"
+                    disabled={smartSearchLoading || !myPostsLoaded}
+                  >
+                    <option value="">
+                      {myPostsLoaded ? "-- Chọn bài đăng --" : "Đang tải..."}
+                    </option>
+                    {myStudentPosts
+                      .filter((p: any) => p.status === "approved")
+                      .map((post: any) => (
+                        <option key={post.id} value={post.id}>
+                          {post.title}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ==================== FILTERS (Only in POST mode) ==================== */}
+        {searchMode === "post" && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 relative z-10"
+          >
+            <TutorPostFilter
+              filters={currentFilters}
+              onFiltersChange={handleFiltersChange}
+              onSearch={handleSearch}
+              onReset={handleReset}
+              isLoading={displayLoading}
+              disabled={false}
+              isSmartSearchMode={searchMode === "post" && !!selectedPostId}
+              resultCount={smartSearchPagination?.totalItems}
+            />
+          </motion.div>
+        )}
+
+        {/* ==================== RESULTS ==================== */}
+        <AnimatePresence mode="wait">
+          {/* Loading State */}
+          {(isInitialLoading || displayLoading) && (displayResults?.length || 0) === 0 && (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100/50 p-12"
+            >
+              <div className="flex flex-col items-center justify-center">
+                <div className="relative mb-6">
+                  <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-100"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-500 border-t-transparent absolute top-0"></div>
+                </div>
+                <span className="text-gray-600 font-medium">
+                  {searchMode === "survey"
+                    ? "Đang tải gia sư đề xuất..."
+                    : "Đang tìm kiếm..."}
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Survey Mode - No Survey Done */}
+          {!isInitialLoading && searchMode === "survey" && !hasSurvey && (allTutors?.length || 0) === 0 && (
+            <motion.div
+              key="no-survey"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center"
+            >
+              <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center">
+                <span className="text-4xl">📋</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Bạn chưa làm khảo sát</h3>
+              <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                Làm khảo sát để nhận đề xuất gia sư phù hợp nhất
+              </p>
+              <button
+                onClick={() => navigate("/student/ai-survey")}
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-6 py-2.5 rounded-xl font-medium transition-all shadow-md"
+              >
+                Làm khảo sát
+              </button>
+            </motion.div>
+          )}
+
+          {/* Post Mode - No Post Selected: Show latest tutors */}
+          {!isInitialLoading && searchMode === "post" && !selectedPostId && (
+            <motion.div
+              key="no-post"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              {/* Info Banner */}
+              <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 rounded-2xl shadow-sm border border-purple-200 p-6 mb-6 text-center">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-md">
+                    <span className="text-2xl">📝</span>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-bold text-purple-900">Chọn bài đăng để tìm gia sư phù hợp</h3>
+                    <p className="text-sm text-purple-700">
+                      Hệ thống sẽ phân tích bài đăng và gợi ý gia sư phù hợp nhất với yêu cầu của bạn
+                    </p>
+                  </div>
+                </div>
+                {(myStudentPosts?.filter((p: any) => p.status === "approved")?.length || 0) === 0 && (
+                  <button
+                    onClick={() => navigate("/student/posts/create")}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2.5 rounded-xl font-medium transition-all shadow-md"
+                  >
+                    Tạo bài đăng ngay
+                  </button>
+                )}
               </div>
 
-              <select
-                value={selectedPostId || ""}
-                onChange={(e) => handlePostSelect(e.target.value || null)}
-                className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white transition-all duration-200"
-                disabled={smartSearchLoading || !myPostsLoaded}
-              >
-                <option value="">
-                  {myPostsLoaded ? "Chọn bài đăng để tìm kiếm" : "Đang tải bài đăng..."}
-                </option>
-                {myStudentPosts
-                  .filter((p: any) => p.status === "approved")
-                  .map((post: any) => (
-                    <option key={post.id} value={post.id}>
-                      {post.title}
-                    </option>
-                  ))}
-              </select>
-
-              {/* Active state display */}
-              {selectedPostId && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="mt-3 p-2.5 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg"
-                >
-                  <div className="flex items-center text-xs mb-1">
-                    <span className="text-blue-600 mr-1.5">🎯</span>
-                    <span className="text-blue-800 font-bold">AI đang hoạt động</span>
+              {/* Show Latest Tutors as Preview */}
+              {allTutorsLoading ? (
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100/50 p-12">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="relative mb-6">
+                      <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-100"></div>
+                      <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-500 border-t-transparent absolute top-0"></div>
+                    </div>
+                    <span className="text-gray-600 font-medium">Đang tải danh sách gia sư...</span>
                   </div>
-                  <div className="text-xs text-blue-600 mb-1">
-                    {getTotalText()}
-                  </div>
-                  {hasActiveFilters() && (
-                    <div className="flex items-center text-xs mb-1">
-                      <span className="text-green-600 mr-1.5">🔧</span>
-                      <span className="text-green-700 font-medium">
-                        Bộ lọc đã áp dụng ({Object.keys(currentFilters).filter(key => 
-                          currentFilters[key as keyof SmartSearchQuery] !== undefined && 
-                          currentFilters[key as keyof SmartSearchQuery] !== '' &&
-                          !['page', 'limit', 'sortBy', 'sortOrder'].includes(key)
-                        ).length})
+                </div>
+              ) : allTutors && allTutors.length > 0 ? (() => {
+                const totalItems = allTutors.length;
+                const totalPages = Math.ceil(totalItems / ALL_TUTORS_PER_PAGE);
+                const startIndex = (allTutorsCurrentPage - 1) * ALL_TUTORS_PER_PAGE;
+                const endIndex = startIndex + ALL_TUTORS_PER_PAGE;
+                const paginatedTutors = allTutors.slice(startIndex, endIndex);
+                
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-gray-900">
+                        Gia sư mới đăng ký gần đây
+                      </h3>
+                      <span className="text-sm text-gray-500">
+                        {allTutors.length} gia sư
                       </span>
                     </div>
-                  )}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {paginatedTutors.map((tutor: TutorPost) => (
+                        <TutorPostCard
+                          key={tutor.id || tutor._id}
+                          post={tutor}
+                          showCompatibility={false}
+                          onClick={() => handleTutorClick(tutor.id || tutor._id)}
+                          onSendRequest={canSendRequest ? handleSendRequest : undefined}
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* Pagination Controls for All Tutors */}
+                    {totalPages > 1 && (
+                      <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        className="flex flex-col items-center gap-3 pt-6 mt-6 border-t border-gray-100"
+                      >
+                        <div className="flex items-center gap-1.5 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100">
+                          {/* Previous Button */}
+                          <button
+                            onClick={() => handleAllTutorsPageChange(allTutorsCurrentPage - 1)}
+                            disabled={allTutorsCurrentPage <= 1}
+                            className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          >
+                            ← Trước
+                          </button>
+
+                          {/* Page Numbers */}
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                              .filter(page => {
+                                const current = allTutorsCurrentPage;
+                                return page === 1 || 
+                                       page === totalPages || 
+                                       (page >= current - 1 && page <= current + 1);
+                              })
+                              .map((page, index, array) => {
+                                const showEllipsisBefore = index > 0 && page - array[index - 1] > 1;
+                                return (
+                                  <React.Fragment key={page}>
+                                    {showEllipsisBefore && (
+                                      <span className="px-1.5 text-gray-400 text-sm">...</span>
+                                    )}
+                                    <button
+                                      onClick={() => handleAllTutorsPageChange(page)}
+                                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                                        page === allTutorsCurrentPage
+                                          ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm"
+                                          : "text-gray-600 hover:bg-gray-100"
+                                      }`}
+                                    >
+                                      {page}
+                                    </button>
+                                  </React.Fragment>
+                                );
+                              })}
+                          </div>
+
+                          {/* Next Button */}
+                          <button
+                            onClick={() => handleAllTutorsPageChange(allTutorsCurrentPage + 1)}
+                            disabled={allTutorsCurrentPage >= totalPages}
+                            className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          >
+                            Sau →
+                          </button>
+                        </div>
+
+                        {/* Pagination Info */}
+                        <span className="text-xs text-gray-500">
+                          Trang {allTutorsCurrentPage} / {totalPages}
+                          {" • "}
+                          {totalItems} gia sư
+                        </span>
+                      </motion.div>
+                    )}
+                  </div>
+                );
+              })() : (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                    <span className="text-3xl">🔍</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    Không tìm thấy gia sư
+                  </h3>
+                  <p className="text-gray-500 mb-5 text-sm max-w-sm mx-auto">
+                    Thử điều chỉnh bộ lọc để tìm thấy nhiều gia sư hơn
+                  </p>
+                  <button
+                    onClick={handleReset}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-lg font-medium transition-all"
+                  >
+                    Đặt lại bộ lọc
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Error State */}
+          {!isInitialLoading && smartSearchError && searchMode === "post" && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl shadow-sm border border-red-100 p-10 text-center"
+            >
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-50 rounded-full flex items-center justify-center">
+                <span className="text-3xl">❌</span>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Đã xảy ra lỗi</h3>
+              <p className="text-gray-500 mb-5 text-sm">{smartSearchError}</p>
+              <button
+                onClick={() => {
+                  setSmartSearchError(null);
+                  if (selectedPostId) {
+                    debouncedSmartSearch(selectedPostId, currentFilters);
+                  }
+                }}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg font-medium transition-all"
+              >
+                Thử lại
+              </button>
+            </motion.div>
+          )}
+
+          {/* Results */}
+          {!isInitialLoading && !displayLoading && (displayResults?.length || 0) > 0 && (
+            <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              {/* Results Grid - 2 columns */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {displayResults.map((post: any, index: number) => {
+                  // Check if this is a survey recommendation
+                  const isSurveyRecommendation = searchMode === "survey" && 
+                    (post.compatibility !== undefined || post.matchScore !== undefined);
+                  
+                  return (
+                    <motion.div
+                      key={post.id || post._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(index * 0.05, 0.3) }}
+                    >
+                      <TutorPostCard
+                        post={post}
+                        showCompatibility={isSurveyRecommendation}
+                        onClick={() => handleTutorClick(post.id || post._id)}
+                        onSendRequest={canSendRequest ? handleSendRequest : undefined}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Pagination (Post mode) */}
+              {searchMode === "post" && smartSearchPagination && smartSearchPagination.totalPages > 1 && (
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  className="flex flex-col items-center gap-3 pt-4"
+                >
+                  {/* Pagination Controls */}
+                  <div className="flex items-center gap-1.5 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => handlePostPageChange((smartSearchPagination.currentPage || 1) - 1)}
+                      disabled={!smartSearchPagination.currentPage || smartSearchPagination.currentPage <= 1 || smartSearchLoading}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    >
+                      ← Trước
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: smartSearchPagination.totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          const current = smartSearchPagination.currentPage || 1;
+                          const total = smartSearchPagination.totalPages;
+                          return page === 1 || 
+                                 page === total || 
+                                 (page >= current - 1 && page <= current + 1);
+                        })
+                        .map((page, index, array) => {
+                          const showEllipsisBefore = index > 0 && page - array[index - 1] > 1;
+                          return (
+                            <React.Fragment key={page}>
+                              {showEllipsisBefore && (
+                                <span className="px-1.5 text-gray-400 text-sm">...</span>
+                              )}
+                              <button
+                                onClick={() => handlePostPageChange(page)}
+                                disabled={smartSearchLoading}
+                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                                  page === (smartSearchPagination.currentPage || 1)
+                                    ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm"
+                                    : "text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => handlePostPageChange((smartSearchPagination.currentPage || 1) + 1)}
+                      disabled={!smartSearchPagination.hasNext || smartSearchLoading}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    >
+                      Sau →
+                    </button>
+                  </div>
+
+                  {/* Pagination Info */}
+                  <span className="text-xs text-gray-500">
+                    Trang {smartSearchPagination.currentPage || 1} / {smartSearchPagination.totalPages}
+                    {" • "}
+                    {smartSearchPagination.totalItems} gia sư phù hợp
+                  </span>
+                </motion.div>
+              )}
+
+              {/* Pagination (Survey mode) */}
+              {searchMode === "survey" && surveyPaginatedResults.pagination.totalPages > 1 && (
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  className="flex flex-col items-center gap-3 pt-4"
+                >
+                  {/* Pagination Controls */}
+                  <div className="flex items-center gap-1.5 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => handleSurveyPageChange(surveyCurrentPage - 1)}
+                      disabled={!surveyPaginatedResults.pagination.hasPrev}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    >
+                      ← Trước
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: surveyPaginatedResults.pagination.totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          const current = surveyCurrentPage;
+                          const total = surveyPaginatedResults.pagination.totalPages;
+                          return page === 1 || 
+                                 page === total || 
+                                 (page >= current - 1 && page <= current + 1);
+                        })
+                        .map((page, index, array) => {
+                          const showEllipsisBefore = index > 0 && page - array[index - 1] > 1;
+                          return (
+                            <React.Fragment key={page}>
+                              {showEllipsisBefore && (
+                                <span className="px-1.5 text-gray-400 text-sm">...</span>
+                              )}
+                              <button
+                                onClick={() => handleSurveyPageChange(page)}
+                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                                  page === surveyCurrentPage
+                                    ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm"
+                                    : "text-gray-600 hover:bg-gray-100"
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            </React.Fragment>
+                          );
+                        })}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => handleSurveyPageChange(surveyCurrentPage + 1)}
+                      disabled={!surveyPaginatedResults.pagination.hasNext}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    >
+                      Sau →
+                    </button>
+                  </div>
+
+                  {/* Pagination Info */}
+                  <span className="text-xs text-gray-500">
+                    Trang {surveyPaginatedResults.pagination.currentPage} / {surveyPaginatedResults.pagination.totalPages}
+                    {" • "}
+                    {surveyPaginatedResults.pagination.totalItems} gia sư
+                  </span>
                 </motion.div>
               )}
             </motion.div>
-          </div>
+          )}
 
-          {/* Filter Section */}
-          <div className="xl:col-span-3">
-            {selectedPostId && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="h-full"
-              >
-                <TutorPostFilter
-                  filters={currentFilters}
-                  onFiltersChange={handleFiltersChange}
-                  onSearch={handleSearch}
-                  onReset={handleReset}
-                  isLoading={smartSearchLoading}
-                  disabled={false}
-                  isSmartSearchMode={true}
-                  resultCount={smartSearchPagination?.totalItems || smartSearchPagination?.total}
-                  className="h-full"
-                />
-              </motion.div>
-            )}
-          </div>
-        </div>
-
-        {/* RESULTS SECTION */}
-        <div className="w-full" style={{ zIndex: 1 }}>
-          <AnimatePresence mode="wait">
-            {/* Initial Loading */}
-            {isInitialLoading && (
-              <motion.div
-                key="initial-loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-white/60 p-12"
-              >
-                <div className="flex flex-col items-center justify-center">
-                  <div className="relative mb-6">
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200"></div>
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent absolute top-0"></div>
-                  </div>
-                  <span className="text-gray-700 text-lg font-medium">Đang khởi tạo AI tìm kiếm...</span>
-                </div>
-              </motion.div>
-            )}
-
-            {/* No Post Selected */}
-            {!isInitialLoading && !selectedPostId && (
-              <motion.div
-                key="no-post"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-white/60 p-16 text-center"
-              >
-                <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-6xl">🤖</span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">🎯 Chọn bài đăng để bắt đầu</h3>
-                <p className="text-gray-600 mb-8 max-w-lg mx-auto leading-relaxed">
-                  Hãy chọn một bài đăng của bạn để AI phân tích và tìm kiếm những gia sư phù hợp nhất
-                </p>
-                {myStudentPosts.filter((p: any) => p.status === "approved").length === 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 max-w-md mx-auto">
-                    <p className="text-yellow-800 font-medium mb-4">
-                      Bạn chưa có bài đăng nào được duyệt. Hãy tạo bài đăng mới để sử dụng tính năng tìm kiếm thông minh.
-                    </p>
-                    <button
-                      onClick={() => navigate('/student/posts/create')}
-                      className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200"
-                    >
-                      ➕ Tạo bài đăng
-                    </button>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* Search Loading */}
-            {!isInitialLoading && selectedPostId && smartSearchLoading && smartSearchResults.length === 0 && (
-              <motion.div
-                key="search-loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-white/60 p-12"
-              >
-                <div className="flex flex-col items-center justify-center">
-                  <div className="relative mb-6">
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200"></div>
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent absolute top-0"></div>
-                  </div>
-                  <span className="text-gray-700 text-lg font-medium">
-                    🤖 AI đang phân tích và tìm kiếm gia sư tối ưu...
-                  </span>
-                  {hasActiveFilters() && (
-                    <p className="text-blue-600 text-sm mt-2 font-medium">
-                      Đang áp dụng bộ lọc của bạn...
-                    </p>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Error State */}
-            {!isInitialLoading && smartSearchError && (
-              <motion.div
-                key="error"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-red-200/50 p-12 text-center"
-              >
-                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-red-100 to-pink-100 rounded-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Đã xảy ra lỗi</h3>
-                <p className="text-gray-600 mb-8 max-w-md mx-auto">{smartSearchError}</p>
-                <button
-                  onClick={() => {
-                    setSmartSearchError(null);
-                    if (selectedPostId) {
-                      debouncedSmartSearch(selectedPostId, currentFilters, true);
-                    }
-                  }}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg transform hover:scale-105"
-                >
-                  🔄 Thử lại
-                </button>
-              </motion.div>
-            )}
-
-            {/* Results List */}
-            {!isInitialLoading && selectedPostId && !smartSearchError && sortedSmartSearchResults.length > 0 && (
-              <motion.div
-                key="results"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-4"
-              >
-                {/* Results List */}
-                <div className="space-y-3">
-                  {sortedSmartSearchResults.map((post: any, index: number) => (
-                    <motion.div
-                      key={post.id || post._id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <TutorPostCardHorizontal
-                        post={post}
-                        showCompatibility={true}
-                        onClick={() => handleTutorClick(post.id || post._id)}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Load More Button */}
-                {smartSearchPagination?.hasNext && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center pt-6">
-                    <button
-                      onClick={handleLoadMore}
-                      disabled={smartSearchLoading}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-10 py-4 rounded-xl font-bold transition-all duration-200 shadow-lg transform hover:scale-105 disabled:transform-none min-w-[200px]"
-                    >
-                      {smartSearchLoading ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
-                          AI đang {hasActiveFilters() ? 'lọc và ' : ''}tìm thêm...
-                        </div>
-                      ) : (
-                        `🤖 Tìm thêm gia sư phù hợp${hasActiveFilters() ? ' (đã lọc)' : ''}`
-                      )}
-                    </button>
-                  </motion.div>
-                )}
-
-                {/* Pagination Info */}
-                {smartSearchPagination && (
-                  <div className="text-center bg-white/70 backdrop-blur-sm rounded-xl p-3 border border-white/60">
-                    <span className="text-sm text-gray-600 font-medium">
-                      Trang {smartSearchPagination.currentPage || smartSearchPagination.page || 1} /{" "}
-                      {smartSearchPagination.totalPages || smartSearchPagination.pages || 1}
-                      {hasActiveFilters() && " • Đã áp dụng bộ lọc"}
-                    </span>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* Enhanced Empty State */}
-            {!isInitialLoading && selectedPostId && !smartSearchError && !smartSearchLoading && smartSearchResults.length === 0 && hasSearched && (
+          {/* Empty State */}
+          {!isInitialLoading &&
+            !displayLoading &&
+            displayResults.length === 0 &&
+            ((searchMode === "survey" && surveyPaginatedResults.pagination.totalItems === 0) ||
+              (searchMode === "post" && selectedPostId)) && (
               <motion.div
                 key="empty"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-white/60 p-16 text-center"
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center"
               >
-                <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-6xl">🤖</span>
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                  <span className="text-3xl">🔍</span>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                  🎯 AI chưa tìm thấy gia sư phù hợp{hasActiveFilters() && ' với bộ lọc'}
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  Không tìm thấy gia sư{hasActiveFilters() && " phù hợp"}
                 </h3>
-                <p className="text-gray-600 mb-10 max-w-lg mx-auto leading-relaxed">
-                  {hasActiveFilters() 
-                    ? `Không tìm thấy gia sư nào phù hợp với ${Object.keys(currentFilters).filter(key => 
-                        currentFilters[key as keyof SmartSearchQuery] !== undefined && 
-                        currentFilters[key as keyof SmartSearchQuery] !== '' &&
-                        !['page', 'limit', 'sortBy', 'sortOrder'].includes(key)
-                      ).length} bộ lọc hiện tại. Hãy thử điều chỉnh hoặc xóa bớt một số tiêu chí lọc.`
-                    : "Hãy thử chọn bài đăng khác, điều chỉnh bộ lọc hoặc mở rộng tiêu chí để AI tìm được gia sư phù hợp hơn"
-                  }
+                <p className="text-gray-500 mb-5 text-sm max-w-sm mx-auto">
+                  {hasActiveFilters()
+                    ? "Thử bỏ bớt điều kiện lọc để tìm thấy nhiều gia sư hơn"
+                    : "Không có gia sư nào phù hợp với yêu cầu"}
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                {hasActiveFilters() && (
                   <button
                     onClick={handleReset}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg transform hover:scale-105"
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-lg font-medium transition-all"
                   >
-                    🔄 Đặt lại bộ lọc
+                    Đặt lại bộ lọc
                   </button>
-                  <button
-                    onClick={() => navigate('/tutors')}
-                    className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg transform hover:scale-105"
-                  >
-                    🔍 Tìm kiếm thông thường
-                  </button>
-                </div>
+                )}
               </motion.div>
             )}
-          </AnimatePresence>
-        </div>
+        </AnimatePresence>
       </div>
+
+      {/* Contact Request Modal */}
+      <AnimatePresence>
+        {showContactModal && selectedTutorPost && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowContactModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ContactRequestForm
+                tutorPost={selectedTutorPost}
+                onSuccess={handleContactSuccess}
+                onCancel={() => setShowContactModal(false)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

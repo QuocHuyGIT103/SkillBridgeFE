@@ -279,9 +279,9 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
           {/* Main Content */}
-          <div className="xl:col-span-4 space-y-8">
+          <div className="xl:col-span-3 space-y-8">
             {/* Header */}
             <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
               <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
@@ -370,6 +370,58 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
                 <p className="whitespace-pre-line text-gray-700 text-lg leading-relaxed bg-gray-50 p-6 rounded-lg border border-gray-100">
                   {currentPost.description}
                 </p>
+              </div>
+            </div>
+
+            {/* Subjects & Schedule Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Subjects Card */}
+              <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                  <div className="w-1 h-6 bg-blue-600 rounded-full mr-3"></div>
+                  Môn học giảng dạy
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {currentPost.subjects.map((subject, index) => (
+                    <span
+                      key={subject._id || index}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 text-sm rounded-xl font-medium border border-blue-200"
+                    >
+                      {typeof subject === "string" ? subject : subject.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Schedule Card */}
+              <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                  <div className="w-1 h-6 bg-green-600 rounded-full mr-3"></div>
+                  Lịch dạy
+                </h3>
+                {currentPost.teachingSchedule.length > 0 ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                    {currentPost.teachingSchedule
+                      .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+                      .map((slot, index) => (
+                        <div
+                          key={index}
+                          className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg border border-gray-100"
+                        >
+                          <span className="font-medium text-gray-700 text-sm">
+                            {getDayName(slot.dayOfWeek)}
+                          </span>
+                          <span className="text-gray-600 text-sm font-mono bg-white px-2 py-0.5 rounded border">
+                            {slot.startTime} - {slot.endTime}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm text-center py-4 bg-gray-50 rounded-lg">
+                    Chưa có lịch dạy cố định
+                  </p>
+                )}
               </div>
             </div>
 
@@ -738,235 +790,199 @@ const TutorPostDetail: React.FC<TutorPostDetailProps> = ({
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-8">
-            {/* Price & Contact */}
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 sticky top-6 hover:shadow-lg transition-shadow">
-              <div className="text-center mb-8">
-                <div className="text-4xl font-bold text-blue-600 mb-2">
-                  {formatPrice(currentPost.pricePerSession)}
+          <div className="xl:col-span-1">
+            {/* Sticky Container - chỉ chứa Price & Contact */}
+            <div className="sticky top-6 space-y-6">
+              {/* Price & Contact Card */}
+              <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+                {/* Price Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 text-white text-center">
+                  <div className="text-3xl font-bold mb-1">
+                    {formatPrice(currentPost.pricePerSession)}
+                  </div>
+                  <div className="text-blue-100 text-sm font-medium">
+                    /{currentPost.sessionDuration} phút/buổi
+                  </div>
                 </div>
-                <div className="text-lg text-gray-600 font-medium">
-                  /{currentPost.sessionDuration} phút
-                </div>
-              </div>
 
-              {isOwnPost ? (
-                <div className="space-y-3">
-                  <Link
-                    to={`/tutor/ai-recommendations?tutorPostId=${currentPost._id || currentPost.id}`}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold text-lg shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
-                  >
-                    <SparklesIcon className="w-5 h-5" />
-                    <span>Gợi ý học viên thông minh</span>
-                  </Link>
-                  <button
-                    onClick={() =>
-                      navigate(
-                        `/tutor/posts/edit/${currentPost._id || currentPost.id}`
-                      )
-                    }
-                    className="w-full px-6 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg"
-                  >
-                    Chỉnh sửa bài đăng
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {/* New Contact Request Button */}
-                  {canSendRequest ? (
-                    <button
-                      onClick={handleContactClick}
-                      className="w-full px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
-                    >
-                      <PaperAirplaneIcon className="w-5 h-5" />
-                      <span>Gửi yêu cầu học tập</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleContactClick}
-                      className="w-full px-6 py-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors font-semibold text-lg shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
-                    >
-                      <ChatBubbleLeftRightIcon className="w-5 h-5" />
-                      <span>Xem thông tin liên hệ</span>
-                    </button>
-                  )}
-
-                  {/* Quick Contact Actions */}
-                  {isAuthenticated && currentPost.tutorId.email && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <a
-                        href={`mailto:${currentPost.tutorId.email}?subject=Liên hệ về bài đăng: ${currentPost.title}`}
-                        className="flex items-center justify-center space-x-1 px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
+                {/* Action Buttons */}
+                <div className="p-5">
+                  {isOwnPost ? (
+                    <div className="space-y-3">
+                      <Link
+                        to={`/tutor/ai-recommendations?tutorPostId=${currentPost._id || currentPost.id}`}
+                        className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold text-sm shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
                       >
-                        <EnvelopeIcon className="w-4 h-4" />
-                        <span>Email</span>
-                      </a>
-
-                      {currentPost.tutorId.phone_number && (
-                        <a
-                          href={`tel:${currentPost.tutorId.phone_number}`}
-                          className="flex items-center justify-center space-x-1 px-3 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-colors text-sm"
+                        <SparklesIcon className="w-4 h-4" />
+                        <span>Gợi ý học viên</span>
+                      </Link>
+                      <button
+                        onClick={() =>
+                          navigate(
+                            `/tutor/posts/edit/${currentPost._id || currentPost.id}`
+                          )
+                        }
+                        className="w-full px-4 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-sm shadow-md hover:shadow-lg"
+                      >
+                        Chỉnh sửa bài đăng
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Main Contact Button */}
+                      {canSendRequest ? (
+                        <button
+                          onClick={handleContactClick}
+                          className="w-full px-4 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-semibold text-sm shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
                         >
-                          <PhoneIcon className="w-4 h-4" />
-                          <span>Gọi</span>
-                        </a>
+                          <PaperAirplaneIcon className="w-4 h-4" />
+                          <span>Gửi yêu cầu học tập</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleContactClick}
+                          className="w-full px-4 py-3.5 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors font-semibold text-sm shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
+                        >
+                          <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                          <span>Xem thông tin liên hệ</span>
+                        </button>
+                      )}
+
+                      {/* Quick Contact Actions */}
+                      {isAuthenticated && currentPost.tutorId.email && (
+                        <div className="flex gap-2">
+                          <a
+                            href={`mailto:${currentPost.tutorId.email}?subject=Liên hệ về bài đăng: ${currentPost.title}`}
+                            className="flex-1 flex items-center justify-center space-x-1 px-3 py-2.5 border-2 border-blue-500 text-blue-600 rounded-xl hover:bg-blue-50 transition-colors text-sm font-medium"
+                          >
+                            <EnvelopeIcon className="w-4 h-4" />
+                            <span>Email</span>
+                          </a>
+
+                          {currentPost.tutorId.phone_number && (
+                            <a
+                              href={`tel:${currentPost.tutorId.phone_number}`}
+                              className="flex-1 flex items-center justify-center space-x-1 px-3 py-2.5 border-2 border-green-500 text-green-600 rounded-xl hover:bg-green-50 transition-colors text-sm font-medium"
+                            >
+                              <PhoneIcon className="w-4 h-4" />
+                              <span>Gọi</span>
+                            </a>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
-                </div>
-              )}
 
-              <div className="text-sm text-gray-500 text-center mt-4 space-y-2">
-                {isOwnPost ? (
-                  <p>Đây là bài đăng của bạn</p>
-                ) : canSendRequest ? (
-                  <div>
-                    <p className="font-medium text-blue-600">
-                      Gửi yêu cầu học tập để kết nối với gia sư
-                    </p>
-                    <p className="text-xs">
-                      Gia sư sẽ nhận được thông báo và phản hồi cho bạn
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <p>
-                      {isAuthenticated
-                        ? user?.role === "TUTOR"
-                          ? "Chỉ học viên mới có thể gửi yêu cầu"
-                          : "Click để xem thông tin liên hệ"
-                        : "Đăng nhập để gửi yêu cầu học tập"}
-                    </p>
-                    {!isAuthenticated && (
-                      <div className="flex items-center justify-center space-x-1">
-                        <svg
-                          className="w-3 h-3"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span>Thông tin được bảo vệ</span>
+                  {/* Helper Text */}
+                  <div className="text-xs text-gray-500 text-center mt-4 pt-4 border-t border-gray-100">
+                    {isOwnPost ? (
+                      <p>Đây là bài đăng của bạn</p>
+                    ) : canSendRequest ? (
+                      <div>
+                        <p className="font-medium text-blue-600">
+                          Gửi yêu cầu học tập để kết nối với gia sư
+                        </p>
+                        <p className="mt-1 text-gray-400">
+                          Gia sư sẽ nhận được thông báo và phản hồi cho bạn
+                        </p>
                       </div>
+                    ) : (
+                      <>
+                        <p>
+                          {isAuthenticated
+                            ? user?.role === "TUTOR"
+                              ? "Chỉ học viên mới có thể gửi yêu cầu"
+                              : "Click để xem thông tin liên hệ"
+                            : "Đăng nhập để gửi yêu cầu học tập"}
+                        </p>
+                        {!isAuthenticated && (
+                          <div className="flex items-center justify-center space-x-1 mt-1 text-gray-400">
+                            <svg
+                              className="w-3 h-3"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span>Thông tin được bảo vệ</span>
+                          </div>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Quick Info */}
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <div className="w-1 h-6 bg-blue-600 rounded-full mr-3"></div>
-                Thông tin nhanh
-              </h3>
+              {/* Quick Info Card - Compact */}
+              <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5">
+                <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center">
+                  <div className="w-1 h-5 bg-blue-600 rounded-full mr-2"></div>
+                  Thông tin nhanh
+                </h3>
 
-              <div className="space-y-6">
-                {/* Subjects */}
-                <div>
-                  <label className="text-base font-semibold text-gray-900 block mb-3">
-                    Môn học
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {currentPost.subjects.map((subject, index) => (
-                      <span
-                        key={subject._id || index}
-                        className="px-3 py-2 bg-blue-100 text-blue-800 text-sm rounded-lg font-medium"
-                      >
-                        {typeof subject === "string" ? subject : subject.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Student Levels */}
-                <div>
-                  <label className="text-base font-semibold text-gray-900 block mb-3">
-                    Đối tượng học viên
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {currentPost.studentLevel.map((level, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-2 bg-green-100 text-green-800 text-sm rounded-lg font-medium"
-                      >
-                        {translateStudentLevel(level)}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Teaching Mode */}
-                <div>
-                  <label className="text-base font-semibold text-gray-900 block mb-3">
-                    Hình thức dạy học
-                  </label>
-                  <span
-                    className={`
-                    px-4 py-2 rounded-lg text-sm font-medium
-                    ${
-                      currentPost.teachingMode === "ONLINE"
-                        ? "bg-green-100 text-green-800"
-                        : currentPost.teachingMode === "OFFLINE"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-purple-100 text-purple-800"
-                    }
-                  `}
-                  >
-                    {getLocationText()}
-                  </span>
-                </div>
-
-                {/* Location */}
-                {currentPost.address && (
-                  <div>
-                    <label className="text-base font-semibold text-gray-900 block mb-3">
-                      Địa chỉ:
-                    </label>
-                    <p className="text-gray-700 text-sm bg-gray-50 p-3 rounded-lg">
-                      {isAuthenticated
-                        ? formatAddressDisplay(currentPost.address, true)
-                        : formatShortAddress(currentPost.address)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Schedule */}
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8 hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <div className="w-1 h-6 bg-blue-600 rounded-full mr-3"></div>
-                Lịch dạy
-              </h3>
-
-              {currentPost.teachingSchedule.length > 0 ? (
                 <div className="space-y-4">
-                  {currentPost.teachingSchedule
-                    .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
-                    .map((slot, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg border border-gray-200"
-                      >
-                        <span className="font-semibold text-gray-800 text-base">
-                          {getDayName(slot.dayOfWeek)}
+                  {/* Student Levels */}
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+                      Đối tượng
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentPost.studentLevel.slice(0, 2).map((level, index) => (
+                        <span
+                          key={index}
+                          className="px-2.5 py-1 bg-green-50 text-green-700 text-xs rounded-lg font-medium border border-green-200"
+                        >
+                          {translateStudentLevel(level)}
                         </span>
-                        <span className="text-gray-700 text-base font-mono bg-white px-3 py-1 rounded">
-                          {slot.startTime} - {slot.endTime}
+                      ))}
+                      {currentPost.studentLevel.length > 2 && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-lg">
+                          +{currentPost.studentLevel.length - 2}
                         </span>
-                      </div>
-                    ))}
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Teaching Mode */}
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+                      Hình thức
+                    </label>
+                    <span
+                      className={`
+                      inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold
+                      ${
+                        currentPost.teachingMode === "ONLINE"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : currentPost.teachingMode === "OFFLINE"
+                          ? "bg-blue-50 text-blue-700 border border-blue-200"
+                          : "bg-purple-50 text-purple-700 border border-purple-200"
+                      }
+                    `}
+                    >
+                      {getLocationText()}
+                    </span>
+                  </div>
+
+                  {/* Location */}
+                  {currentPost.address && (
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+                        Địa chỉ
+                      </label>
+                      <p className="text-gray-700 text-xs bg-gray-50 p-2.5 rounded-lg leading-relaxed">
+                        {isAuthenticated
+                          ? formatAddressDisplay(currentPost.address, true)
+                          : formatShortAddress(currentPost.address)}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <p className="text-gray-500 text-base text-center py-4 bg-gray-50 rounded-lg">
-                  Chưa có lịch dạy cố định
-                </p>
-              )}
+              </div>
             </div>
           </div>
         </div>

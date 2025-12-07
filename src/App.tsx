@@ -18,7 +18,6 @@ import TutorEducationPage from "./pages/tutor/TutorEducationPage";
 import TutorSchedulePage from "./pages/tutor/TutorSchedulePage";
 import TutorAssignmentsPage from "./pages/tutor/TutorAssignmentsPage";
 import TutorExerciseBankPage from "./pages/tutor/TutorExerciseBankPage";
-import TutorRubricManagementPage from "./pages/tutor/TutorRubricManagementPage";
 
 import CreateTutorPostPage from "./pages/tutor/CreateTutorPostPage";
 import EditTutorPostPage from "./pages/tutor/EditTutorPostPage";
@@ -29,7 +28,7 @@ import CreateTeachRequestPage from "./pages/tutor/CreateTeachRequestPage";
 import TutorSearchPage from "./pages/TutorSearchPage";
 import TutorPostDetailPage from "./pages/TutorPostDetailPage";
 import StudentDashboardLayout from "./layouts/StudentDashboardLayout";
-import StudentDashboardOverview from "./pages/student/StudentDashboardOverview";
+import NewStudentDashboard from "./pages/student/NewStudentDashboard";
 import StudentSchedulePage from "./pages/student/StudentSchedulePage";
 import StudentMessagesPage from "./pages/student/StudentMessagesPage";
 import StudentAssignmentsPage from "./pages/student/StudentAssignmentsPage";
@@ -170,7 +169,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path="dashboard" element={<StudentDashboardOverview />} />
+              <Route path="dashboard" element={<NewStudentDashboard />} />
               <Route path="smart-search" element={<StudentSmartSearchPage />} />
               <Route
                 path="ai-recommendations/:postId"
@@ -306,7 +305,6 @@ function App() {
               <Route path="schedule/*" element={<TutorSchedulePage />} />
               <Route path="assignments" element={<TutorAssignmentsPage />} />
               <Route path="exercise-bank" element={<TutorExerciseBankPage />} />
-              <Route path="rubrics" element={<TutorRubricManagementPage />} />
 
               {/* ✅ Thêm Contact Requests routes cho Tutor */}
               <Route

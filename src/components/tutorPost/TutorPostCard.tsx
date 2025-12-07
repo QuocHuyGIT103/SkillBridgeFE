@@ -10,6 +10,7 @@ import {
   FireIcon,
   EyeIcon,
   PhoneIcon,
+  PaperAirplaneIcon,
 } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
 import TutorReviewsModal from "./TutorReviewsModal";
@@ -71,12 +72,14 @@ interface TutorPostCardProps {
   };
   showCompatibility?: boolean;
   onClick?: () => void;
+  onSendRequest?: (post: TutorPostCardProps['post']) => void;
 }
 
 const TutorPostCard: React.FC<TutorPostCardProps> = ({
   post,
   showCompatibility = false,
-  onClick
+  onClick,
+  onSendRequest
 }) => {
   // Guard clause to prevent rendering if post or tutorId is undefined
   if (!post || !post.tutorId) {
@@ -260,9 +263,16 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
     >
       {/* ✅ Fixed Height Container */}
       <div className="p-5 flex flex-col h-full">
-        {/* ✅ Compatibility Score Badge - Top Priority */}
+        {/* ✅ Survey Recommendation Badge & Compatibility Score */}
         {showCompatibility && post.compatibility !== undefined && (
-          <div className="mb-4 flex-shrink-0">
+          <div className="mb-4 flex-shrink-0 space-y-2">
+            {/* Survey Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-100 via-pink-100 to-rose-100 text-purple-800 rounded-full text-xs font-bold border-2 border-purple-200 shadow-sm">
+              <span className="text-sm">✨</span>
+              <span>Đề xuất từ khảo sát của bạn</span>
+            </div>
+            
+            {/* Compatibility Score */}
             <div className={`inline-flex items-center px-3 py-2 rounded-xl text-sm font-bold border-2 shadow-sm ${getCompatibilityColor(post.compatibility)}`}>
               <span className="mr-2 text-base">{getCompatibilityIcon(post.compatibility)}</span>
               <span className="font-semibold">{getCompatibilityText(post.compatibility)}: {post.compatibility}%</span>
@@ -446,27 +456,31 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
           </div>
         </div>
 
-        {/* Action Button - Fixed at Bottom */}
-        <div className="flex-shrink-0">
+        {/* Action Buttons - Fixed at Bottom */}
+        <div className="flex-shrink-0 flex gap-2">
+          {onSendRequest && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSendRequest(post);
+              }}
+              className="flex-1 px-4 py-3 rounded-xl transition-all duration-200 font-semibold text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transform hover:scale-[1.02] flex items-center justify-center"
+            >
+              <PaperAirplaneIcon className="w-4 h-4 mr-2" />
+              Gửi yêu cầu
+            </button>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation(); // Ngăn sự kiện chạy 2 lần
               handleViewDetails();
             }}
             className={`
-              w-full px-4 py-3 rounded-xl transition-all duration-200 font-semibold text-sm
-              ${showCompatibility && post.compatibility && post.compatibility >= 80
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-[1.02]'
-                : 'bg-gradient-to-r from-gray-700 to-gray-800 text-white hover:from-gray-800 hover:to-gray-900 shadow-md hover:shadow-lg transform hover:scale-[1.02]'
-              }
+              ${onSendRequest ? 'flex-1' : 'w-full'} px-4 py-3 rounded-xl transition-all duration-200 font-semibold text-sm
+              bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-md hover:shadow-lg transform hover:scale-[1.02]
             `}
           >
-            {showCompatibility && post.compatibility && post.compatibility >= 90
-              ? '🎯 Liên hệ ngay'
-              : showCompatibility && post.compatibility && post.compatibility >= 80
-                ? '✨ Xem chi tiết'
-                : 'Xem chi tiết'
-            }
+            Xem chi tiết
           </button>
         </div>
 

@@ -136,7 +136,7 @@ export interface SmartStudentRecommendationResponse {
 
 // ==================== SERVICE CLASS ====================
 
-class AIService {
+export class AIService {
   /**
    * Get AI-powered smart tutor recommendations for a student post
    * Uses Gemini embeddings + hybrid search (70% structured + 30% semantic)
@@ -177,6 +177,35 @@ class AIService {
     const url = `/ai/posts/${postId}/smart-recommendations${queryString ? `?${queryString}` : ''}`;
 
     return axiosClient.get<SmartRecommendationResponse>(url);
+  }
+
+  /**
+   * Get on-demand AI explanation for a specific tutor-post match
+   * 
+   * This should be called ONLY when user clicks/expands a tutor card.
+   * Avoids generating explanations for all 10 results upfront.
+   * 
+   * Cost saving: 90% (250 VNĐ → 25 VNĐ per search)
+   * 
+   * @param tutorId - Tutor user ID
+   * @param postId - Student post ID
+   * @returns AI-generated explanation
+   * 
+   * @example
+   * ```typescript
+   * // When user clicks on a tutor card:
+   * const explanation = await AIService.getOnDemandExplanation(
+   *   'tutor-123',
+   *   'post-456'
+   * );
+   * ```
+   */
+  static async getOnDemandExplanation(
+    tutorId: string,
+    postId: string
+  ): Promise<ApiResponse<{ explanation: string; tutorId: string; postId: string; generatedAt: string }>> {
+    const url = `/ai/tutors/${tutorId}/posts/${postId}/explanation`;
+    return axiosClient.get(url);
   }
 
   /**

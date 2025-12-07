@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   HomeIcon,
@@ -58,6 +58,7 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
   onCloseMobile,
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [expandedItems, setExpandedItems] = useState<string[]>([]); // ✅ State cho expanded items
 
   const studentNavigationItems: StudentNavigationItem[] = [
@@ -89,7 +90,7 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
     },
     {
       id: "smart-search",
-      label: "Tìm gia sư thông minh",
+      label: "Tìm gia sư phù hợp",
       icon: "search",
       path: "/student/smart-search",
     },
@@ -316,7 +317,9 @@ const StudentDashboardSidebar: React.FC<StudentDashboardSidebarProps> = ({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/')}
+            title="Về trang chủ"
           >
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
               <AcademicCapIcon className="w-5 h-5 text-white" />
