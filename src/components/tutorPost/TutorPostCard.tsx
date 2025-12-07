@@ -26,6 +26,11 @@ interface TutorPostCardProps {
     pricePerSession: number;
     sessionDuration: number;
     teachingMode: "ONLINE" | "OFFLINE" | "BOTH";
+    teachingSchedule?: Array<{
+      dayOfWeek: number;
+      startTime: string;
+      endTime: string;
+    }>;
     tutorId: {
       _id?: string;
       full_name: string;
@@ -207,6 +212,11 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
     return "Ít phù hợp";
   };
 
+  const getDayName = (dayOfWeek: number): string => {
+    const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+    return days[dayOfWeek];
+  };
+
   const getBadgeConfig = (badge?: string) => {
     if (!badge) return null;
 
@@ -266,54 +276,41 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
       {/* Gradient overlay on hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 via-purple-50/0 to-pink-50/0 group-hover:from-blue-50/30 group-hover:via-purple-50/30 group-hover:to-pink-50/30 transition-all duration-500 pointer-events-none" />
       {/* ✅ Fixed Height Container */}
-      <div className="p-6 flex flex-col h-full relative z-10">
-        {/* ✅ Survey Recommendation Badge & Compatibility Score */}
-        {showCompatibility && post.compatibility !== undefined && (
-          <div className="mb-4 flex-shrink-0 space-y-2">
-            {/* Survey Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-100 via-pink-100 to-rose-100 text-purple-800 rounded-full text-xs font-bold border-2 border-purple-200 shadow-sm">
-              <span className="text-sm">✨</span>
-              <span>Đề xuất từ khảo sát của bạn</span>
-            </div>
-            
-            {/* Compatibility Score */}
-            <div className={`inline-flex items-center px-3 py-2 rounded-xl text-sm font-bold border-2 shadow-sm ${getCompatibilityColor(post.compatibility)}`}>
-              <span className="mr-2 text-base">{getCompatibilityIcon(post.compatibility)}</span>
-              <span className="font-semibold">{getCompatibilityText(post.compatibility)}: {post.compatibility}%</span>
-              {post.compatibility >= 90 && (
-                <FireIcon className="w-4 h-4 ml-2 text-red-500 animate-pulse" />
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Header with Avatar and Basic Info - Fixed Height */}
-        <div className="flex items-start space-x-4 mb-5 flex-shrink-0">
+      <div className="p-5 flex flex-col h-full relative z-10">
+        {/* Header with Avatar and Basic Info */}
+        <div className="flex items-start space-x-3 mb-4 flex-shrink-0">
           {/* Avatar */}
-          <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-full flex items-center justify-center shadow-lg flex-shrink-0 ring-4 ring-white group-hover:ring-blue-100 transition-all duration-300 transform group-hover:scale-110">
+          <div className="relative flex-shrink-0">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white group-hover:ring-blue-100 transition-all duration-300 transform group-hover:scale-105">
               {post.tutorId.avatar_url ? (
                 <img
                   src={post.tutorId.avatar_url}
                   alt="Avatar"
-                  className="w-20 h-20 rounded-full object-cover"
+                  className="w-16 h-16 rounded-full object-cover"
                 />
               ) : (
-                <span className="text-white font-bold text-2xl">
+                <span className="text-white font-bold text-xl">
                   {post.tutorId.full_name?.charAt(0).toUpperCase() || "U"}
                 </span>
               )}
             </div>
-            {/* Online status indicator with pulse */}
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white shadow-md animate-pulse"></div>
+            {/* Online status indicator */}
+            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-green-500 rounded-full border-2 border-white shadow-md"></div>
           </div>
 
           {/* Tutor Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2 truncate group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
-              {post.tutorId.full_name || "Gia sư"}
-            </h3>
-            <div className="space-y-1">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                {post.tutorId.full_name || "Gia sư"}
+              </h3>
+              {/* Teaching Mode Badge */}
+              <div className={`px-2 py-1 rounded-lg text-xs font-semibold border ${modeConfig.color} flex items-center flex-shrink-0`}>
+                <span className="text-sm">{modeConfig.icon}</span>
+              </div>
+            </div>
+            
+            <div className="space-y-0.5 mt-1">
               <div className="flex items-center text-xs text-gray-600">
                 {post.tutorId.date_of_birth && (
                   <>
@@ -322,7 +319,7 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
                   </>
                 )}
                 {post.tutorId.gender && post.tutorId.date_of_birth && (
-                  <span className="mx-2">•</span>
+                  <span className="mx-1.5">•</span>
                 )}
                 {post.tutorId.gender && (
                   <span>
@@ -353,34 +350,16 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
                     }`}
                   title="Xem các đánh giá của học viên"
                 >
-                  <StarIconSolid className="w-4 h-4 text-yellow-400 mr-1" />
+                  <StarIconSolid className="w-3.5 h-3.5 text-yellow-400 mr-1" />
                   <span>{ratingAverage.toFixed(1)}</span>
                   <span className="ml-1 text-gray-500">
-                    ({ratingCount.toLocaleString("vi-VN")})
+                    ({ratingCount})
                   </span>
                 </button>
               )}
             </div>
           </div>
-
-          {/* Teaching Mode Badge */}
-          <div className="flex-shrink-0">
-            <div className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${modeConfig.color} flex items-center`}>
-              <span className="mr-1">{modeConfig.icon}</span>
-              <span className="hidden sm:inline">{getTeachingModeText(post.teachingMode)}</span>
-            </div>
-          </div>
         </div>
-
-        {badgeConfig && (
-          <div className="mb-3 flex items-center">
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full border text-xs font-semibold ${badgeConfig.className}`}
-            >
-              {badgeConfig.label}
-            </span>
-          </div>
-        )}
 
         <TutorReviewsModal
           tutorId={tutorUserId}
@@ -389,150 +368,124 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
           onClose={() => setIsReviewModalOpen(false)}
         />
 
-        {/* Title - Fixed Height */}
-        <div className="mb-4 flex-shrink-0">
-          <h2 className="text-lg font-bold text-gray-900 line-clamp-2 leading-tight group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">
+        {/* Title */}
+        <div className="mb-3 flex-shrink-0">
+          <h2 className="text-base font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
             {post.title}
           </h2>
         </div>
 
-        {/* Description - Fixed Height */}
-        <div className="mb-5 flex-shrink-0">
-          <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
+        {/* Description */}
+        <div className="mb-3 flex-shrink-0">
+          <p className="text-gray-600 text-xs line-clamp-2 leading-relaxed">
             {truncateText(
               post.tutorId.profile?.introduction || post.description,
-              120
+              100
             )}
           </p>
         </div>
 
-        {/* Subjects - Fixed Height */}
-        <div className="mb-5 flex-shrink-0">
-          <div className="flex items-center mb-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md mr-2 group-hover:scale-110 transition-transform duration-300">
-              <BookOpenIcon className="w-5 h-5 text-white" />
+        {/* Subjects & Schedule Grid */}
+        <div className="mb-3 flex-shrink-0 space-y-3">
+          {/* Môn học */}
+          <div>
+            <div className="flex items-center mb-2">
+              <BookOpenIcon className="w-4 h-4 text-blue-600 mr-1.5" />
+              <span className="text-xs font-bold text-gray-700">Môn học</span>
             </div>
-            <span className="text-sm font-bold text-gray-800">Môn học</span>
+            <div className="flex flex-wrap gap-1.5">
+              {post.subjects.slice(0, 2).map((subject, index) => (
+                <span
+                  key={subject._id || subject.name || index}
+                  className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs rounded-lg font-medium border border-blue-200"
+                >
+                  {subject.name}
+                </span>
+              ))}
+              {post.subjects.length > 2 && (
+                <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs rounded-lg font-medium border border-gray-200">
+                  +{post.subjects.length - 2}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {post.subjects.slice(0, 3).map((subject, index) => (
-              <span
-                key={subject._id || subject.name || index}
-                className="px-3 py-1.5 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 text-blue-700 text-xs rounded-full font-semibold border-2 border-blue-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200"
-              >
-                {subject.name}
-              </span>
-            ))}
-            {post.subjects.length > 3 && (
-              <span className="px-3 py-1.5 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 text-xs rounded-full font-semibold border-2 border-gray-300 shadow-sm">
-                +{post.subjects.length - 3} môn
-              </span>
-            )}
-          </div>
+
+          {/* Lịch dạy */}
+          {post.teachingSchedule && post.teachingSchedule.length > 0 && (
+            <div>
+              <div className="flex items-center mb-2">
+                <ClockIcon className="w-4 h-4 text-purple-600 mr-1.5" />
+                <span className="text-xs font-bold text-gray-700">Lịch dạy</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {post.teachingSchedule.slice(0, 2).map((schedule, index) => (
+                  <span
+                    key={index}
+                    className="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs rounded-lg font-medium border border-purple-200"
+                  >
+                    {getDayName(schedule.dayOfWeek)}: {schedule.startTime} - {schedule.endTime}
+                  </span>
+                ))}
+                {post.teachingSchedule.length > 2 && (
+                  <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs rounded-lg font-medium border border-gray-200">
+                    +{post.teachingSchedule.length - 2}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Flex spacer to push content to bottom */}
         <div className="flex-1"></div>
 
-        {/* Price and Duration - Fixed at Bottom */}
-        <div className="flex items-center justify-between mb-5 flex-shrink-0">
+        {/* Price and Duration */}
+        <div className="flex items-center justify-between mb-3 flex-shrink-0 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-3 border border-gray-200">
           <div className="flex items-center">
-            <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
-              <div className="flex items-center text-base font-extrabold">
-                <CurrencyDollarIcon className="w-5 h-5 mr-1.5" />
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg shadow-md">
+              <div className="flex items-center text-sm font-bold">
+                <CurrencyDollarIcon className="w-4 h-4 mr-1" />
                 <span>{formatPrice(post.pricePerSession)}</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center text-sm font-semibold text-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 px-3 py-2 rounded-lg border-2 border-gray-200 shadow-sm">
-            <ClockIcon className="w-4 h-4 mr-1.5 text-blue-500" />
+          <div className="flex items-center text-xs font-semibold text-gray-700 bg-white px-3 py-2 rounded-lg border border-gray-300 shadow-sm">
+            <ClockIcon className="w-3.5 h-3.5 mr-1 text-blue-500" />
             <span>{post.sessionDuration} phút</span>
           </div>
         </div>
 
-        {/* Stats - Fixed at Bottom */}
-        <div className="flex items-center justify-between text-sm font-medium text-gray-600 mb-5 flex-shrink-0 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border border-blue-100">
-          <div className="flex items-center">
-            <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-              <EyeIcon className="w-4 h-4 text-blue-600" />
-            </div>
-            <span className="font-semibold">{post.viewCount.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center mr-2">
-              <PhoneIcon className="w-4 h-4 text-green-600" />
-            </div>
-            <span className="font-semibold">{post.contactCount.toLocaleString()}</span>
-          </div>
-        </div>
-
-        {/* Action Buttons - Fixed at Bottom */}
-        <div className="flex-shrink-0 flex gap-3">
+        {/* Action Buttons */}
+        <div className="flex-shrink-0 flex gap-2">
           {onSendRequest && (
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={(e) => {
                 e.stopPropagation();
                 onSendRequest(post);
               }}
-              className="flex-1 px-5 py-3.5 rounded-xl transition-all duration-300 font-bold text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-2xl flex items-center justify-center group/btn"
+              className="flex-1 px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg flex items-center justify-center"
             >
-              <PaperAirplaneIcon className="w-5 h-5 mr-2 group-hover/btn:rotate-45 transition-transform duration-300" />
+              <PaperAirplaneIcon className="w-4 h-4 mr-1.5" />
               Gửi yêu cầu
             </motion.button>
           )}
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={(e) => {
               e.stopPropagation();
               handleViewDetails();
             }}
             className={`
-              ${onSendRequest ? 'flex-1' : 'w-full'} px-5 py-3.5 rounded-xl transition-all duration-300 font-bold text-sm
-              bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900 text-white hover:from-gray-800 hover:via-gray-900 hover:to-black shadow-lg hover:shadow-2xl
+              ${onSendRequest ? 'flex-1' : 'w-full'} px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold text-sm
+              bg-gray-800 text-white hover:bg-gray-900 shadow-md hover:shadow-lg flex items-center justify-center
             `}
           >
-            👁️ Xem chi tiết
+            <span className="mr-1.5">👁️</span> Xem chi tiết
           </motion.button>
         </div>
-
-        {/* Match Details - Expandable */}
-        {showCompatibility && post.matchDetails && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="mt-3 pt-3 border-t border-gray-100 flex-shrink-0"
-          >
-            <div className="grid grid-cols-2 gap-2">
-              {post.matchDetails.subjectMatch > 0 && (
-                <div className="flex items-center text-xs text-gray-600">
-                  <BookOpenIcon className="w-3 h-3 mr-1 text-blue-500" />
-                  <span>Môn: {post.matchDetails.subjectMatch}%</span>
-                </div>
-              )}
-              {post.matchDetails.locationMatch > 0 && (
-                <div className="flex items-center text-xs text-gray-600">
-                  <MapPinIcon className="w-3 h-3 mr-1 text-red-500" />
-                  <span>Vị trí: {post.matchDetails.locationMatch}%</span>
-                </div>
-              )}
-              {post.matchDetails.priceMatch > 0 && (
-                <div className="flex items-center text-xs text-gray-600">
-                  <CurrencyDollarIcon className="w-3 h-3 mr-1 text-green-500" />
-                  <span>Giá: {post.matchDetails.priceMatch}%</span>
-                </div>
-              )}
-              {post.matchDetails.scheduleMatch > 0 && (
-                <div className="flex items-center text-xs text-gray-600">
-                  <ClockIcon className="w-3 h-3 mr-1 text-purple-500" />
-                  <span>Lịch: {post.matchDetails.scheduleMatch}%</span>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
       </div>
     </motion.div>
   );

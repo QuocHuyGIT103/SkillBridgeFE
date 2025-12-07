@@ -117,11 +117,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       path: "/tutor/academics",
       children: [
         {
-          id: "academics-students",
-          label: "Học sinh của tôi",
-          path: "/tutor/academics/students",
-        },
-        {
           id: "academics-classes",
           label: "Quản lý lớp học",
           path: "/tutor/classes",
@@ -137,29 +132,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           path: "/tutor/exercise-bank",
         },
         {
-          id: "academics-curriculum",
-          label: "Lập kế hoạch giảng dạy",
-          path: "/tutor/academics/curriculum",
-        },
-        {
-          id: "academics-materials",
-          label: "Tài liệu học tập",
-          path: "/tutor/academics/materials",
-        },
-        {
           id: "academics-assessments",
           label: "Đánh giá & Chấm điểm",
           path: "/tutor/academics/assessments",
-        },
-        {
-          id: "academics-progress",
-          label: "Tiến độ học sinh",
-          path: "/tutor/academics/progress",
-        },
-        {
-          id: "academics-reports",
-          label: "Báo cáo & Phân tích",
-          path: "/tutor/academics/reports",
         },
       ],
     },
@@ -170,11 +145,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       path: "/tutor/messages",
       badge: 5,
       children: [
-        {
-          id: "chat-conversations",
-          label: "Tất cả cuộc hội thoại",
-          path: "/tutor/messages/conversations",
-        },
+        
         {
           id: "chat-students",
           label: "Tin nhắn học sinh",
@@ -341,11 +312,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             return (
               <div key={item.id} className="space-y-1">
                 <div
-                  className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${
-                    isActive
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-gray-700 hover:bg-secondary/10 hover:text-primary"
-                  }`}
+                  className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${isActive
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-gray-700 hover:bg-secondary/10 hover:text-primary"
+                    }`}
                   onClick={() => {
                     if (hasChildren) {
                       toggleExpanded(item.id);
@@ -398,11 +368,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                         <Link
                           key={child.id}
                           to={child.path}
-                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-                            isChildActive(child.path)
-                              ? "bg-accent text-primary font-medium"
-                              : "text-gray-600 hover:bg-secondary/5 hover:text-primary"
-                          }`}
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200 ${isChildActive(child.path)
+                            ? "bg-accent text-primary font-medium"
+                            : "text-gray-600 hover:bg-secondary/5 hover:text-primary"
+                            }`}
                         >
                           <span>{child.label}</span>
                           {child.badge && (

@@ -238,40 +238,6 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
       )}
 
       <div className="p-4 pt-12 flex flex-col flex-grow">
-        {/* Match Score - Compact */}
-        <div className={`mb-3 ${isTopMatch ? 'pb-2 border-b border-gray-100' : ''}`}>
-          <div className="flex items-center justify-between mb-1.5">
-            <span className={`text-xs font-medium ${isTopMatch ? 'text-gray-700 font-semibold' : 'text-gray-600'}`}>
-              Độ phù hợp
-            </span>
-            <span
-              className={`px-2 py-1 rounded-full text-xs font-bold border ${
-                isTopMatch
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-600 shadow-sm'
-                  : getMatchScoreColor(matchScore)
-              }`}
-            >
-              {Math.round(matchScore)}% • {getMatchScoreLabel(matchScore)}
-            </span>
-          </div>
-          
-          {/* Match Score Bar - Compact */}
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-            <div
-              className={`h-full transition-all duration-500 rounded-full ${
-                isTopMatch
-                  ? 'bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 shadow-lg'
-                  : matchScore >= 60
-                  ? 'bg-gradient-to-r from-blue-400 to-blue-600'
-                  : matchScore >= 40
-                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-600'
-                  : 'bg-gradient-to-r from-gray-400 to-gray-600'
-              }`}
-              style={{ width: `${matchScore}%` }}
-            />
-          </div>
-        </div>
-
         {/* Tutor Info - Compact */}
         <div className="flex items-start space-x-3 mb-3">
           <div className="relative">

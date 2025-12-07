@@ -19,8 +19,12 @@ const TutorMessagesPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const contactRequestId = searchParams.get("contactRequestId");
   const classId = searchParams.get("classId");
+  const userId = searchParams.get("userId");
+  
+  const classIdProcessedRef = useRef<string | null>(null);
 
   const {
+    conversations,
     fetchConversations,
     setSelectedConversation: setStoreSelectedConversation,
     createConversation,
@@ -108,7 +112,7 @@ const TutorMessagesPage: React.FC = () => {
       classIdProcessedRef.current = classId;
 
       try {
-        const conversation = await createConversationFromClass(classId);
+        const conversation = await getOrCreateConversationByClass(classId);
         if (conversation) {
           setSelectedConversation(conversation);
           setStoreSelectedConversation(conversation);

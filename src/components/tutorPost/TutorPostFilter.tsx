@@ -713,7 +713,6 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
                   style={{ zIndex: 50, minWidth: '280px' }}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-2">
                     {TEACHING_MODES.map((mode) => {
@@ -722,11 +721,13 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                       return (
                         <button
                           key={mode.value}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             updateFilter(
                               "teachingMode",
                               isSelected ? undefined : (mode.value as any)
                             );
+                            closeAllDropdowns();
                           }}
                           className={`w-full p-2.5 rounded text-left transition-colors flex items-center gap-3 ${isSelected
                               ? "bg-purple-50 border border-purple-200 text-purple-700"
@@ -781,7 +782,6 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4"
                   style={{ zIndex: 50, minWidth: '320px' }}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   {/* Price Presets */}
                   <div className="mb-3">
@@ -793,7 +793,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                       {PRICE_PRESETS.map((preset, index) => (
                         <button
                           key={index}
-                          onClick={() => handlePricePreset(preset)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePricePreset(preset);
+                          }}
                           // ✅ TĂNG CỠ CHỮ VÀ PADDING
                           className="px-2 py-1.5 text-base bg-gray-100 hover:bg-gray-200 rounded transition-colors"
                         >
@@ -854,7 +857,6 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4"
                   style={{ zIndex: 50, minWidth: '320px' }}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-4">
                     <div>
@@ -868,7 +870,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                           return (
                             <button
                               key={preset.value}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 updateFilter(
                                   "minRating",
                                   isSelected ? undefined : preset.value
@@ -885,7 +888,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                         })}
                       </div>
                       <button
-                        onClick={() => updateFilter("minRating", undefined)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateFilter("minRating", undefined);
+                        }}
                         className="mt-2 text-sm text-gray-500 underline"
                       >
                         Xóa lọc số sao
@@ -906,12 +912,14 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                               : ""
                           }
                           onChange={(e) => {
+                            e.stopPropagation();
                             const value = e.target.value;
                             updateFilter(
                               "minReviews",
                               value === "" ? undefined : Math.max(0, Number(value))
                             );
                           }}
+                          onClick={(e) => e.stopPropagation()}
                           className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-base focus:ring-1 focus:ring-blue-500"
                           placeholder="Ví dụ 5"
                         />
@@ -923,7 +931,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
                     <div className="flex items-center justify-between">
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           updateFilter("minRating", undefined);
                           updateFilter("minReviews", undefined);
                         }}
@@ -967,7 +976,6 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3 max-h-96 overflow-y-auto"
                   style={{ zIndex: 50, minWidth: '280px' }}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-3">
                     <div>
@@ -976,7 +984,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                       </label>
                       <div className="space-y-1 max-h-48 overflow-y-auto">
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             updateFilter("province", undefined);
                             updateFilter("district", undefined);
                           }}
@@ -991,7 +1000,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                         {provinces.map((province) => (
                           <button
                             key={province.code}
-                            onClick={() => handleProvinceChange(province.code)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleProvinceChange(province.code);
+                            }}
                             className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
                               localFilters.province === province.code
                                 ? "bg-blue-50 text-blue-700 font-medium"
@@ -1011,7 +1023,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                         </label>
                         <div className="space-y-1 max-h-48 overflow-y-auto">
                           <button
-                            onClick={() => updateFilter("district", undefined)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateFilter("district", undefined);
+                            }}
                             className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
                               !localFilters.district
                                 ? "bg-blue-50 text-blue-700 font-medium"
@@ -1023,7 +1038,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                           {districts.map((district) => (
                             <button
                               key={district.code}
-                              onClick={() => handleDistrictChange(district.code)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDistrictChange(district.code);
+                              }}
                               className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
                                 localFilters.district === district.code
                                   ? "bg-blue-50 text-blue-700 font-medium"
