@@ -291,7 +291,7 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
         </div>
 
         {/* AI Explanation - On-Demand Toggle Button */}
-        <div className="mb-3">
+        <div className="mb-3 min-h-[32px]">
           <button
             type="button"
             onClick={handleToggleExplanation}
@@ -316,28 +316,30 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
             )}
           </button>
           
-          {/* Collapsible Explanation Content */}
-          <AnimatePresence>
-            {isExplanationExpanded && (explanation || onDemandExplanation) && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className={`mt-2 p-2.5 rounded-lg border ${
-                  isTopMatch
-                    ? 'bg-white/50 border-purple-200'
-                    : 'bg-white/50 border-purple-100'
-                }`}>
-                  <p className="text-xs leading-relaxed text-purple-700">
-                    {explanation || onDemandExplanation}
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Collapsible Explanation Content with reserved space */}
+          <div className={isExplanationExpanded && (explanation || onDemandExplanation) ? '' : 'h-0'}>
+            <AnimatePresence>
+              {isExplanationExpanded && (explanation || onDemandExplanation) && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className={`mt-2 p-2.5 rounded-lg border ${
+                    isTopMatch
+                      ? 'bg-white/50 border-purple-200'
+                      : 'bg-white/50 border-purple-100'
+                  }`}>
+                    <p className="text-xs leading-relaxed text-purple-700">
+                      {explanation || onDemandExplanation}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Tutor Post Info - Compact with highlighted important fields */}

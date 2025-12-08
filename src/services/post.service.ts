@@ -255,6 +255,8 @@ export class PostService {
       grade_levels?: string[];
       is_online?: boolean;
       search_term?: string;
+      min_hourly_rate?: number;
+      max_hourly_rate?: number;
       relax?: boolean;
       page?: number;
       limit?: number;
@@ -277,6 +279,12 @@ export class PostService {
     }
     if (query.search_term && query.search_term.trim()) {
       params.append("search_term", query.search_term.trim());
+    }
+    if (query.min_hourly_rate !== undefined && query.min_hourly_rate > 0) {
+      params.append("min_hourly_rate", String(query.min_hourly_rate));
+    }
+    if (query.max_hourly_rate !== undefined && query.max_hourly_rate > 0) {
+      params.append("max_hourly_rate", String(query.max_hourly_rate));
     }
     if (query.page && query.page > 0) params.append("page", String(query.page));
     if (query.limit && query.limit > 0)

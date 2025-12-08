@@ -1047,7 +1047,7 @@ const StudentSmartSearchPage: React.FC = () => {
           {!isInitialLoading && !displayLoading && (displayResults?.length || 0) > 0 && (
             <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               {/* Results Grid - 2 columns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
                 {displayResults.map((post: any, index: number) => {
                   // Check if this is a survey recommendation
                   const isSurveyRecommendation = searchMode === "survey" && 
@@ -1059,6 +1059,7 @@ const StudentSmartSearchPage: React.FC = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: Math.min(index * 0.05, 0.3) }}
+                      className="h-full"
                     >
                       <TutorPostCard
                         post={post}

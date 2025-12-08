@@ -291,7 +291,7 @@ const AISmartRecommendationsPage: React.FC = () => {
 
         {/* Recommendations Grid - 2 columns for better visibility */}
         {recommendations.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-fr">
             <AnimatePresence>
               {(() => {
                 // Calculate max score once

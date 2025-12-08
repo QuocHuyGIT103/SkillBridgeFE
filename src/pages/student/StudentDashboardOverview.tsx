@@ -197,13 +197,14 @@ const StudentDashboardOverview: React.FC = () => {
               <p>Đang tải gợi ý mới nhất...</p>
             </div>
           ) : recommendations.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
               {topRecommendations.map((recommendation, index) => (
                 <motion.div
                   key={recommendation.tutorId || index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + index * 0.05 }}
+                  className="h-full"
                 >
                   <SmartRecommendationCard recommendation={recommendation} rank={index + 1} />
                 </motion.div>

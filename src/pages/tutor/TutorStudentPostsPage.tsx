@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import usePostStore from "../../store/post.store";
-import { useTutorPostStore } from "../../store/tutorPost.store";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import StudentPostCard from "../../components/tutor/StudentPostCard";
@@ -13,30 +12,16 @@ const TutorStudentPostsPage: React.FC = () => {
     tutorStudentPostsLoading,
     tutorStudentPostsError,
     fetchTutorStudentPosts,
-    smartTutorStudentPosts,
-    smartTutorStudentPostsPagination,
-    smartTutorStudentPostsLoading,
-    smartTutorStudentPostsError,
-    smartSearchStudentPostsForTutor,
   } = usePostStore();
 
-  const { myPosts, getMyTutorPosts, isLoading: myTutorPostsLoading } = useTutorPostStore();
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [isOnline, setIsOnline] = useState<"all" | "true" | "false">("all");
   const [page, setPage] = useState(1);
-  const [limit] = useState(20);
+  const [limit] = useState(3);
   const [minRate, setMinRate] = useState<string>("");
   const [maxRate, setMaxRate] = useState<string>("");
-  const [smartMode, setSmartMode] = useState<boolean>(false);
-  const [selectedTutorPostId, setSelectedTutorPostId] = useState<string>("");
-
-  useEffect(() => {
-    // Load my tutor posts once for smart mode selector
-    getMyTutorPosts(1, 50);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     const baseQuery: any = { page, limit };
@@ -45,18 +30,9 @@ const TutorStudentPostsPage: React.FC = () => {
     if (minRate.trim()) baseQuery.min_hourly_rate = Number(minRate);
     if (maxRate.trim()) baseQuery.max_hourly_rate = Number(maxRate);
 
-    if (smartMode && selectedTutorPostId) {
-      smartSearchStudentPostsForTutor({
-        tutorPostId: selectedTutorPostId,
-        ...baseQuery,
-        sort_by: "compatibility",
-        sort_order: "desc",
-      });
-    } else {
-      fetchTutorStudentPosts(baseQuery);
-    }
+    fetchTutorStudentPosts(baseQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, isOnline, smartMode, selectedTutorPostId]);
+  }, [page, isOnline, minRate, maxRate]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,16 +43,9 @@ const TutorStudentPostsPage: React.FC = () => {
     if (minRate.trim()) baseQuery.min_hourly_rate = Number(minRate);
     if (maxRate.trim()) baseQuery.max_hourly_rate = Number(maxRate);
 
-    if (smartMode && selectedTutorPostId) {
-      smartSearchStudentPostsForTutor({
-        tutorPostId: selectedTutorPostId,
-        ...baseQuery,
-        sort_by: "compatibility",
-        sort_order: "desc",
-      });
-    } else {
-      fetchTutorStudentPosts(baseQuery);
-    }
+    console.log('[TutorStudentPostsPage] handleSearch query:', baseQuery);
+
+    fetchTutorStudentPosts(baseQuery);
   };
 
   const handleReset = () => {
@@ -85,36 +54,20 @@ const TutorStudentPostsPage: React.FC = () => {
     setMinRate("");
     setMaxRate("");
     setPage(1);
-    if (smartMode && selectedTutorPostId) {
-      smartSearchStudentPostsForTutor({
-        tutorPostId: selectedTutorPostId,
-        page: 1,
-        limit,
-        sort_by: "compatibility",
-        sort_order: "desc",
-      });
-    } else {
-      fetchTutorStudentPosts({ page: 1, limit });
-    }
+    fetchTutorStudentPosts({ page: 1, limit });
   };
 
-  const loading = smartMode ? smartTutorStudentPostsLoading : tutorStudentPostsLoading;
-  const error = smartMode ? smartTutorStudentPostsError : tutorStudentPostsError;
-  const list = smartMode ? smartTutorStudentPosts : tutorStudentPosts;
-  const pagination = smartMode ? smartTutorStudentPostsPagination : tutorStudentPostsPagination;
+  const loading = tutorStudentPostsLoading;
+  const error = tutorStudentPostsError;
+  const list = tutorStudentPosts;
+  const pagination = tutorStudentPostsPagination;
 
   const handleViewDetail = (post: any) => {
     navigate(`/tutor/posts/student/${post.id || post._id}`);
   };
 
   const goToSendRequestPage = (studentPost: any) => {
-    if (!smartMode) {
-      toast("Hãy bật tìm kiếm thông minh để gửi đề nghị dạy.", { icon: "ℹ️" });
-      return;
-    }
-    navigate(`/tutor/posts/student/${studentPost.id || studentPost._id}/request`, {
-      state: { selectedTutorPostId },
-    });
+    navigate(`/tutor/posts/student/${studentPost.id || studentPost._id}/request`);
   };
 
   return (
@@ -137,40 +90,7 @@ const TutorStudentPostsPage: React.FC = () => {
       {/* Bộ lọc mở rộng */}
       <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
         <form onSubmit={handleSearch} className="grid gap-4 md:grid-cols-12">
-          <div className="md:col-span-3 flex items-center gap-3">
-            <input
-              id="smartMode"
-              type="checkbox"
-              checked={smartMode}
-              onChange={(e) => setSmartMode(e.target.checked)}
-              className="h-4 w-4 text-primary border-gray-300 rounded"
-            />
-            <label htmlFor="smartMode" className="text-sm font-medium text-gray-700">
-              Bật tìm kiếm thông minh (dựa trên bài đăng của bạn)
-            </label>
-          </div>
-          {smartMode && (
-            <div className="md:col-span-3 flex flex-col">
-              <label className="text-xs font-medium text-gray-600 mb-1">
-                Chọn bài đăng của bạn
-              </label>
-              <select
-                value={selectedTutorPostId}
-                onChange={(e) => setSelectedTutorPostId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option key="placeholder" value="">
-                  {myTutorPostsLoading ? "Đang tải..." : "— Chọn bài đăng —"}
-                </option>
-                {myPosts?.map((p) => (
-                  <option key={p.id || p._id} value={p.id || p._id}>
-                    {p.title || "Bài đăng không tiêu đề"}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div className="md:col-span-4 flex flex-col">
+          <div className="md:col-span-6 flex flex-col">
             <label className="text-xs font-medium text-gray-600 mb-1">
               Tìm kiếm
             </label>
@@ -198,47 +118,41 @@ const TutorStudentPostsPage: React.FC = () => {
           </div>
           <div className="md:col-span-2 flex flex-col">
             <label className="text-xs font-medium text-gray-600 mb-1">
-              Học phí tối thiểu (VND)
+              Học phí tối thiểu (VNĐ/giờ)
             </label>
-            <input
-              type="number"
-              min={0}
-              step={1000}
+            <select
               value={minRate}
               onChange={(e) => setMinRate(e.target.value)}
-              onBlur={() => {
-                if (!minRate) return;
-                const num = Number(minRate);
-                if (!isNaN(num)) {
-                  const rounded = Math.round(num / 1000) * 1000;
-                  setMinRate(String(rounded));
-                }
-              }}
-              placeholder="VD: 80000"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            >
+              <option value="">Không giới hạn</option>
+              <option value="50000">50,000</option>
+              <option value="80000">80,000</option>
+              <option value="100000">100,000</option>
+              <option value="150000">150,000</option>
+              <option value="200000">200,000</option>
+              <option value="300000">300,000</option>
+              <option value="500000">500,000</option>
+            </select>
           </div>
           <div className="md:col-span-2 flex flex-col">
             <label className="text-xs font-medium text-gray-600 mb-1">
-              Học phí tối đa (VND)
+              Học phí tối đa (VNĐ/giờ)
             </label>
-            <input
-              type="number"
-              min={0}
-              step={1000}
+            <select
               value={maxRate}
               onChange={(e) => setMaxRate(e.target.value)}
-              onBlur={() => {
-                if (!maxRate) return;
-                const num = Number(maxRate);
-                if (!isNaN(num)) {
-                  const rounded = Math.round(num / 1000) * 1000;
-                  setMaxRate(String(rounded));
-                }
-              }}
-              placeholder="VD: 150000"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            >
+              <option value="">Không giới hạn</option>
+              <option value="80000">80,000</option>
+              <option value="100000">100,000</option>
+              <option value="150000">150,000</option>
+              <option value="200000">200,000</option>
+              <option value="300000">300,000</option>
+              <option value="500000">500,000</option>
+              <option value="1000000">1,000,000</option>
+            </select>
           </div>
           <div className="md:col-span-2 flex items-end space-x-2">
             <button
@@ -297,18 +211,12 @@ const TutorStudentPostsPage: React.FC = () => {
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h2 className="text-xl font-bold text-gray-900">
-                  {smartMode ? '🎯 Gợi ý phù hợp' : '📋 Danh sách bài đăng'}
+                  📋 Danh sách học viên gần đây
                 </h2>
                 <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
                   {pagination?.total || list.length} bài đăng
                 </span>
               </div>
-              {smartMode && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  <span>Đang sử dụng AI để tìm kiếm</span>
-                </div>
-              )}
             </div>
 
             {/* Grid Layout */}
@@ -323,8 +231,6 @@ const TutorStudentPostsPage: React.FC = () => {
                 >
                   <StudentPostCard
                     post={post}
-                    showCompatibility={smartMode}
-                    rank={smartMode && (post as any).compatibility ? index + 1 : undefined}
                     onClick={() => handleViewDetail(post)}
                   />
                 </motion.div>

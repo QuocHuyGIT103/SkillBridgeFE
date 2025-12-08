@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   SparklesIcon,
   MapPinIcon,
@@ -11,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { SparklesIcon as SparklesSolidIcon } from '@heroicons/react/24/solid';
 import type { SmartStudentRecommendation } from '../../services/ai.service';
+import AIService from '../../services/ai.service';
 
 interface SmartStudentRecommendationCardProps {
   recommendation: SmartStudentRecommendation;
@@ -26,6 +28,11 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
   tutorPostId,
 }) => {
   const navigate = useNavigate();
+  
+  // On-demand explanation states
+  const [isExplanationExpanded, setIsExplanationExpanded] = useState(false);
+  const [onDemandExplanation, setOnDemandExplanation] = useState<string | null>(null);
+  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
 
   const handleCardClick = () => {
     if (onClick) {
@@ -35,6 +42,53 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
       navigate(`/tutor/posts/student/${recommendation.postId}`, {
         state: { tutorPostId, fromAIRecommendations: true }
       });
+    }
+  };
+
+  // Fetch on-demand explanation when user clicks
+  const handleToggleExplanation = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // If already expanded with explanation, just collapse
+    if (isExplanationExpanded && (explanation || onDemandExplanation)) {
+      setIsExplanationExpanded(false);
+      return;
+    }
+    
+    // If auto-generated explanation exists, show it
+    if (explanation) {
+      setIsExplanationExpanded(true);
+      return;
+    }
+    
+    // If already fetched, show it
+    if (onDemandExplanation) {
+      setIsExplanationExpanded(true);
+      return;
+    }
+    
+    // Fetch from API
+    if (!tutorPostId || !recommendation.postId) {
+      toast.error('Thiếu thông tin bài đăng');
+      return;
+    }
+    
+    setIsLoadingExplanation(true);
+    setIsExplanationExpanded(true);
+    
+    try {
+      const response = await AIService.generateMatchExplanation(
+        tutorPostId,
+        recommendation.postId,
+        matchScore / 100
+      );
+      setOnDemandExplanation(response.data.explanation);
+    } catch (error: any) {
+      console.error('Failed to fetch explanation:', error);
+      toast.error(error.response?.data?.message || 'Không thể tạo giải thích AI');
+      setIsExplanationExpanded(false);
+    } finally {
+      setIsLoadingExplanation(false);
     }
   };
 
@@ -70,20 +124,16 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
 
   return (
     <div
-      className={`group relative rounded-xl border-2 transition-all duration-300 overflow-hidden flex flex-col h-full
-        ${
-          isBestMatch
-            ? 'bg-gradient-to-br from-yellow-50 via-white to-yellow-50 border-yellow-400 shadow-2xl hover:shadow-3xl hover:border-yellow-500'
-            : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-xl'
-        }`}
+      className="group relative rounded-xl border-2 bg-white border-gray-200 hover:border-blue-400 
+                 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full"
     >
-      {/* Rank Badge (if provided) */}
+      {/* Rank Badge */}
       {rank && rank <= 3 && (
         <div className="absolute top-4 left-4 z-10">
           <div
             className={`
             flex items-center justify-center rounded-full font-bold text-white text-lg shadow-lg
-            ${rank === 1 ? 'w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 ring-4 ring-yellow-200 animate-pulse' : 'w-10 h-10'}
+            ${rank === 1 ? 'w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 ring-4 ring-yellow-200' : 'w-10 h-10'}
             ${rank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500' : ''}
             ${rank === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : ''}
           `}
@@ -92,39 +142,27 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
           </div>
         </div>
       )}
-      
-      {/* Best Match Banner */}
-      {isBestMatch && (
-        <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 text-center py-1.5 text-xs font-bold shadow-md z-10">
-          🏆 PHÙ HỢP NHẤT
-        </div>
-      )}
 
-      {/* AI Badge */}
-      <div className="absolute top-4 right-4 z-10">
-        <div className="flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 
-                        rounded-full shadow-lg">
-          <SparklesSolidIcon className="w-4 h-4 text-white" />
-          <span className="text-white text-xs font-semibold">AI Match</span>
-        </div>
-      </div>
-
-      <div className={`p-6 flex flex-col flex-grow ${isBestMatch ? 'pt-20' : 'pt-16'}`}>
-        {/* Match Score */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Độ phù hợp</span>
+      <div className={`p-6 flex flex-col flex-grow ${rank && rank <= 3 ? 'pt-16' : ''}`}>
+        {/* Header with Match Score */}
+        <div className="flex items-start justify-between mb-4">
+          <h4 className={`text-gray-900 line-clamp-2 flex-1 ${isBestMatch ? 'font-bold text-lg' : 'font-semibold text-base'}`}>
+            {studentPost.title}
+          </h4>
+          <div className="ml-3 flex-shrink-0">
             <span
-              className={`px-3 py-1 rounded-full text-sm font-bold border-2 ${getMatchScoreColor(
+              className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getMatchScoreColor(
                 matchScore
               )}`}
             >
-              {matchScore}% • {getMatchScoreLabel(matchScore)}
+              {matchScore}%
             </span>
           </div>
-          
-          {/* Match Score Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+        </div>
+
+        {/* Match Score Bar */}
+        <div className="mb-4">
+          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
             <div
               className={`h-full transition-all duration-500 rounded-full ${
                 matchScore >= 80
@@ -142,42 +180,63 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
 
         {/* Student Post Info */}
         <div className="space-y-3 mb-4">
-          <h4 className="font-semibold text-gray-900 line-clamp-2">{studentPost.title}</h4>
-
-          {/* AI Explanation */}
-          {explanation && (
-            <div
-              className={`p-3 rounded-lg border
-                ${
-                  isBestMatch
-                    ? 'bg-gradient-to-r from-yellow-50 to-purple-50 border-yellow-300'
-                    : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200'
-                }`}
-            >
-              <div className="flex items-start space-x-2">
-                <SparklesIcon className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isBestMatch ? 'text-yellow-600' : 'text-purple-600'}`} />
-                <p className={`text-sm leading-relaxed ${isBestMatch ? 'text-yellow-900 font-medium' : 'text-purple-800'}`}>
-                  {explanation}
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Content Preview */}
           {studentPost.content && (
-            <p className="text-sm text-gray-600 line-clamp-2">{studentPost.content}</p>
+            <p className={`text-sm text-gray-600 line-clamp-2 ${isBestMatch ? 'font-semibold' : ''}`}>
+              {studentPost.content}
+            </p>
           )}
+
+          {/* AI Explanation - On Demand */}
+          <div className="min-h-[32px]">
+            <button
+              onClick={handleToggleExplanation}
+              className="w-full text-left p-3 rounded-lg border-2 border-purple-200 hover:border-purple-400 
+                         transition-all duration-200 bg-gradient-to-r from-purple-50 to-pink-50"
+            >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <SparklesIcon className="w-4 h-4 text-purple-600" />
+                <span className="text-sm font-medium text-purple-800">
+                  {isLoadingExplanation ? 'Đang tạo giải thích...' : 'Lý do AI gợi ý'}
+                </span>
+              </div>
+              {!isLoadingExplanation && (
+                <svg
+                  className={`w-4 h-4 text-purple-600 transition-transform duration-200 ${
+                    isExplanationExpanded ? 'rotate-180' : ''
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </div>
+            </button>
+            
+            {isExplanationExpanded && (explanation || onDemandExplanation) && (
+              <div className="mt-2 p-3 rounded-lg border border-purple-200 bg-white/50">
+                <p className="text-sm leading-relaxed text-purple-800">
+                  {onDemandExplanation || explanation}
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Subjects */}
           <div className="flex flex-wrap gap-2">
             {studentPost.subjects.slice(0, 3).map((subject, idx) => (
               <span
                 key={idx}
-                className={`px-2.5 py-1 text-xs font-medium rounded-full border
+                className={`px-3 py-1.5 text-xs rounded-full border transition-all
                   ${
                     matchDetails.subjectMatch
-                      ? 'bg-green-100 text-green-800 border-green-300 font-bold shadow-sm'
-                      : 'bg-blue-50 text-blue-700 border-blue-200'
+                      ? isBestMatch 
+                        ? 'bg-green-100 text-green-900 border-green-400 font-extrabold text-sm shadow-md'
+                        : 'bg-green-100 text-green-800 border-green-300 font-bold'
+                      : 'bg-blue-50 text-blue-700 border-blue-200 font-medium'
                   }`}
               >
                 {subject.name}
@@ -185,120 +244,97 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
               </span>
             ))}
             {studentPost.subjects.length > 3 && (
-              <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                +{studentPost.subjects.length - 3} môn
+              <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full border border-gray-200">
+                +{studentPost.subjects.length - 3}
               </span>
             )}
           </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div
-              className={`flex items-center space-x-2 rounded-lg p-2 transition-all
-                ${
-                  matchDetails.levelMatch
-                    ? 'bg-green-50 text-green-800 font-semibold border border-green-200'
-                    : 'text-gray-600'
-                }`}
-            >
-              <AcademicCapIcon className={`w-4 h-4 ${matchDetails.levelMatch ? 'text-green-600' : ''}`} />
-              <span className="line-clamp-1">
-                {studentPost.grade_levels.join(', ')}
-                {matchDetails.levelMatch && ' ✓'}
-              </span>
+          {/* Details Grid - Cleaner Layout */}
+          <div className="space-y-2 text-sm">
+            {/* Grade Levels */}
+            <div className={`flex items-center space-x-2 p-2.5 rounded-lg border
+                ${matchDetails.levelMatch
+                  ? isBestMatch 
+                    ? 'bg-green-100 border-green-400 font-extrabold text-green-900'
+                    : 'bg-green-50 border-green-200 font-bold text-green-800'
+                  : 'bg-gray-50 border-gray-200 text-gray-700'
+                }`}>
+              <AcademicCapIcon className={`w-5 h-5 flex-shrink-0 ${matchDetails.levelMatch ? 'text-green-600' : 'text-gray-500'}`} />
+              <div className="flex-1 min-w-0">
+                <span className="text-xs text-gray-600">Cấp độ:</span>
+                <p className={`truncate ${matchDetails.levelMatch && isBestMatch ? 'text-sm' : 'text-xs'}`}>
+                  {studentPost.grade_levels.join(', ')}
+                  {matchDetails.levelMatch && ' ✓'}
+                </p>
+              </div>
             </div>
 
-            <div
-              className={`flex items-center space-x-2 rounded-lg p-2 transition-all
-                ${
-                  matchDetails.priceMatch
-                    ? 'bg-green-50 text-green-800 font-semibold border border-green-200'
-                    : 'text-gray-600'
-                }`}
-            >
-              <CurrencyDollarIcon className={`w-4 h-4 ${matchDetails.priceMatch ? 'text-green-600' : ''}`} />
-              <span className="text-xs">
-                {formatPrice(studentPost.hourly_rate?.min, studentPost.hourly_rate?.max)}
-                {matchDetails.priceMatch && ' ✓'}
-              </span>
+            {/* Price */}
+            <div className={`flex items-center space-x-2 p-2.5 rounded-lg border
+                ${matchDetails.priceMatch
+                  ? isBestMatch
+                    ? 'bg-green-100 border-green-400 font-extrabold text-green-900'
+                    : 'bg-green-50 border-green-200 font-bold text-green-800'
+                  : 'bg-gray-50 border-gray-200 text-gray-700'
+                }`}>
+              <CurrencyDollarIcon className={`w-5 h-5 flex-shrink-0 ${matchDetails.priceMatch ? 'text-green-600' : 'text-gray-500'}`} />
+              <div className="flex-1 min-w-0">
+                <span className="text-xs text-gray-600">Học phí:</span>
+                <p className={`truncate ${matchDetails.priceMatch && isBestMatch ? 'text-sm' : 'text-xs'}`}>
+                  {formatPrice(studentPost.hourly_rate?.min, studentPost.hourly_rate?.max)}
+                  {matchDetails.priceMatch && ' ✓'}
+                </p>
+              </div>
             </div>
 
-            <div
-              className={`flex items-center space-x-2 rounded-lg p-2 transition-all
-                ${
-                  matchDetails.scheduleMatch
-                    ? 'bg-green-50 text-green-800 font-semibold border border-green-200'
-                    : 'text-gray-600'
-                }`}
-            >
-              <MapPinIcon className={`w-4 h-4 ${matchDetails.scheduleMatch ? 'text-green-600' : ''}`} />
-              <span className="text-xs">
-                {studentPost.is_online ? '💻 Online' : '🏠 Offline'}
-                {studentPost.location && !studentPost.is_online && ` • ${studentPost.location}`}
-                {matchDetails.scheduleMatch && ' ✓'}
-              </span>
+            {/* Teaching Mode & Location */}
+            <div className={`flex items-center space-x-2 p-2.5 rounded-lg border
+                ${matchDetails.scheduleMatch
+                  ? isBestMatch
+                    ? 'bg-green-100 border-green-400 font-extrabold text-green-900'
+                    : 'bg-green-50 border-green-200 font-bold text-green-800'
+                  : 'bg-gray-50 border-gray-200 text-gray-700'
+                }`}>
+              <MapPinIcon className={`w-5 h-5 flex-shrink-0 ${matchDetails.scheduleMatch ? 'text-green-600' : 'text-gray-500'}`} />
+              <div className="flex-1 min-w-0">
+                <span className="text-xs text-gray-600">Hình thức:</span>
+                <p className={`truncate ${matchDetails.scheduleMatch && isBestMatch ? 'text-sm' : 'text-xs'}`}>
+                  {studentPost.is_online ? '💻 Online' : '🏠 Offline'}
+                  {studentPost.location && !studentPost.is_online && ` • ${studentPost.location}`}
+                  {matchDetails.scheduleMatch && ' ✓'}
+                </p>
+              </div>
             </div>
 
+            {/* Student Info */}
             {studentPost.author && (
-              <div className="flex items-center space-x-2 text-gray-600">
-                <UserIcon className="w-4 h-4" />
-                <span className="text-xs truncate">{studentPost.author.name}</span>
+              <div className="flex items-center space-x-2 p-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700">
+                <UserIcon className="w-5 h-5 flex-shrink-0 text-gray-500" />
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-xs font-medium">{studentPost.author.name}</p>
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Match Details */}
-        <div className="border-t pt-4">
-          <p className="text-xs font-medium text-gray-600 mb-2">Chi tiết khớp:</p>
-          <div className="flex flex-wrap gap-2">
-            {matchDetails.subjectMatch && (
-              <span className="flex items-center space-x-1 px-2 py-1 bg-green-50 text-green-700 
-                              text-xs rounded-full border border-green-200">
-                <CheckCircleIcon className="w-3 h-3" />
-                <span>Môn học</span>
-              </span>
-            )}
-            {matchDetails.levelMatch && (
-              <span className="flex items-center space-x-1 px-2 py-1 bg-green-50 text-green-700 
-                              text-xs rounded-full border border-green-200">
-                <CheckCircleIcon className="w-3 h-3" />
-                <span>Cấp độ</span>
-              </span>
-            )}
-            {matchDetails.priceMatch && (
-              <span className="flex items-center space-x-1 px-2 py-1 bg-green-50 text-green-700 
-                              text-xs rounded-full border border-green-200">
-                <CheckCircleIcon className="w-3 h-3" />
-                <span>Giá</span>
-              </span>
-            )}
-            {matchDetails.semanticScore > 0 && (
-              <span className="flex items-center space-x-1 px-2 py-1 bg-purple-50 text-purple-700 
-                              text-xs rounded-full border border-purple-200">
-                <StarIcon className="w-3 h-3" />
-                <span>AI: {Math.round(matchDetails.semanticScore * 100)}%</span>
-              </span>
-            )}
-          </div>
-        </div>
-
         {/* View Button */}
-        <div className="mt-auto pt-4">
+        <div className="mt-auto pt-4 border-t">
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleCardClick();
             }}
-            className={`w-full px-4 py-2.5 text-white font-medium rounded-lg 
+            className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 
+                      hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-lg 
                       transition-all duration-200 shadow-md hover:shadow-lg
-                      ${
-                        isBestMatch
-                          ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 font-bold'
-                          : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
-                      }`}
+                      flex items-center justify-center space-x-2"
           >
-            {isBestMatch ? '⭐ Xem chi tiết bài đăng phù hợp nhất' : 'Xem chi tiết bài đăng'}
+            <span>Xem chi tiết</span>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
       </div>

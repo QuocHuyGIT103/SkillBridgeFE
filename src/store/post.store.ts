@@ -303,34 +303,9 @@ const usePostStore = create<PostState>((set, get) => ({
           tutorStudentPostsLoading: false,
         });
 
-        // If zero results and not already relaxed, auto retry with relax=true for quick diagnosis
-        if ((!posts || posts.length === 0) && !query?.relax) {
-          // eslint-disable-next-line no-console
-          console.info("No results with strict filters. Retrying with relax=true...");
-          const relaxed = await PostService.getApprovedStudentPostsForTutor({
-            ...query,
-            relax: true,
-          });
-          if (relaxed.success && relaxed.data) {
-            const relaxedPosts = relaxed.data.posts || [];
-            set({
-              tutorStudentPosts: relaxedPosts,
-              tutorStudentPostsPagination: relaxed.data.pagination || null,
-            });
-            if (relaxedPosts.length > 0) {
-              // Notify that relaxed mode brought results
-              toast.success(
-                "Đã nới lỏng bộ lọc tạm thời và tìm thấy bài đăng phù hợp."
-              );
-            } else {
-              // Still zero
-              toast("Không tìm thấy bài đăng. Hãy thử bỏ bớt bộ lọc.", {
-                icon: "ℹ️",
-              });
-            }
-          }
-        } else if (posts.length === 0) {
-          toast("Không tìm thấy bài đăng. Hãy thử bỏ bớt bộ lọc.", {
+        // Show simple notification if no results (removed auto-relax behavior to respect user filters)
+        if (posts.length === 0) {
+          toast("Không tìm thấy bài đăng phù hợp. Hãy thử điều chỉnh bộ lọc.", {
             icon: "ℹ️",
           });
         }

@@ -31,12 +31,15 @@ const TutorAISmartRecommendationsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [aiAvailable, setAiAvailable] = useState(true);
   const [tutorPostTitle, setTutorPostTitle] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
 
   // Query parameters
   const [query, setQuery] = useState<SmartRecommendationQuery>({
     limit: 10,
-    minScore: 0.5,
-    includeExplanations: true,
+    minScore: 0,
   });
 
   // Check AI status
@@ -181,30 +184,9 @@ const TutorAISmartRecommendationsPage: React.FC = () => {
                 is_online: post.is_online || false,
               };
               
-              // Try to generate AI explanation if includeExplanations is true and tutorPostId exists
-              let explanation = '';
-              if (query.includeExplanations && tutorPostId && aiAvailable) {
-                try {
-                  const aiResponse = await AIService.generateMatchExplanation(
-                    tutorPostId,
-                    post._id || post.id,
-                    compatibility / 100
-                  );
-                  if (aiResponse.success && aiResponse.data?.explanation) {
-                    explanation = aiResponse.data.explanation;
-                  } else {
-                    // Fallback to rule-based explanation
-                    explanation = generateDetailedExplanation(compatibility, matchDetails, studentPostData);
-                  }
-                } catch (error) {
-                  console.error('Failed to generate AI explanation:', error);
-                  // Fallback to rule-based explanation
-                  explanation = generateDetailedExplanation(compatibility, matchDetails, studentPostData);
-                }
-              } else {
-                // Use rule-based explanation
-                explanation = generateDetailedExplanation(compatibility, matchDetails, studentPostData);
-              }
+              // Generate explanation based on checkbox setting
+              // For performance: Always use rule-based first, AI generates on-demand when user views detail
+              const explanation = generateDetailedExplanation(compatibility, matchDetails, studentPostData);
 
               return {
                 postId: post._id || post.id,
@@ -293,6 +275,18 @@ const TutorAISmartRecommendationsPage: React.FC = () => {
 
   const handleQueryChange = (newQuery: Partial<SmartRecommendationQuery>) => {
     setQuery((prev) => ({ ...prev, ...newQuery }));
+    setCurrentPage(1); // Reset to first page when query changes
+  };
+
+  // Calculate pagination
+  const totalPages = Math.ceil(recommendations.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentRecommendations = recommendations.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // AI Status Banner
@@ -469,50 +463,90 @@ const TutorAISmartRecommendationsPage: React.FC = () => {
               </select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="includeExplanations"
-                checked={query.includeExplanations}
-                onChange={(e) => handleQueryChange({ includeExplanations: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="includeExplanations" className="text-sm text-gray-600">
-                Hiện giải thích AI
-              </label>
-            </div>
+
           </div>
         </div>
 
         {/* Results */}
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <p className="text-gray-600">
             Tìm thấy <span className="font-bold text-blue-600">{recommendations.length}</span> bài đăng phù hợp
+            {recommendations.length > 0 && (
+              <span className="ml-2 text-sm text-gray-500">
+                (Trang {currentPage} / {totalPages})
+              </span>
+            )}
           </p>
         </div>
 
         {/* Recommendations Grid */}
         {recommendations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
-              {recommendations.map((rec, index) => (
-                <motion.div
-                  key={rec.postId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex"
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 auto-rows-fr">
+              <AnimatePresence>
+                {currentRecommendations.map((rec, index) => {
+                  const globalIndex = startIndex + index;
+                  return (
+                    <motion.div
+                      key={rec.postId}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="h-full"
+                    >
+                      <SmartStudentRecommendationCard 
+                        recommendation={rec} 
+                        rank={globalIndex + 1}
+                        tutorPostId={tutorPostId || undefined}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-white border-2 border-gray-300 rounded-lg 
+                            hover:border-blue-500 hover:text-blue-600 transition-all
+                            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:text-gray-700"
                 >
-                  <SmartStudentRecommendationCard 
-                    recommendation={rec} 
-                    rank={index + 1}
-                    tutorPostId={tutorPostId || undefined}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+                  ← Trước
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        page === currentPage
+                          ? 'bg-blue-600 text-white shadow-lg'
+                          : 'bg-white border-2 border-gray-300 hover:border-blue-500 hover:text-blue-600'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-white border-2 border-gray-300 rounded-lg 
+                            hover:border-blue-500 hover:text-blue-600 transition-all
+                            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:text-gray-700"
+                >
+                  Sau →
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-20 bg-white rounded-lg border border-gray-200">
             <SparklesIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
