@@ -87,6 +87,13 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
       return;
     }
     
+    // Check if user is authenticated before making request
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      toast.error('Vui lòng đăng nhập lại để sử dụng tính năng này');
+      return;
+    }
+    
     setIsLoadingExplanation(true);
     setIsExplanationExpanded(true);
     
@@ -95,7 +102,20 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
       setOnDemandExplanation(response.data.explanation);
     } catch (error: any) {
       console.error('Failed to fetch explanation:', error);
-      toast.error(error.response?.data?.message || 'Không thể tạo giải thích AI');
+      
+      // Handle different error types
+      let errorMessage = 'Không thể tạo giải thích AI';
+      if (error.status === 401) {
+        errorMessage = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
+      } else if (error.status === 403) {
+        errorMessage = 'Bạn không có quyền xem thông tin này';
+      } else if (error.status === 404) {
+        errorMessage = 'Không tìm thấy thông tin gia sư';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
       setIsExplanationExpanded(false);
     } finally {
       setIsLoadingExplanation(false);

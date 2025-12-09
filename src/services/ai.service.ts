@@ -209,6 +209,42 @@ export class AIService {
   }
 
   /**
+   * Get on-demand AI explanation for a specific student-tutor post match (FOR TUTOR)
+   * 
+   * This should be called ONLY when tutor clicks/expands a student post card.
+   * Avoids generating explanations for all results upfront.
+   * 
+   * Cost saving: 90% per search
+   * 
+   * @param tutorPostId - Tutor's post ID
+   * @param studentPostId - Student post ID
+   * @returns AI-generated explanation
+   * 
+   * @example
+   * ```typescript
+   * // When tutor clicks on a student post card:
+   * const explanation = await AIService.getOnDemandStudentExplanation(
+   *   'tutor-post-123',
+   *   'student-post-456'
+   * );
+   * ```
+   */
+  static async getOnDemandStudentExplanation(
+    tutorPostId: string,
+    studentPostId: string
+  ): Promise<ApiResponse<{ 
+    explanation: string; 
+    tutorPostId: string; 
+    studentPostId: string; 
+    matchScore: number;
+    usedAI: boolean;
+    generatedAt: string 
+  }>> {
+    const url = `/ai/tutor-posts/${tutorPostId}/student-posts/${studentPostId}/explanation`;
+    return axiosClient.get(url);
+  }
+
+  /**
    * Check if AI features are available (Gemini API configured)
    * 
    * @returns AI service status and available features

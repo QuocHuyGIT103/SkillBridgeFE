@@ -184,9 +184,9 @@ const TutorAISmartRecommendationsPage: React.FC = () => {
                 is_online: post.is_online || false,
               };
               
-              // Generate explanation based on checkbox setting
-              // For performance: Always use rule-based first, AI generates on-demand when user views detail
-              const explanation = generateDetailedExplanation(compatibility, matchDetails, studentPostData);
+              // DON'T pre-generate explanation - let SmartStudentRecommendationCard fetch AI explanation on-demand
+              // This saves API costs by only generating explanations when user actually clicks to view
+              const explanation = ''; // Empty to trigger on-demand AI fetch
 
               return {
                 postId: post._id || post.id,
