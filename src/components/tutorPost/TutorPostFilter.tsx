@@ -181,15 +181,29 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
     };
   }, []);
 
+  // Debounced search - only trigger when search text changes
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
   useEffect(() => {
-    if (localFilters.search && localFilters.search.trim() !== "") {
-      const timer = setTimeout(() => {
-        onFiltersChange(localFilters);
-      }, 800);
-
-      return () => clearTimeout(timer);
+    // Clear previous timer
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
     }
-  }, [localFilters.search, onFiltersChange, localFilters]);
+    
+    // Only trigger search if there's search text or if it was cleared
+    const searchText = localFilters.search?.trim() || '';
+    
+    searchTimerRef.current = setTimeout(() => {
+      onFiltersChange({ ...localFilters, search: searchText || undefined });
+    }, 800);
+
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localFilters.search]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -261,10 +275,10 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
   const handleSearchChange = useCallback(
     (searchValue: string) => {
-      const trimmedValue = searchValue.trim();
+      // Don't trim while typing - allow spaces
       const newFilters = {
         ...localFilters,
-        search: trimmedValue || undefined,
+        search: searchValue || undefined,
       };
       setLocalFilters(newFilters);
     },
@@ -432,45 +446,44 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
       ref={filterContainerRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-visible relative ${className} ${disabled ? "opacity-50 pointer-events-none" : ""
+      className={`bg-white rounded-2xl shadow-sm border border-gray-200 overflow-visible relative ${className} ${disabled ? "opacity-50 pointer-events-none" : ""
         }`}
       style={{ zIndex: 20 }}
     >
       {/* HEADER */}
-      <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
+      <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className="flex items-center justify-center w-10 h-10 bg-white rounded-lg shadow-sm flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-xl flex-shrink-0">
               <FunnelIcon className="w-5 h-5 text-blue-600" />
             </div>
-            {/* ✅ TĂNG CỠ CHỮ */}
             <h3 className="text-base font-bold text-gray-900 truncate">
-              Bộ lọc {isSmartSearchMode && "🤖"}
+              Bộ lọc {isSmartSearchMode && <span className="text-blue-500">AI</span>}
             </h3>
             {getActiveFilterCount() > 0 && (
-              // ✅ TĂNG CỠ CHỮ
-              <span className="px-2.5 py-1 bg-green-100 text-green-700 text-sm rounded-full flex-shrink-0">
+              <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full flex-shrink-0">
                 {getActiveFilterCount()}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-3 flex-shrink-0">
             {resultCount !== undefined && (
-              <div className="bg-white px-3 py-1.5 rounded-md border border-gray-200">
-                {/* ✅ TĂNG CỠ CHỮ */}
-                <span className="text-base font-semibold text-gray-900">
+              <div className="bg-green-50 px-4 py-2 rounded-xl border border-green-200">
+                <span className="text-base font-bold text-green-700">
                   {resultCount.toLocaleString()}
                 </span>
+                <span className="text-sm text-green-600 ml-1">kết quả</span>
               </div>
             )}
             {hasActiveFilters() && (
               <button
                 onClick={onReset}
-                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                title="Xóa bộ lọc"
+                className="flex items-center gap-1.5 px-3 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors text-sm font-medium"
+                title="Xóa tất cả bộ lọc"
               >
-                <XMarkIcon className="w-5 h-5" />
+                <XMarkIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Xóa lọc</span>
               </button>
             )}
           </div>
@@ -478,16 +491,12 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
       </div>
 
       {/* SEARCH BAR */}
-      <div className="px-4 py-3 border-b border-gray-100">
+      <div className="px-5 py-4 border-b border-gray-100">
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder={
-              disabled
-                ? "Tìm kiếm bị tắt trong chế độ AI"
-                : "Tìm kiếm gia sư..."
-            }
+            placeholder="Tìm kiếm theo tên, môn học, khu vực..."
             value={localFilters.search || ""}
             onChange={(e) => handleSearchChange(e.target.value)}
             onKeyPress={(e) => {
@@ -495,41 +504,44 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 onSearch();
               }
             }}
-            // ✅ TĂNG CỠ CHỮ VÀ PADDING
-            className="w-full pl-12 pr-28 py-2.5 text-base border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-full pl-12 pr-28 py-3 text-base border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all duration-200 bg-gray-50 focus:bg-white"
             disabled={disabled}
           />
-          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
             {localFilters.search && (
               <button
                 onClick={() => handleSearchChange("")}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1.5 hover:bg-gray-200 rounded-full transition-colors"
               >
-                <XMarkIcon className="w-4 h-4 text-gray-400" />
+                <XMarkIcon className="w-4 h-4 text-gray-500" />
               </button>
             )}
             <button
               onClick={onSearch}
               disabled={isLoading || disabled}
-              // ✅ TĂNG CỠ CHỮ VÀ PADDING
-              className="px-4 py-1.5 bg-blue-600 text-white text-base rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
             >
-              {isLoading ? "⏳" : "🔍"}
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <MagnifyingGlassIcon className="w-4 h-4" />
+              )}
+              <span>Tìm</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* FILTER DROPDOWNS */}
-      <div className="px-4 py-3 relative">
+      <div className="px-5 py-4 relative">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {/* Subjects Dropdown */}
           <div className="relative">
             <button
               onClick={() => toggleDropdown("subjects")}
-              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.subjects?.length
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.subjects?.length
                   ? "border-blue-400 bg-blue-50 text-blue-700"
-                  : "border-gray-200 text-gray-700"
+                  : "border-gray-200 text-gray-700 hover:border-gray-300"
                 }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">

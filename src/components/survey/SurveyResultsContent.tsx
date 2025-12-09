@@ -362,7 +362,8 @@ const SurveyResultsContent: React.FC<SurveyResultsContentProps> = ({
                 >
                   <SmartRecommendationCard
                     recommendation={recommendation as SmartRecommendation}
-                    rank={index + 1}
+                    matchPercentage={Math.round(recommendation.matchScore || 0)}
+                    hideExplanation={true}
                   />
                 </motion.div>
               ))}

@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   SparklesIcon,
   AdjustmentsHorizontalIcon,
   ExclamationCircleIcon,
   ArrowPathIcon,
-  CheckCircleIcon,
-  XCircleIcon,
 } from '@heroicons/react/24/outline';
 import SmartRecommendationCard from '../../components/ai/SmartRecommendationCard';
 import AIService from '../../services/ai.service';
@@ -25,6 +23,8 @@ const AISmartRecommendationsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aiAvailable, setAiAvailable] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 2;
 
   // Query parameters - minScore 0 để hiển thị tất cả gia sư được gợi ý
   // includeExplanations: false để tiết kiệm chi phí (dùng on-demand thày vì)
@@ -109,48 +109,16 @@ const AISmartRecommendationsPage: React.FC = () => {
     setQuery((prev) => ({ ...prev, ...newQuery }));
   };
 
-  // AI Status Banner
-  const AIStatusBanner = () => {
-    if (aiAvailable) {
-      return (
-        <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-              <CheckCircleIcon className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-purple-900">
-                🤖 AI Smart Recommendations Đang Hoạt Động
-              </h3>
-              <p className="text-xs text-purple-700 mt-1">
-                Được hỗ trợ bởi Google Gemini AI - Tìm kiếm ngữ nghĩa thông minh với độ chính xác cao
-              </p>
-              <p className="text-xs text-purple-600 mt-1 font-medium">
-                💸 Tiết kiệm 90% chi phí với on-demand explanations
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
+  // Pagination helpers
+  const totalPages = Math.ceil(recommendations.length / ITEMS_PER_PAGE);
+  const paginatedRecommendations = recommendations.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
-    return (
-      <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-        <div className="flex items-center space-x-3">
-          <div className="flex-shrink-0">
-            <XCircleIcon className="w-6 h-6 text-yellow-600" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-yellow-900">
-              AI Chưa Được Kích Hoạt
-            </h3>
-            <p className="text-xs text-yellow-700 mt-1">
-              Tính năng gợi ý thông minh chưa sẵn sàng. Vui lòng liên hệ quản trị viên.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Loading State
@@ -239,9 +207,6 @@ const AISmartRecommendationsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* AI Status Banner */}
-        <AIStatusBanner />
-
         {/* Controls */}
         <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center space-x-4">
@@ -291,15 +256,15 @@ const AISmartRecommendationsPage: React.FC = () => {
 
         {/* Recommendations Grid - 2 columns for better visibility */}
         {recommendations.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-fr">
-            <AnimatePresence>
+          <>
+            <div key={`page-${currentPage}`} className="grid grid-cols-1 lg:grid-cols-2 gap-6 auto-rows-fr">
               {(() => {
                 // Calculate max score once
                 const maxScore = recommendations.length > 0 
                   ? Math.max(...recommendations.map(r => r.matchScore))
                   : 0;
                 
-                return recommendations.map((rec, index) => {
+                return paginatedRecommendations.map((rec, index) => {
                   const isTopMatch = rec.matchScore === maxScore;
                   
                   return (
@@ -307,13 +272,12 @@ const AISmartRecommendationsPage: React.FC = () => {
                       key={rec.tutorId}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
                       transition={{ delay: index * 0.1 }}
                       className="h-full"
                     >
                       <SmartRecommendationCard 
                         recommendation={rec} 
-                        rank={index + 1}
+                        matchPercentage={Math.round(rec.matchScore)}
                         isTopMatch={isTopMatch}
                         postId={postId}
                       />
@@ -321,8 +285,45 @@ const AISmartRecommendationsPage: React.FC = () => {
                   );
                 });
               })()}
-            </AnimatePresence>
-          </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  ← Trước
+                </button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                        page === currentPage
+                          ? 'bg-purple-600 text-white'
+                          : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Sau →
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-20 bg-white rounded-lg border border-gray-200">
             <SparklesIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />

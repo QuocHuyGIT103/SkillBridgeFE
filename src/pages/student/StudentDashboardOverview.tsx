@@ -206,7 +206,10 @@ const StudentDashboardOverview: React.FC = () => {
                   transition={{ delay: 0.2 + index * 0.05 }}
                   className="h-full"
                 >
-                  <SmartRecommendationCard recommendation={recommendation} rank={index + 1} />
+                  <SmartRecommendationCard 
+                    recommendation={recommendation} 
+                    matchPercentage={Math.round(recommendation.matchScore || 0)} 
+                  />
                 </motion.div>
               ))}
             </div>
