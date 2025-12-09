@@ -105,6 +105,32 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
     }
   };
 
+  const getPaymentStatusColor = (paymentStatus: string) => {
+    switch (paymentStatus) {
+      case "PAID":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "UNPAID":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getPaymentStatusText = (paymentStatus: string) => {
+    switch (paymentStatus) {
+      case "PAID":
+        return "Đã thanh toán";
+      case "UNPAID":
+        return "Chưa thanh toán";
+      case "PENDING":
+        return "Chờ thanh toán";
+      default:
+        return paymentStatus;
+    }
+  };
+
   const getDayName = (dayOfWeek: number) => {
     const days = [
       "Chủ nhật",
@@ -133,9 +159,9 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
       meetingLink: classData.onlineInfo?.meetingLink,
       location: classData.location
         ? {
-          type: "address",
-          details: classData.location.address,
-        }
+            type: "address",
+            details: classData.location.address,
+          }
         : undefined,
       attendance: session.attendance || {
         tutorAttended: false,
@@ -232,7 +258,8 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
 
   const handleContactChat = () => {
     // Navigate to messages page with classId to auto-open conversation
-    const messagesPath = userRole === "STUDENT" ? "/student/messages" : "/tutor/messages";
+    const messagesPath =
+      userRole === "STUDENT" ? "/student/messages" : "/tutor/messages";
     navigate(`${messagesPath}?classId=${classId}`);
   };
 
@@ -250,11 +277,11 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
               {classData.learningMode === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}
             </p>
           </div>
-          
+
           {/* Contact Button */}
           <button
             onClick={handleContactChat}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
           >
             <ChatBubbleLeftRightIcon className="w-5 h-5" />
             Liên hệ {userRole === "STUDENT" ? "gia sư" : "học viên"}
@@ -371,7 +398,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-4">
                       {getStatusIcon(session.status)}
                       <div>
@@ -391,7 +418,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-3">
+                    <div className="flex flex-col md:flex-row items-end md:items-center gap-2">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
                           session.status
@@ -403,6 +430,17 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                       {session.isUpcoming && (
                         <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
                           Sắp tới
+                        </span>
+                      )}
+
+                      {/* Payment Status Badge */}
+                      {session.paymentRequired && (
+                        <span
+                          className={`px-3 py-1 rounded-lg text-xs font-medium border ${getPaymentStatusColor(
+                            session.paymentStatus
+                          )}`}
+                        >
+                          {getPaymentStatusText(session.paymentStatus)}
                         </span>
                       )}
                     </div>
@@ -444,65 +482,81 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                               `/student/classes/${classData._id}/payment`
                             )
                           }
-                          className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                          className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
                         >
-                          <DocumentTextIcon className="w-4 h-4" />
-                          <span>
-                            {hasSessionAssignments
-                              ? "Xem bài tập"
-                              : "Chưa có bài tập"}
-                          </span>
+                          Thanh toán ngay
                         </button>
                       )}
 
-                    {/* Homework Button - Show after both attended or completed */}
-                    {(session.status === "COMPLETED" ||
-                      (session.attendance?.tutorAttended &&
-                        session.attendance?.studentAttended)) && (
-                        <button
-                          onClick={() => handleOpenHomework(session)}
-                          className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
-                        >
-                          <DocumentTextIcon className="w-4 h-4" />
-                          <span>
-                            {userRole === "TUTOR"
-                              ? hasSessionAssignments
-                                ? "Quản lý bài tập"
-                                : "Giao bài tập"
-                              : hasSessionAssignments
+                    {/* Show disabled message for unpaid sessions (non-student view) */}
+                    {session.paymentRequired &&
+                      session.paymentStatus === "UNPAID" &&
+                      userRole !== "STUDENT" && (
+                        <div className="flex-1 text-center">
+                          <p className="text-sm text-red-600 bg-red-50 py-2 px-4 rounded-lg">
+                            ❌ Buổi học chưa được thanh toán bởi học viên
+                          </p>
+                        </div>
+                      )}
+
+                    {/* Only show other actions if payment is NOT required OR session is PAID */}
+                    {(!session.paymentRequired ||
+                      session.paymentStatus === "PAID") && (
+                      <>
+                        {/* Homework Button - Show after both attended or completed */}
+                        {(session.status === "COMPLETED" ||
+                          (session.attendance?.tutorAttended &&
+                            session.attendance?.studentAttended)) && (
+                          <button
+                            onClick={() => handleOpenHomework(session)}
+                            className="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer flex items-center justify-center space-x-2"
+                          >
+                            <DocumentTextIcon className="w-4 h-4" />
+                            <span>
+                              {userRole === "TUTOR"
+                                ? hasSessionAssignments
+                                  ? "Quản lý bài tập"
+                                  : "Giao bài tập"
+                                : hasSessionAssignments
                                 ? "Xem bài tập"
                                 : "Chưa có bài tập"}
-                          </span>
-                        </button>
-                      )}
-
-                    {/* Cancel Request Button - For scheduled sessions */}
-                    {session.status === "SCHEDULED" && (
-                      <button
-                        onClick={() => handleRequestCancelSession(session)}
-                        disabled={cancellingSession === session.sessionNumber}
-                        className="px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
-                      >
-                        {cancellingSession === session.sessionNumber ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            <span>Đang gửi...</span>
-                          </>
-                        ) : (
-                          <>
-                            <TrashIcon className="w-4 h-4" />
-                            <span>Yêu cầu huỷ</span>
-                          </>
+                            </span>
+                          </button>
                         )}
-                      </button>
+
+                        {/* Cancel Request Button - For scheduled sessions */}
+                        {session.status === "SCHEDULED" && (
+                          <button
+                            onClick={() => handleRequestCancelSession(session)}
+                            disabled={
+                              cancellingSession === session.sessionNumber
+                            }
+                            className="px-3 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors cursor-pointer flex items-center justify-center space-x-2"
+                          >
+                            {cancellingSession === session.sessionNumber ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <span>Đang gửi...</span>
+                              </>
+                            ) : (
+                              <>
+                                <TrashIcon className="w-4 h-4" />
+                                <span>Yêu cầu huỷ</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </>
                     )}
 
-                    {/* Pending Cancellation - Show approval/reject buttons */}
+                    {/* Pending Cancellation - Show approval/reject buttons - Only if paid */}
                     {session.status === "PENDING_CANCELLATION" &&
-                      session.cancellationRequest && (
+                      session.cancellationRequest &&
+                      (!session.paymentRequired ||
+                        session.paymentStatus === "PAID") && (
                         <div className="flex-1">
                           {session.cancellationRequest.requestedBy ===
-                            userRole ? (
+                          userRole ? (
                             // User who requested cancellation
                             <div className="text-sm text-orange-700 bg-orange-50 px-3 py-2 rounded-lg">
                               ⏳ Đang chờ phê duyệt yêu cầu huỷ buổi học
@@ -518,7 +572,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                                 disabled={
                                   cancellingSession === session.sessionNumber
                                 }
-                                className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                                className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
                               >
                                 Phản hồi yêu cầu
                               </button>
@@ -602,7 +656,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
             )} - ${format(
               new Date(
                 new Date(sessionToCancel.scheduledDate).getTime() +
-                sessionToCancel.duration * 60000
+                  sessionToCancel.duration * 60000
               ),
               "HH:mm"
             )}`,
@@ -638,7 +692,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
             )} - ${format(
               new Date(
                 new Date(respondingSession.scheduledDate).getTime() +
-                respondingSession.duration * 60000
+                  respondingSession.duration * 60000
               ),
               "HH:mm"
             )}`,
