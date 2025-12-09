@@ -32,25 +32,26 @@ interface AuthState {
   logout: () => void;
   clearPendingVerification: () => void;
   clearPendingReset: () => void;
+  updateUser: (userData: Partial<UserResponse>) => void;
 }
 
 // Helper function để điều hướng theo role
 const navigateByRole = (role: string) => {
   switch (role?.toUpperCase()) {
-    case 'ADMIN':
-      window.location.href = '/admin/dashboard';
+    case "ADMIN":
+      window.location.href = "/admin/dashboard";
       break;
-    case 'TUTOR':
-      window.location.href = '/tutor/dashboard';
+    case "TUTOR":
+      window.location.href = "/tutor/dashboard";
       break;
-    case 'STUDENT':
-      window.location.href = '/student/dashboard';
+    case "STUDENT":
+      window.location.href = "/student/dashboard";
       break;
-    case 'PARENT':
-      window.location.href = '/parent/dashboard';
+    case "PARENT":
+      window.location.href = "/parent/dashboard";
       break;
     default:
-      window.location.href = '/';
+      window.location.href = "/";
       break;
   }
 };
@@ -99,7 +100,7 @@ export const useAuthStore = create<AuthState>()(
               pendingVerificationEmail: null,
             });
             toast.success(response.message || "Xác thực thành công!");
-            
+
             // Điều hướng theo role sau khi verify OTP thành công
             setTimeout(() => {
               navigateByRole(response.data.user.role);
@@ -240,7 +241,7 @@ export const useAuthStore = create<AuthState>()(
             });
 
             toast.success(response.message || "Đăng nhập thành công");
-            
+
             // Điều hướng theo role sau khi đăng nhập thành công
             setTimeout(() => {
               navigateByRole(response.data.user.role);
@@ -264,6 +265,18 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         });
         toast.success("Đã đăng xuất thành công");
+      },
+
+      updateUser: (userData: Partial<UserResponse>) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          set({
+            user: {
+              ...currentUser,
+              ...userData,
+            },
+          });
+        }
       },
     }),
     {
