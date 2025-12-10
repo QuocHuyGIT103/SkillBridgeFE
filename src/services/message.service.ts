@@ -1,12 +1,7 @@
 import axios from "axios";
 
 // Support either VITE_API_URL or VITE_API_BASE_URL; fallback to localhost
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.VITE_API_BASE_URL
-    ? `${import.meta.env.VITE_API_BASE_URL}/api/v1`
-    : undefined) ||
-  "http://localhost:3000/api/v1";
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
 
 export interface MessageData {
   _id: string;

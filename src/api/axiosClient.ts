@@ -9,7 +9,7 @@ class AxiosClient {
 
   constructor() {
     this.instance = axios.create({
-      baseURL: "http://localhost:3000/api/v1", // Change this to match your backend URL
+      baseURL: `${import.meta.env.VITE_API_BASE_URL}/api/v1`,
       headers: {
         "Content-Type": "application/json",
       },

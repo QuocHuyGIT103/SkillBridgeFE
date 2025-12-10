@@ -50,8 +50,7 @@ interface TypingData {
 
 class SocketService {
   private socket: Socket | null = null;
-  private readonly serverUrl: string =
-    import.meta.env.VITE_SOCKET_URL || "http://localhost:3000"; // Adjust based on your backend URL
+  private readonly serverUrl: string = import.meta.env.VITE_SOCKET_URL;
 
   connect(token?: string): Socket {
     if (this.socket?.connected) {

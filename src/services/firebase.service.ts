@@ -78,10 +78,8 @@ try {
 // VAPID key for web push - Replace with your actual VAPID key
 const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
-// Compute backend API base URL robustly (supports either VITE_API_URL or VITE_API_BASE_URL)
-const API_BASE_URL = (import.meta.env.VITE_API_URL
-  || (import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/api/v1` : undefined)
-  || 'http://localhost:3000/api/v1') as string;
+// Backend API base URL from environment variable
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
 
 class FirebaseService {
   private signingIn?: Promise<void>;
