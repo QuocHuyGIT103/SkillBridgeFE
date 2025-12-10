@@ -61,140 +61,24 @@ const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
       label: "Quản lý người dùng",
       icon: "users",
       path: "/admin/users",
-      children: [
-        {
-          id: "users-list",
-          label: "Danh sách người dùng",
-          path: "/admin/users/list",
-        },
-        {
-          id: "users-students",
-          label: "Học sinh",
-          path: "/admin/users/students",
-        },
-        {
-          id: "users-tutors",
-          label: "Gia sư",
-          path: "/admin/users/tutors",
-        },
-        {
-          id: "users-blocked",
-          label: "Tài khoản bị khóa",
-          path: "/admin/users/blocked",
-          badge: 3,
-        },
-        {
-          id: "users-reports",
-          label: "Báo cáo người dùng",
-          path: "/admin/users/reports",
-        },
-      ],
     },
     {
       id: "authentication",
       label: "Xác thực & Chất lượng",
       icon: "shield",
-      path: "/admin/authentication",
-      children: [
-        {
-          id: "tutor-approval",
-          label: "Duyệt hồ sơ gia sư",
-          path: "/admin/authentication/tutor-approval",
-          badge: 12,
-        },
-        {
-          id: "verification-approval",
-          label: "Duyệt xác thực bằng cấp",
-          path: "/admin/authentication/verification-approval",
-        },
-        {
-          id: "verification-history",
-          label: "Lịch sử xác thực bằng cấp",
-          path: "/admin/authentication/verification-history",
-        },
-      ],
-    },
-    {
-      id: "operations",
-      label: "Quản lý vận hành",
-      icon: "calendar",
-      path: "/admin/operations",
-      children: [
-        {
-          id: "sessions-tracking",
-          label: "Theo dõi buổi học",
-          path: "/admin/operations/sessions",
-        },
-        {
-          id: "sessions-ongoing",
-          label: "Buổi học đang diễn ra",
-          path: "/admin/operations/sessions/ongoing",
-          badge: 5,
-        },
-        {
-          id: "sessions-history",
-          label: "Lịch sử buổi học",
-          path: "/admin/operations/sessions/history",
-        },
-        {
-          id: "session-analytics",
-          label: "Phân tích buổi học",
-          path: "/admin/operations/analytics",
-        },
-      ],
+      path: "/admin/verification-approval",
     },
     {
       id: "posts",
       label: "Quản lý Bài Đăng",
       icon: "document",
-      path: "/admin/posts",
-      children: [
-        {
-          id: "post-review",
-          label: "Duyệt Bài Đăng",
-          path: "/admin/posts/review",
-        },
-      ],
+      path: "/admin/posts/review",
     },
     {
       id: "transactions",
       label: "Quản lý giao dịch",
       icon: "currency",
       path: "/admin/transactions",
-      children: [
-        {
-          id: "transaction-overview",
-          label: "Tổng quan giao dịch",
-          path: "/admin/transactions/overview",
-        },
-        {
-          id: "payments",
-          label: "Thanh toán",
-          path: "/admin/transactions/payments",
-        },
-        {
-          id: "withdrawals",
-          label: "Yêu cầu rút tiền",
-          path: "/admin/transactions/withdrawals",
-          badge: 7,
-        },
-        {
-          id: "refunds",
-          label: "Hoàn tiền",
-          path: "/admin/transactions/refunds",
-          badge: 2,
-        },
-        {
-          id: "commission",
-          label: "Hoa hồng hệ thống",
-          path: "/admin/transactions/commission",
-        },
-        {
-          id: "financial-reports",
-          label: "Báo cáo tài chính",
-          path: "/admin/transactions/reports",
-        },
-      ],
     },
     {
       id: "session-reports",
@@ -203,141 +87,10 @@ const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
       path: "/admin/session-reports",
     },
     {
-      id: "reports",
-      label: "Báo cáo & Phân tích",
-      icon: "chart",
-      path: "/admin/reports",
-      children: [
-        {
-          id: "revenue-reports",
-          label: "Báo cáo doanh thu",
-          path: "/admin/reports/revenue",
-        },
-        {
-          id: "user-analytics",
-          label: "Phân tích người dùng",
-          path: "/admin/reports/users",
-        },
-        {
-          id: "session-statistics",
-          label: "Thống kê buổi học",
-          path: "/admin/reports/sessions",
-        },
-        {
-          id: "growth-metrics",
-          label: "Chỉ số tăng trưởng",
-          path: "/admin/reports/growth",
-        },
-        {
-          id: "performance-dashboard",
-          label: "Bảng điều khiển hiệu suất",
-          path: "/admin/reports/performance",
-        },
-        {
-          id: "custom-reports",
-          label: "Báo cáo tùy chỉnh",
-          path: "/admin/reports/custom",
-        },
-      ],
-    },
-    {
-      id: "content",
-      label: "Quản lý nội dung",
-      icon: "document",
-      path: "/admin/content",
-      children: [
-        {
-          id: "static-pages",
-          label: "Trang tĩnh",
-          path: "/admin/content/pages",
-        },
-        {
-          id: "privacy-policy",
-          label: "Chính sách bảo mật",
-          path: "/admin/content/privacy",
-        },
-        {
-          id: "terms-service",
-          label: "Điều khoản dịch vụ",
-          path: "/admin/content/terms",
-        },
-        {
-          id: "faq-management",
-          label: "Quản lý FAQ",
-          path: "/admin/content/faq",
-        },
-        {
-          id: "announcements",
-          label: "Thông báo hệ thống",
-          path: "/admin/content/announcements",
-        },
-      ],
-    },
-    {
-      id: "configuration",
-      label: "Cấu hình hệ thống",
-      icon: "cog",
-      path: "/admin/config",
-      children: [
-        {
-          id: "system-settings",
-          label: "Cài đặt hệ thống",
-          path: "/admin/config/system",
-        },
-        {
-          id: "commission-settings",
-          label: "Cài đặt hoa hồng",
-          path: "/admin/config/commission",
-        },
-        {
-          id: "payment-settings",
-          label: "Cài đặt thanh toán",
-          path: "/admin/config/payment",
-        },
-        {
-          id: "refund-policy",
-          label: "Chính sách hoàn tiền",
-          path: "/admin/config/refund",
-        },
-        {
-          id: "notification-settings",
-          label: "Cài đặt thông báo",
-          path: "/admin/config/notifications",
-        },
-        {
-          id: "security-settings",
-          label: "Cài đặt bảo mật",
-          path: "/admin/config/security",
-        },
-      ],
-    },
-    {
       id: "notifications",
       label: "Thông báo hàng loạt",
       icon: "bell",
       path: "/admin/notifications",
-      children: [
-        {
-          id: "send-notification",
-          label: "Gửi thông báo",
-          path: "/admin/notifications/send",
-        },
-        {
-          id: "notification-templates",
-          label: "Mẫu thông báo",
-          path: "/admin/notifications/templates",
-        },
-        {
-          id: "notification-history",
-          label: "Lịch sử thông báo",
-          path: "/admin/notifications/history",
-        },
-        {
-          id: "notification-analytics",
-          label: "Phân tích thông báo",
-          path: "/admin/notifications/analytics",
-        },
-      ],
     },
   ];
 

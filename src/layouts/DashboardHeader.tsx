@@ -30,7 +30,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const { isDark, toggleDarkMode } = useDarkMode();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } =
+    useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,6 +57,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       if (segment === "academics") label = "Công việc học thuật";
       if (segment === "chat") label = "Tin nhắn";
       if (segment === "finance") label = "Tài chính";
+      if (segment === "verification-approval") label = "Xác thực & Chất lượng";
+      if (segment === "posts" && pathSegments[i + 1] === "review") {
+        label = "Quản lý Bài Đăng";
+        // Skip next segment (review)
+        i++;
+      }
+      if (segment === "transactions") label = "Quản lý giao dịch";
 
       breadcrumbs.push({ label, path, isLast: i === pathSegments.length - 1 });
     }
@@ -241,11 +249,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                         notifications.map((notification) => (
                           <Link
                             key={notification.id}
-                            to={notification.actionUrl || notification.data?.actionUrl || "#"}
-                            className={`block p-4 hover:bg-gray-50 transition-colors border-l-4 ${notification.read
+                            to={
+                              notification.actionUrl ||
+                              notification.data?.actionUrl ||
+                              "#"
+                            }
+                            className={`block p-4 hover:bg-gray-50 transition-colors border-l-4 ${
+                              notification.read
                                 ? "border-transparent"
                                 : "border-primary bg-primary/5"
-                              }`}
+                            }`}
                             onClick={async () => {
                               if (!notification.read) {
                                 await markAsRead(notification.id);
@@ -257,10 +270,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                               {getNotificationIcon(notification.type)}
                               <div className="flex-1 min-w-0">
                                 <p
-                                  className={`text-sm font-medium ${notification.read
+                                  className={`text-sm font-medium ${
+                                    notification.read
                                       ? "text-gray-700"
                                       : "text-gray-900"
-                                    }`}
+                                  }`}
                                 >
                                   {notification.title}
                                 </p>
@@ -269,7 +283,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                                 </p>
                                 <p className="text-xs text-gray-400 mt-2">
                                   {formatNotificationTime(
-                                    notification.created_at || notification.timestamp.toISOString()
+                                    notification.created_at ||
+                                      notification.timestamp.toISOString()
                                   )}
                                 </p>
                               </div>

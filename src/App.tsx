@@ -47,13 +47,11 @@ import AISurveyResultsPage from "./pages/student/AISurveyResultsPage";
 
 import AdminDashboardLayout from "./layouts/AdminDashboardLayout";
 import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
-import UserManagementList from "./pages/admin/users/UserManagementList";
-import TutorApprovalPage from "./pages/admin/authentication/TutorApprovalPage";
+import UsersManagement from "./pages/admin/UsersManagement";
 import VerificationApprovalPage from "./pages/admin/authentication/VerificationApprovalPage";
-import VerificationHistoryPage from "./pages/admin/authentication/VerificationHistoryPage";
-import TransactionManagement from "./pages/admin/transactions/TransactionManagement";
+import TransactionsManagement from "./pages/admin/TransactionsManagement";
 import SessionReportsManagement from "./pages/admin/SessionReportsManagement";
-import SystemConfiguration from "./pages/admin/config/SystemConfiguration";
+import BulkNotifications from "./pages/admin/BulkNotifications";
 import ToastProvider from "./components/ToastProvider";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { useAuthStore } from "./store/auth.store";
@@ -422,98 +420,17 @@ function App() {
               <Route path="dashboard" element={<AdminDashboardOverview />} />
 
               {/* User Management */}
-              <Route path="users/list" element={<UserManagementList />} />
-              <Route path="users/students" element={<UserManagementList />} />
-              <Route path="users/tutors" element={<UserManagementList />} />
-              <Route path="users/blocked" element={<UserManagementList />} />
-              <Route path="users/reports" element={<UserManagementList />} />
+              <Route path="users" element={<UsersManagement />} />
               <Route path="posts/review" element={<AdminPostReviewPage />} />
 
               {/* Authentication & Quality */}
               <Route
-                path="authentication/tutor-approval"
-                element={<TutorApprovalPage />}
-              />
-              <Route
-                path="authentication/verification-approval"
+                path="verification-approval"
                 element={<VerificationApprovalPage />}
-              />
-              <Route
-                path="authentication/verification-history"
-                element={<VerificationHistoryPage />}
-              />
-              <Route
-                path="authentication/certificates"
-                element={<TutorApprovalPage />}
-              />
-              <Route
-                path="authentication/history"
-                element={<TutorApprovalPage />}
-              />
-              <Route
-                path="authentication/quality"
-                element={<TutorApprovalPage />}
-              />
-
-              {/* Operations Management */}
-              <Route
-                path="operations/sessions"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Session Management - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="operations/sessions/ongoing"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Ongoing Sessions - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="operations/sessions/history"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Session History - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="operations/analytics"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Session Analytics - Coming Soon
-                  </div>
-                }
               />
 
               {/* Transaction Management */}
-              <Route
-                path="transactions/overview"
-                element={<TransactionManagement />}
-              />
-              <Route
-                path="transactions/payments"
-                element={<TransactionManagement />}
-              />
-              <Route
-                path="transactions/withdrawals"
-                element={<TransactionManagement />}
-              />
-              <Route
-                path="transactions/refunds"
-                element={<TransactionManagement />}
-              />
-              <Route
-                path="transactions/commission"
-                element={<TransactionManagement />}
-              />
-              <Route
-                path="transactions/reports"
-                element={<TransactionManagement />}
-              />
+              <Route path="transactions" element={<TransactionsManagement />} />
 
               {/* Session Reports Management */}
               <Route
@@ -521,145 +438,8 @@ function App() {
                 element={<SessionReportsManagement />}
               />
 
-              {/* Reports & Analytics */}
-              <Route
-                path="reports/revenue"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Revenue Reports - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="reports/users"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    User Analytics - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="reports/sessions"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Session Statistics - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="reports/growth"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Growth Metrics - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="reports/performance"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Performance Dashboard - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="reports/custom"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Custom Reports - Coming Soon
-                  </div>
-                }
-              />
-
-              {/* Content Management */}
-              <Route
-                path="content/pages"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Static Pages Management - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="content/privacy"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Privacy Policy - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="content/terms"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Terms of Service - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="content/faq"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    FAQ Management - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="content/announcements"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    System Announcements - Coming Soon
-                  </div>
-                }
-              />
-
-              {/* System Configuration */}
-              <Route path="config/system" element={<SystemConfiguration />} />
-              <Route
-                path="config/commission"
-                element={<SystemConfiguration />}
-              />
-              <Route path="config/payment" element={<SystemConfiguration />} />
-              <Route path="config/refund" element={<SystemConfiguration />} />
-              <Route
-                path="config/notifications"
-                element={<SystemConfiguration />}
-              />
-              <Route path="config/security" element={<SystemConfiguration />} />
-
-              {/* Mass Notifications */}
-              <Route
-                path="notifications/send"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Send Mass Notifications - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="notifications/templates"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Notification Templates - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="notifications/history"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Notification History - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="notifications/analytics"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Notification Analytics - Coming Soon
-                  </div>
-                }
-              />
+              {/* Bulk Notifications */}
+              <Route path="notifications" element={<BulkNotifications />} />
             </Route>
 
             {/* Fallback route */}
