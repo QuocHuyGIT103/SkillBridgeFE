@@ -11,6 +11,7 @@ import {
   DocumentTextIcon,
   TrashIcon,
   ChatBubbleLeftRightIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { useClassStore } from "../../store/class.store";
 import { format } from "date-fns";
@@ -18,7 +19,10 @@ import { vi } from "date-fns/locale";
 import HomeworkModal from "../modals/HomeworkModal";
 import CancelSessionModal from "../modals/CancelSessionModal";
 import RespondCancelSessionModal from "../modals/RespondCancelSessionModal";
+import ReportSessionModal from "../modals/ReportSessionModal";
+import ViewReportsModal from "../modals/ViewReportsModal";
 import { attendanceService } from "../../services/attendance.service";
+import sessionReportService from "../../services/sessionReport.service";
 import type { WeeklySession } from "../../types/attendance";
 import toast from "react-hot-toast";
 import ClassResourcesSection from "./ClassResourcesSection";
@@ -46,6 +50,9 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
   const [sessionToCancel, setSessionToCancel] = useState<any>(null);
   const [respondingSession, setRespondingSession] = useState<any>(null);
   const [showRespondModal, setShowRespondModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [sessionToReport, setSessionToReport] = useState<any>(null);
+  const [showViewReportsModal, setShowViewReportsModal] = useState(false);
 
   useEffect(() => {
     fetchClassSchedule(classId);
@@ -263,6 +270,39 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
     navigate(`${messagesPath}?classId=${classId}`);
   };
 
+  const handleOpenReportModal = (session: any) => {
+    // Check if session can be reported (within 48 hours)
+    if (
+      !sessionReportService.canReportSession(
+        session.scheduledDate,
+        classData.sessionDuration
+      )
+    ) {
+      toast.error("Đã quá thời hạn 48 giờ để báo cáo buổi học này");
+      return;
+    }
+    setSessionToReport(session);
+    setShowReportModal(true);
+  };
+
+  const handleCloseReportModal = () => {
+    setShowReportModal(false);
+    setSessionToReport(null);
+  };
+
+  const handleReportSuccess = () => {
+    handleCloseReportModal();
+    fetchClassSchedule(classId);
+  };
+
+  const handleOpenViewReports = () => {
+    setShowViewReportsModal(true);
+  };
+
+  const handleCloseViewReports = () => {
+    setShowViewReportsModal(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -279,13 +319,22 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
           </div>
 
           {/* Contact Button */}
-          <button
-            onClick={handleContactChat}
-            className="inline-flex items-center gap-2 px-4 py-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
-          >
-            <ChatBubbleLeftRightIcon className="w-5 h-5" />
-            Liên hệ {userRole === "STUDENT" ? "gia sư" : "học viên"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenViewReports}
+              className="inline-flex items-center gap-2 px-4 py-2 cursor-pointer bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+            >
+              <ExclamationTriangleIcon className="w-5 h-5" />
+              Báo cáo của tôi
+            </button>
+            <button
+              onClick={handleContactChat}
+              className="inline-flex items-center gap-2 px-4 py-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+            >
+              <ChatBubbleLeftRightIcon className="w-5 h-5" />
+              Liên hệ {userRole === "STUDENT" ? "gia sư" : "học viên"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -546,6 +595,20 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                             )}
                           </button>
                         )}
+
+                        {/* Report Button - For sessions that have started and within 48h after end */}
+                        {sessionReportService.canReportSession(
+                          session.scheduledDate,
+                          session.duration
+                        ) && (
+                          <button
+                            onClick={() => handleOpenReportModal(session)}
+                            className="px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer flex items-center justify-center space-x-2"
+                          >
+                            <ExclamationTriangleIcon className="w-4 h-4" />
+                            <span>Báo cáo</span>
+                          </button>
+                        )}
                       </>
                     )}
 
@@ -702,6 +765,28 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
                 : "Học viên",
             reason: respondingSession.cancellationRequest.reason,
           }}
+        />
+      )}
+
+      {/* Report Session Modal */}
+      {showReportModal && sessionToReport && (
+        <ReportSessionModal
+          isOpen={showReportModal}
+          onClose={handleCloseReportModal}
+          onSuccess={handleReportSuccess}
+          classId={classId}
+          sessionNumber={sessionToReport.sessionNumber}
+          sessionDate={sessionToReport.scheduledDate}
+          sessionDuration={sessionToReport.duration}
+        />
+      )}
+
+      {/* View Reports Modal */}
+      {showViewReportsModal && (
+        <ViewReportsModal
+          isOpen={showViewReportsModal}
+          onClose={handleCloseViewReports}
+          classId={classId}
         />
       )}
     </div>

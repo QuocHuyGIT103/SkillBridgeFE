@@ -52,7 +52,7 @@ import TutorApprovalPage from "./pages/admin/authentication/TutorApprovalPage";
 import VerificationApprovalPage from "./pages/admin/authentication/VerificationApprovalPage";
 import VerificationHistoryPage from "./pages/admin/authentication/VerificationHistoryPage";
 import TransactionManagement from "./pages/admin/transactions/TransactionManagement";
-import ComplaintManagement from "./pages/admin/complaints/ComplaintManagement";
+import SessionReportsManagement from "./pages/admin/SessionReportsManagement";
 import SystemConfiguration from "./pages/admin/config/SystemConfiguration";
 import ToastProvider from "./components/ToastProvider";
 import { NotificationProvider } from "./contexts/NotificationContext";
@@ -515,26 +515,10 @@ function App() {
                 element={<TransactionManagement />}
               />
 
-              {/* Complaints Management */}
+              {/* Session Reports Management */}
               <Route
-                path="complaints/pending"
-                element={<ComplaintManagement />}
-              />
-              <Route
-                path="complaints/investigating"
-                element={<ComplaintManagement />}
-              />
-              <Route
-                path="complaints/resolved"
-                element={<ComplaintManagement />}
-              />
-              <Route
-                path="complaints/dismissed"
-                element={<ComplaintManagement />}
-              />
-              <Route
-                path="complaints/analytics"
-                element={<ComplaintManagement />}
+                path="session-reports"
+                element={<SessionReportsManagement />}
               />
 
               {/* Reports & Analytics */}

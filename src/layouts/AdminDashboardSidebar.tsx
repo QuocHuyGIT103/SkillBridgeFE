@@ -197,40 +197,10 @@ const AdminDashboardSidebar: React.FC<AdminDashboardSidebarProps> = ({
       ],
     },
     {
-      id: "complaints",
-      label: "Xử lý khiếu nại",
+      id: "session-reports",
+      label: "Xử lý báo cáo",
       icon: "exclamation",
-      path: "/admin/complaints",
-      badge: 15,
-      children: [
-        {
-          id: "complaints-pending",
-          label: "Khiếu nại chờ xử lý",
-          path: "/admin/complaints/pending",
-          badge: 15,
-        },
-        {
-          id: "complaints-investigating",
-          label: "Đang điều tra",
-          path: "/admin/complaints/investigating",
-          badge: 5,
-        },
-        {
-          id: "complaints-resolved",
-          label: "Đã xử lý",
-          path: "/admin/complaints/resolved",
-        },
-        {
-          id: "complaints-dismissed",
-          label: "Đã bác bỏ",
-          path: "/admin/complaints/dismissed",
-        },
-        {
-          id: "complaints-analytics",
-          label: "Phân tích khiếu nại",
-          path: "/admin/complaints/analytics",
-        },
-      ],
+      path: "/admin/session-reports",
     },
     {
       id: "reports",
