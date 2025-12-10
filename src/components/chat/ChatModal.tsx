@@ -24,7 +24,6 @@ const ChatModal: React.FC<ChatModalProps> = ({
   const [showConversationList, setShowConversationList] = useState(true);
 
   const {
-    getConversationByContactRequest,
     createConversation,
     fetchConversations,
     setSelectedConversation: setStoreSelectedConversation,

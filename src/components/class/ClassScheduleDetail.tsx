@@ -771,7 +771,6 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
       {/* Report Session Modal */}
       {showReportModal && sessionToReport && (
         <ReportSessionModal
-          isOpen={showReportModal}
           onClose={handleCloseReportModal}
           onSuccess={handleReportSuccess}
           classId={classId}
@@ -783,11 +782,7 @@ const ClassScheduleDetail: React.FC<ClassScheduleDetailProps> = ({
 
       {/* View Reports Modal */}
       {showViewReportsModal && (
-        <ViewReportsModal
-          isOpen={showViewReportsModal}
-          onClose={handleCloseViewReports}
-          classId={classId}
-        />
+        <ViewReportsModal onClose={handleCloseViewReports} classId={classId} />
       )}
     </div>
   );

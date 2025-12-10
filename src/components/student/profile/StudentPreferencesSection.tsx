@@ -1,33 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useForm, Controller } from 'react-hook-form';
-import { toast } from 'react-hot-toast';
-import { 
-  AcademicCapIcon, 
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useForm, Controller } from "react-hook-form";
+import { toast } from "react-hot-toast";
+import {
+  AcademicCapIcon,
   HeartIcon,
   ClockIcon,
   CurrencyDollarIcon,
   UserGroupIcon,
   PencilIcon,
   CheckIcon,
-  XCircleIcon
-} from '@heroicons/react/24/outline';
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
 
-import { useStudentProfileStore } from '../../../store/studentProfile.store';
-import { useSubjectStore } from '../../../store/subject.store';
-import { LEARNING_STYLE_OPTIONS } from '../../../types/student.types';
-import type { 
-  StudentPreferencesUpdate, 
+import { useStudentProfileStore } from "../../../store/studentProfile.store";
+import { useSubjectStore } from "../../../store/subject.store";
+import { LEARNING_STYLE_OPTIONS } from "../../../types/student.types";
+import type {
+  StudentPreferencesUpdate,
   StudentProfile,
-} from '../../../types/student.types';
-import RangeSlider from '../../RangeSlider';
+} from "../../../types/student.types";
+import RangeSlider from "../../RangeSlider";
 
 interface StudentPreferencesSectionProps {
   profile: StudentProfile | null;
 }
 
-const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({ 
-  profile 
+const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
+  profile,
 }) => {
   const { updatePreferences, isUpdatingPreferences } = useStudentProfileStore();
   const { activeSubjects, getActiveSubjects } = useSubjectStore();
@@ -39,23 +39,22 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
     handleSubmit,
     control,
     setValue,
-    watch,
     reset,
-    formState: { errors, isDirty },
+    formState: { isDirty },
   } = useForm<StudentPreferencesUpdate>({
     defaultValues: {
-      learning_goals: profile?.learning_goals || '',
+      learning_goals: profile?.learning_goals || "",
       preferred_subjects: profile?.preferred_subjects || [],
       learning_style: profile?.learning_style || undefined,
-      availability_schedule: profile?.availability_schedule || '',
+      availability_schedule: profile?.availability_schedule || "",
       budget_range: profile?.budget_range || { min: 0, max: 1000000 },
-      interests: profile?.interests || '',
-      special_needs: profile?.special_needs || '',
+      interests: profile?.interests || "",
+      special_needs: profile?.special_needs || "",
       parent_contact: profile?.parent_contact || {
-        name: '',
-        phone: '',
-        relationship: ''
-      }
+        name: "",
+        phone: "",
+        relationship: "",
+      },
     },
   });
 
@@ -68,14 +67,14 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
   useEffect(() => {
     if (profile) {
       const formData = {
-        learning_goals: profile.learning_goals || '',
+        learning_goals: profile.learning_goals || "",
         preferred_subjects: profile.preferred_subjects || [],
         learning_style: profile.learning_style,
-        availability_schedule: profile.availability_schedule || '',
+        availability_schedule: profile.availability_schedule || "",
         budget_range: profile.budget_range || { min: 0, max: 1000000 },
-        interests: profile.interests || '',
-        special_needs: profile.special_needs || '',
-        parent_contact: profile.parent_contact || {}
+        interests: profile.interests || "",
+        special_needs: profile.special_needs || "",
+        parent_contact: profile.parent_contact || {},
       };
 
       reset(formData);
@@ -84,7 +83,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
       if (profile.budget_range) {
         setBudgetRange([
           profile.budget_range.min || 0,
-          profile.budget_range.max || 1000000
+          profile.budget_range.max || 1000000,
         ]);
       }
     }
@@ -93,40 +92,42 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
   // ✅ Handle edit mode toggle
   const handleEditToggle = () => {
     if (isEditing && isDirty) {
-      const confirmDiscard = window.confirm('Bạn có thay đổi chưa được lưu. Bạn có muốn hủy bỏ các thay đổi?');
+      const confirmDiscard = window.confirm(
+        "Bạn có thay đổi chưa được lưu. Bạn có muốn hủy bỏ các thay đổi?"
+      );
       if (!confirmDiscard) return;
-      
+
       // Reset form to original values
       if (profile) {
         reset({
-          learning_goals: profile.learning_goals || '',
+          learning_goals: profile.learning_goals || "",
           preferred_subjects: profile.preferred_subjects || [],
           learning_style: profile.learning_style,
-          availability_schedule: profile.availability_schedule || '',
+          availability_schedule: profile.availability_schedule || "",
           budget_range: profile.budget_range || { min: 0, max: 1000000 },
-          interests: profile.interests || '',
-          special_needs: profile.special_needs || '',
-          parent_contact: profile.parent_contact || {}
+          interests: profile.interests || "",
+          special_needs: profile.special_needs || "",
+          parent_contact: profile.parent_contact || {},
         });
-        
+
         if (profile.budget_range) {
           setBudgetRange([
             profile.budget_range.min || 0,
-            profile.budget_range.max || 1000000
+            profile.budget_range.max || 1000000,
           ]);
         }
       }
     }
-    
+
     setIsEditing(!isEditing);
   };
 
   // Handle budget range change
   const handleBudgetRangeChange = (minValue: number, maxValue: number) => {
     setBudgetRange([minValue, maxValue]);
-    setValue('budget_range', {
+    setValue("budget_range", {
       min: minValue,
-      max: maxValue
+      max: maxValue,
     });
   };
 
@@ -134,43 +135,48 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
   const onSubmit = async (data: StudentPreferencesUpdate) => {
     try {
       await updatePreferences(data);
-      toast.success('Cập nhật sở thích học tập thành công!');
+      toast.success("Cập nhật sở thích học tập thành công!");
       setIsEditing(false); // ✅ Exit edit mode after successful save
     } catch (error: any) {
-      toast.error(error.message || 'Cập nhật sở thích thất bại');
+      toast.error(error.message || "Cập nhật sở thích thất bại");
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
   // ✅ Format display values
   const formatLearningStyle = () => {
-    const style = LEARNING_STYLE_OPTIONS.find(opt => opt.value === profile?.learning_style);
-    return style ? style.label : 'Chưa cập nhật';
+    const style = LEARNING_STYLE_OPTIONS.find(
+      (opt) => opt.value === profile?.learning_style
+    );
+    return style ? style.label : "Chưa cập nhật";
   };
 
   const formatPreferredSubjects = () => {
-    if (!profile?.preferred_subjects || profile.preferred_subjects.length === 0) {
-      return 'Chưa cập nhật';
+    if (
+      !profile?.preferred_subjects ||
+      profile.preferred_subjects.length === 0
+    ) {
+      return "Chưa cập nhật";
     }
-    
-    const selectedSubjects = activeSubjects.filter(subject => 
+
+    const selectedSubjects = activeSubjects.filter((subject) =>
       profile.preferred_subjects?.includes(subject._id)
     );
-    
-    return selectedSubjects.length > 0 
-      ? selectedSubjects.map(s => s.name).join(', ')
-      : 'Chưa cập nhật';
+
+    return selectedSubjects.length > 0
+      ? selectedSubjects.map((s) => s.name).join(", ")
+      : "Chưa cập nhật";
   };
 
   const formatBudgetRange = () => {
-    if (!profile?.budget_range) return 'Chưa cập nhật';
-    
+    if (!profile?.budget_range) return "Chưa cập nhật";
+
     const { min = 0, max = 1000000 } = profile.budget_range;
     return `${formatCurrency(min)} - ${formatCurrency(max)}`;
   };
@@ -189,7 +195,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
             Sở thích học tập
           </h2>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {isEditing ? (
             <button
@@ -223,7 +229,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               Mục tiêu học tập
             </label>
             <textarea
-              {...register('learning_goals')}
+              {...register("learning_goals")}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Ví dụ: Tôi muốn cải thiện kỹ năng toán học để chuẩn bị cho kỳ thi đại học..."
@@ -254,12 +260,16 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
                           if (e.target.checked) {
                             field.onChange([...currentValue, subject._id]);
                           } else {
-                            field.onChange(currentValue.filter(id => id !== subject._id));
+                            field.onChange(
+                              currentValue.filter((id) => id !== subject._id)
+                            );
                           }
                         }}
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
-                      <span className="text-sm text-gray-700">{subject.name}</span>
+                      <span className="text-sm text-gray-700">
+                        {subject.name}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -279,14 +289,18 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
                   className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors"
                 >
                   <input
-                    {...register('learning_style')}
+                    {...register("learning_style")}
                     type="radio"
                     value={option.value}
                     className="mt-1 w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
                   <div>
-                    <div className="font-medium text-gray-900">{option.label}</div>
-                    <div className="text-sm text-gray-500">{option.description}</div>
+                    <div className="font-medium text-gray-900">
+                      {option.label}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {option.description}
+                    </div>
                   </div>
                 </label>
               ))}
@@ -300,7 +314,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               Lịch học phù hợp
             </label>
             <textarea
-              {...register('availability_schedule')}
+              {...register("availability_schedule")}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Ví dụ: Thứ 2, 4, 6 từ 19:00 - 21:00. Cuối tuần từ 8:00 - 12:00..."
@@ -335,7 +349,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               Sở thích và hoạt động ngoại khóa
             </label>
             <textarea
-              {...register('interests')}
+              {...register("interests")}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Ví dụ: Thích đọc sách, chơi thể thao, học piano..."
@@ -348,7 +362,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               Nhu cầu đặc biệt
             </label>
             <textarea
-              {...register('special_needs')}
+              {...register("special_needs")}
               rows={2}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Nếu có nhu cầu học tập đặc biệt, vui lòng mô tả..."
@@ -361,14 +375,14 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               <UserGroupIcon className="w-5 h-5 mr-2" />
               Thông tin phụ huynh
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Họ và tên
                 </label>
                 <input
-                  {...register('parent_contact.name')}
+                  {...register("parent_contact.name")}
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Tên phụ huynh"
@@ -380,7 +394,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
                   Số điện thoại
                 </label>
                 <input
-                  {...register('parent_contact.phone')}
+                  {...register("parent_contact.phone")}
                   type="tel"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="0123456789"
@@ -392,7 +406,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
                   Mối quan hệ
                 </label>
                 <select
-                  {...register('parent_contact.relationship')}
+                  {...register("parent_contact.relationship")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Chọn mối quan hệ</option>
@@ -420,7 +434,9 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <CheckIcon className="w-5 h-5" />
-              <span>{isUpdatingPreferences ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
+              <span>
+                {isUpdatingPreferences ? "Đang lưu..." : "Lưu thay đổi"}
+              </span>
             </button>
           </div>
         </form>
@@ -434,7 +450,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               Mục tiêu học tập
             </label>
             <div className="px-3 py-2 bg-gray-50 rounded-lg text-gray-900 min-h-[80px]">
-              {profile?.learning_goals || 'Chưa cập nhật'}
+              {profile?.learning_goals || "Chưa cập nhật"}
             </div>
           </div>
 
@@ -465,7 +481,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               Lịch học phù hợp
             </label>
             <div className="px-3 py-2 bg-gray-50 rounded-lg text-gray-900 min-h-[80px]">
-              {profile?.availability_schedule || 'Chưa cập nhật'}
+              {profile?.availability_schedule || "Chưa cập nhật"}
             </div>
           </div>
 
@@ -486,7 +502,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               Sở thích và hoạt động ngoại khóa
             </label>
             <div className="px-3 py-2 bg-gray-50 rounded-lg text-gray-900 min-h-[80px]">
-              {profile?.interests || 'Chưa cập nhật'}
+              {profile?.interests || "Chưa cập nhật"}
             </div>
           </div>
 
@@ -496,7 +512,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               Nhu cầu đặc biệt
             </label>
             <div className="px-3 py-2 bg-gray-50 rounded-lg text-gray-900">
-              {profile?.special_needs || 'Chưa cập nhật'}
+              {profile?.special_needs || "Chưa cập nhật"}
             </div>
           </div>
 
@@ -506,14 +522,14 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
               <UserGroupIcon className="w-5 h-5 mr-2" />
               Thông tin phụ huynh
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Họ và tên
                 </label>
                 <div className="px-3 py-2 bg-gray-50 rounded-lg text-gray-900">
-                  {profile?.parent_contact?.name || 'Chưa cập nhật'}
+                  {profile?.parent_contact?.name || "Chưa cập nhật"}
                 </div>
               </div>
 
@@ -522,7 +538,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
                   Số điện thoại
                 </label>
                 <div className="px-3 py-2 bg-gray-50 rounded-lg text-gray-900">
-                  {profile?.parent_contact?.phone || 'Chưa cập nhật'}
+                  {profile?.parent_contact?.phone || "Chưa cập nhật"}
                 </div>
               </div>
 
@@ -531,7 +547,7 @@ const StudentPreferencesSection: React.FC<StudentPreferencesSectionProps> = ({
                   Mối quan hệ
                 </label>
                 <div className="px-3 py-2 bg-gray-50 rounded-lg text-gray-900">
-                  {profile?.parent_contact?.relationship || 'Chưa cập nhật'}
+                  {profile?.parent_contact?.relationship || "Chưa cập nhật"}
                 </div>
               </div>
             </div>

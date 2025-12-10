@@ -25,11 +25,7 @@ interface UserDetailModalProps {
   onRefresh: () => void;
 }
 
-const UserDetailModal: React.FC<UserDetailModalProps> = ({
-  user,
-  onClose,
-  onRefresh,
-}) => {
+const UserDetailModal: React.FC<UserDetailModalProps> = ({ user, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [detailedUser, setDetailedUser] = useState<UserDetailedInfo | null>(
     null
