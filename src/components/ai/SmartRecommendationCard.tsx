@@ -24,18 +24,20 @@ import toast from 'react-hot-toast';
 
 interface SmartRecommendationCardProps {
   recommendation: SmartRecommendation;
-  rank?: number;
+  matchPercentage?: number; // Match percentage to display instead of rank
   onClick?: () => void;
   isTopMatch?: boolean; // Indicates if this is the card with the highest match score
   postId?: string; // Student post ID for contact request
+  hideExplanation?: boolean; // Hide "Lý do AI gợi ý" section
 }
 
 const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
   recommendation,
-  rank,
+  matchPercentage,
   onClick,
   isTopMatch = false,
   postId,
+  hideExplanation = false,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -87,6 +89,13 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
       return;
     }
     
+    // Check if user is authenticated before making request
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      toast.error('Vui lòng đăng nhập lại để sử dụng tính năng này');
+      return;
+    }
+    
     setIsLoadingExplanation(true);
     setIsExplanationExpanded(true);
     
@@ -95,7 +104,20 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
       setOnDemandExplanation(response.data.explanation);
     } catch (error: any) {
       console.error('Failed to fetch explanation:', error);
-      toast.error(error.response?.data?.message || 'Không thể tạo giải thích AI');
+      
+      // Handle different error types
+      let errorMessage = 'Không thể tạo giải thích AI';
+      if (error.status === 401) {
+        errorMessage = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
+      } else if (error.status === 403) {
+        errorMessage = 'Bạn không có quyền xem thông tin này';
+      } else if (error.status === 404) {
+        errorMessage = 'Không tìm thấy thông tin gia sư';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
       setIsExplanationExpanded(false);
     } finally {
       setIsLoadingExplanation(false);
@@ -216,18 +238,19 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
                    : 'border-gray-200 hover:border-blue-400 hover:shadow-xl'
                  }`}
     >
-      {/* Rank Badge (if provided) */}
-      {rank && rank <= 3 && (
+      {/* Match Percentage Badge */}
+      {matchPercentage !== undefined && (
         <div className="absolute top-3 left-3 z-10">
           <div
             className={`
-            flex items-center justify-center w-8 h-8 rounded-full font-bold text-white text-sm shadow-lg
-            ${rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : ''}
-            ${rank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500' : ''}
-            ${rank === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : ''}
+            flex items-center justify-center px-2.5 py-1 rounded-full font-bold text-xs shadow-lg
+            ${matchPercentage >= 80 ? 'bg-gradient-to-br from-green-400 to-green-600 text-white' : ''}
+            ${matchPercentage >= 60 && matchPercentage < 80 ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white' : ''}
+            ${matchPercentage >= 40 && matchPercentage < 60 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white' : ''}
+            ${matchPercentage < 40 ? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white' : ''}
           `}
           >
-            {rank}
+            {matchPercentage}% phù hợp
           </div>
         </div>
       )}
@@ -237,7 +260,7 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500" />
       )}
 
-      <div className="p-4 pt-12 flex flex-col flex-grow">
+      <div className={`p-4 flex flex-col flex-grow ${matchPercentage !== undefined ? 'pt-12' : 'pt-4'}`}>
         {/* Tutor Info - Compact */}
         <div className="flex items-start space-x-3 mb-3">
           <div className="relative">
@@ -290,57 +313,59 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
           </div>
         </div>
 
-        {/* AI Explanation - On-Demand Toggle Button */}
-        <div className="mb-3 min-h-[32px]">
-          <button
-            type="button"
-            onClick={handleToggleExplanation}
-            className={`w-full flex items-center justify-between p-2 rounded-lg border transition-all ${
-              isTopMatch
-                ? 'bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 border-purple-200 hover:border-purple-300'
-                : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100 hover:border-purple-200'
-            }`}
-          >
-            <div className="flex items-center gap-1.5">
-              <SparklesIcon className="w-4 h-4 text-purple-600" />
-              <span className="text-xs font-semibold text-purple-900">
-                {isLoadingExplanation ? 'AI đang phân tích...' : 'Lý do AI gợi ý'}
-              </span>
-            </div>
-            {isLoadingExplanation ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent" />
-            ) : isExplanationExpanded ? (
-              <ChevronUpIcon className="w-4 h-4 text-purple-600" />
-            ) : (
-              <ChevronDownIcon className="w-4 h-4 text-purple-600" />
-            )}
-          </button>
-          
-          {/* Collapsible Explanation Content with reserved space */}
-          <div className={isExplanationExpanded && (explanation || onDemandExplanation) ? '' : 'h-0'}>
-            <AnimatePresence>
-              {isExplanationExpanded && (explanation || onDemandExplanation) && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className={`mt-2 p-2.5 rounded-lg border ${
-                    isTopMatch
-                      ? 'bg-white/50 border-purple-200'
-                      : 'bg-white/50 border-purple-100'
-                  }`}>
-                    <p className="text-xs leading-relaxed text-purple-700">
-                      {explanation || onDemandExplanation}
-                    </p>
-                  </div>
-                </motion.div>
+        {/* AI Explanation - On-Demand Toggle Button (hidden when hideExplanation is true) */}
+        {!hideExplanation && (
+          <div className="mb-3 min-h-[32px]">
+            <button
+              type="button"
+              onClick={handleToggleExplanation}
+              className={`w-full flex items-center justify-between p-2 rounded-lg border transition-all ${
+                isTopMatch
+                  ? 'bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 border-purple-200 hover:border-purple-300'
+                  : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100 hover:border-purple-200'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <SparklesIcon className="w-4 h-4 text-purple-600" />
+                <span className="text-xs font-semibold text-purple-900">
+                  {isLoadingExplanation ? 'AI đang phân tích...' : 'Lý do AI gợi ý'}
+                </span>
+              </div>
+              {isLoadingExplanation ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent" />
+              ) : isExplanationExpanded ? (
+                <ChevronUpIcon className="w-4 h-4 text-purple-600" />
+              ) : (
+                <ChevronDownIcon className="w-4 h-4 text-purple-600" />
               )}
-            </AnimatePresence>
+            </button>
+            
+            {/* Collapsible Explanation Content with reserved space */}
+            <div className={isExplanationExpanded && (explanation || onDemandExplanation) ? '' : 'h-0'}>
+              <AnimatePresence>
+                {isExplanationExpanded && (explanation || onDemandExplanation) && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className={`mt-2 p-2.5 rounded-lg border ${
+                      isTopMatch
+                        ? 'bg-white/50 border-purple-200'
+                        : 'bg-white/50 border-purple-100'
+                    }`}>
+                      <p className="text-xs leading-relaxed text-purple-700">
+                        {explanation || onDemandExplanation}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Tutor Post Info - Compact with highlighted important fields */}
         <div className="space-y-2.5 mb-3 flex-grow">

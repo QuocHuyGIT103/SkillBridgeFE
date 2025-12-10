@@ -1,7 +1,8 @@
 import axiosClient from '../api/axiosClient';
 
 export interface ExerciseTemplate {
-  id: string;
+  _id: string;
+  id?: string; // alias for _id
   ownerId: string;
   subjectId: string;
   title: string;
@@ -18,6 +19,8 @@ export interface ExerciseTemplate {
   };
   isPublic: boolean;
   usageCount: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ExerciseTemplateFilters {

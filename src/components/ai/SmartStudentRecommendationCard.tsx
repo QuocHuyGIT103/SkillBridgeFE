@@ -55,8 +55,8 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
       return;
     }
     
-    // If auto-generated explanation exists, show it
-    if (explanation) {
+    // If auto-generated explanation exists and not empty, show it
+    if (explanation && explanation.trim().length > 0) {
       setIsExplanationExpanded(true);
       return;
     }
@@ -67,25 +67,51 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
       return;
     }
     
-    // Fetch from API
+    // Fetch from API (on-demand AI explanation)
     if (!tutorPostId || !recommendation.postId) {
       toast.error('Thiếu thông tin bài đăng');
       return;
     }
+
+    // Check if user is authenticated before making request
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      toast.error('Vui lòng đăng nhập lại để sử dụng tính năng này');
+      return;
+    }
+    
+    console.log('🔍 [SmartStudentRecommendationCard] Fetching AI explanation...');
+    console.log('🔍 [SmartStudentRecommendationCard] tutorPostId:', tutorPostId);
+    console.log('🔍 [SmartStudentRecommendationCard] studentPostId:', recommendation.postId);
     
     setIsLoadingExplanation(true);
     setIsExplanationExpanded(true);
     
     try {
-      const response = await AIService.generateMatchExplanation(
+      // Use the new on-demand API endpoint for tutors
+      console.log('🔍 [SmartStudentRecommendationCard] Calling AIService.getOnDemandStudentExplanation...');
+      const response = await AIService.getOnDemandStudentExplanation(
         tutorPostId,
-        recommendation.postId,
-        matchScore / 100
+        recommendation.postId
       );
+      console.log('✅ [SmartStudentRecommendationCard] API Response:', response);
       setOnDemandExplanation(response.data.explanation);
     } catch (error: any) {
       console.error('Failed to fetch explanation:', error);
-      toast.error(error.response?.data?.message || 'Không thể tạo giải thích AI');
+      
+      // Handle different error types
+      let errorMessage = 'Không thể tạo giải thích AI';
+      if (error.status === 401) {
+        errorMessage = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
+      } else if (error.status === 403) {
+        errorMessage = 'Bạn không có quyền xem thông tin này';
+      } else if (error.status === 404) {
+        errorMessage = 'Không tìm thấy thông tin bài đăng';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
       setIsExplanationExpanded(false);
     } finally {
       setIsLoadingExplanation(false);

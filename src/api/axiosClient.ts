@@ -13,7 +13,7 @@ class AxiosClient {
       headers: {
         "Content-Type": "application/json",
       },
-      timeout: 10000,
+      timeout: 30000, // Increased timeout for AI requests (30 seconds)
     });
 
     this.setupInterceptors();
@@ -27,6 +27,10 @@ class AxiosClient {
         const token = localStorage.getItem("token") || localStorage.getItem("access_token");
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+        }
+        // Debug logging for auth issues
+        if (config.url?.includes('/ai/') && !token) {
+          console.warn('[AxiosClient] No token found for AI request:', config.url);
         }
         return config;
       },
@@ -47,6 +51,12 @@ class AxiosClient {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
           const errorData = error.response.data as any;
+          
+          // Handle 401 specifically for better UX
+          if (error.response.status === 401) {
+            console.warn('[AxiosClient] 401 Unauthorized:', error.config?.url);
+          }
+          
           return Promise.reject({
             success: false,
             message: errorData.message || errorData.error || "Đã xảy ra lỗi",
@@ -55,6 +65,7 @@ class AxiosClient {
           });
         } else if (error.request) {
           // The request was made but no response was received
+          console.error('[AxiosClient] No response received:', error.config?.url, error.message);
           return Promise.reject({
             success: false,
             message: "Không thể kết nối đến máy chủ",

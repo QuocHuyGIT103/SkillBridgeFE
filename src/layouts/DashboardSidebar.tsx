@@ -131,11 +131,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           label: "Kho bài tập",
           path: "/tutor/exercise-bank",
         },
-        {
-          id: "academics-assessments",
-          label: "Đánh giá & Chấm điểm",
-          path: "/tutor/academics/assessments",
-        },
       ],
     },
     {
