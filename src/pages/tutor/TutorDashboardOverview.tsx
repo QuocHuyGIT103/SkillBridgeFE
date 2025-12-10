@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import {
   UserGroupIcon,
   CalendarIcon,
@@ -11,17 +12,19 @@ import {
   ArrowTrendingUpIcon,
   BookOpenIcon,
   VideoCameraIcon,
-  DocumentTextIcon,
   BellAlertIcon,
+  PlusCircleIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import {
-  UserGroupIcon as UserGroupSolidIcon,
   CalendarIcon as CalendarSolidIcon,
   CurrencyDollarIcon as CurrencySolidIcon,
   StarIcon as StarSolidIcon,
 } from "@heroicons/react/24/solid";
 import { useTutorProfileStore } from "../../store/tutorProfile.store";
 import TutorProfileStatusCard from "../../components/tutor/TutorProfileStatusCard";
+import TutorDashboardService from "../../services/tutor/tutorDashboard.service";
+import TutorFinanceService from "../../services/tutor/tutorFinance.service";
 import type {
   DashboardStats,
   RecentActivity,
@@ -33,117 +36,107 @@ const TutorDashboardOverview: React.FC = () => {
   const { profileStatusData, profileData, checkOperationStatus, fetchProfile } =
     useTutorProfileStore();
 
-  // Load profile and status data on mount (guard against double-invoke in StrictMode)
-  const didRunRef = useRef(false);
+  // Dashboard data state
+  const [loading, setLoading] = useState(true);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [stats, setStats] = useState<DashboardStats>({
+    total_students: 0,
+    active_lessons: 0,
+    completed_lessons: 0,
+    total_earnings: 0,
+    pending_payments: 0,
+    avg_rating: 0,
+    upcoming_sessions: 0,
+    new_messages: 0,
+  });
+  const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>(
+    []
+  );
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
+    []
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  // Load profile and dashboard data on mount (guard against double-invoke in StrictMode)
+  const fetchedRef = useRef(false);
   useEffect(() => {
-    if (didRunRef.current) return;
-    didRunRef.current = true;
+    // Prevent duplicate API calls (especially in React StrictMode)
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    // Load profile status
     checkOperationStatus();
     fetchProfile();
+
+    // Load dashboard data
+    loadDashboardData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps - run only once on mount
 
-  // Removed duplicate effect to avoid re-calling checkOperationStatus
+  const loadDashboardData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [dashboardResponse, financeStats] = await Promise.all([
+        TutorDashboardService.getDashboardOverview(),
+        TutorFinanceService.calculateEarningsStats(),
+      ]);
 
-  // Mock data - replace with actual API calls
-  const stats: DashboardStats = {
-    total_students: 24,
-    active_lessons: 8,
-    completed_lessons: 156,
-    total_earnings: 3450.75,
-    pending_payments: 245.5,
-    avg_rating: 4.8,
-    upcoming_sessions: 5,
-    new_messages: 12,
+      // Use finance stats for accurate earnings calculation (80/20 split)
+      setStats({
+        ...dashboardResponse.stats,
+        total_earnings: financeStats.totalEarnings,
+        pending_payments: financeStats.pendingEarnings,
+      });
+      setUpcomingSessions(dashboardResponse.upcomingSessions);
+      // Load recent activities in background after main data loads
+      loadRecentActivities();
+    } catch (error: any) {
+      console.error("Error loading dashboard data:", error);
+      setError(error.message || "Đã xảy ra lỗi khi tải dữ liệu");
+      toast.error(error.message || "Đã xảy ra lỗi khi tải dữ liệu");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const recentActivities: RecentActivity[] = [
-    {
-      id: "1",
-      type: "lesson_completed",
-      title: "Bài học hoàn thành",
-      description: "Bài học Toán với Sarah Johnson - Cơ bản về Đại số",
-      timestamp: "2025-01-15T14:30:00Z",
-      student_name: "Sarah Johnson",
-    },
-    {
-      id: "2",
-      type: "payment_received",
-      title: "Đã nhận thanh toán",
-      description: "Thanh toán cho buổi học Hóa học",
-      timestamp: "2025-01-15T13:15:00Z",
-      amount: 45,
-    },
-    {
-      id: "3",
-      type: "new_student",
-      title: "Học sinh mới đăng ký",
-      description: "Mike Chen đã tham gia lớp Vật lý của bạn",
-      timestamp: "2025-01-15T11:45:00Z",
-      student_name: "Mike Chen",
-    },
-    {
-      id: "4",
-      type: "lesson_scheduled",
-      title: "Bài học đã lên lịch",
-      description: "Bài học Sinh học đã được lên lịch cho ngày mai",
-      timestamp: "2025-01-15T10:20:00Z",
-      student_name: "Emma Davis",
-    },
-  ];
-
-  const upcomingSessions: UpcomingSession[] = [
-    {
-      id: "1",
-      student_name: "Sarah Johnson",
-      subject: "Toán học",
-      scheduled_at: "2025-01-16T15:00:00Z",
-      duration_minutes: 60,
-      status: "confirmed",
-      meeting_link: "https://meet.example.com/abc123",
-    },
-    {
-      id: "2",
-      student_name: "Mike Chen",
-      subject: "Vật lý",
-      scheduled_at: "2025-01-16T16:30:00Z",
-      duration_minutes: 90,
-      status: "confirmed",
-    },
-    {
-      id: "3",
-      student_name: "Emma Davis",
-      subject: "Sinh học",
-      scheduled_at: "2025-01-17T14:00:00Z",
-      duration_minutes: 60,
-      status: "pending",
-    },
-  ];
+  const loadRecentActivities = async () => {
+    setLoadingActivities(true);
+    try {
+      const activities = await TutorDashboardService.getRecentActivitiesOnly();
+      setRecentActivities(activities);
+    } catch (error: any) {
+      console.error("Error loading recent activities:", error);
+      // Silent fail - activities are not critical
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
 
   const quickActions = [
     {
       id: "schedule-lesson",
-      title: "Lên lịch bài học mới",
-      description: "Đặt lịch học mới với học sinh của bạn",
+      title: "Xem lịch giảng dạy",
+      description: "Quản lý các buổi học của bạn",
       icon: CalendarIcon,
       color: "primary",
-      href: "/tutor/schedule/lessons",
+      href: "/tutor/schedule",
     },
     {
-      id: "manage-students",
-      title: "Quản lý học sinh",
-      description: "Xem và quản lý danh sách học sinh",
-      icon: UserGroupIcon,
+      id: "create-post",
+      title: "Tạo bài đăng",
+      description: "Đăng tin tuyển học viên mới",
+      icon: PlusCircleIcon,
       color: "secondary",
-      href: "/tutor/academics/students",
+      href: "/tutor/posts/create",
     },
     {
-      id: "create-material",
-      title: "Tải lên tài liệu",
-      description: "Chia sẻ tài liệu học tập",
-      icon: DocumentTextIcon,
+      id: "find-students",
+      title: "Tìm học viên",
+      description: "Xem các yêu cầu học từ học viên",
+      icon: MagnifyingGlassIcon,
       color: "accent",
-      href: "/tutor/academics/materials",
+      href: "/tutor/posts/student",
     },
     {
       id: "view-earnings",
@@ -151,7 +144,7 @@ const TutorDashboardOverview: React.FC = () => {
       description: "Kiểm tra tổng quan tài chính",
       icon: CurrencyDollarIcon,
       color: "primary",
-      href: "/tutor/finance/earnings",
+      href: "/tutor/finance",
     },
   ];
 
@@ -210,7 +203,7 @@ const TutorDashboardOverview: React.FC = () => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
-    }).format(amount * 25000); // Convert USD to VND approximately
+    }).format(amount);
   };
 
   const containerVariants = {
@@ -247,10 +240,17 @@ const TutorDashboardOverview: React.FC = () => {
         <h1 className="text-2xl md:text-3xl font-bold mb-2 text-white/80">
           Chào mừng bạn trở lại! 👋
         </h1>
-        <p className="text-white/80 text-lg">
-          Bạn có {stats.upcoming_sessions} buổi học sắp tới hôm nay và{" "}
-          {stats.new_messages} tin nhắn mới.
-        </p>
+        {loading ? (
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            <p className="text-white/80 text-lg">Đang tải dữ liệu...</p>
+          </div>
+        ) : (
+          <p className="text-white/80 text-lg">
+            Bạn có {stats.upcoming_sessions} buổi học sắp tới và{" "}
+            {stats.new_messages} tin nhắn mới.
+          </p>
+        )}
       </motion.div>
 
       {/* TutorProfile Status */}
@@ -273,28 +273,8 @@ const TutorDashboardOverview: React.FC = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
-        <motion.div
-          variants={itemVariants}
-          className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Tổng số học sinh
-              </p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {stats.total_students}
-              </p>
-              <p className="text-sm text-green-600 mt-2">+3 tháng này</p>
-            </div>
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <UserGroupSolidIcon className="w-6 h-6 text-primary" />
-            </div>
-          </div>
-        </motion.div>
-
         <motion.div
           variants={itemVariants}
           className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300"
@@ -304,9 +284,13 @@ const TutorDashboardOverview: React.FC = () => {
               <p className="text-sm font-medium text-gray-600">
                 Bài học đang diễn ra
               </p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {stats.active_lessons}
-              </p>
+              {loading ? (
+                <div className="animate-pulse bg-gray-200 h-8 w-16 rounded mt-1"></div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  {stats.active_lessons}
+                </p>
+              )}
               <p className="text-sm text-blue-600 mt-2">
                 {stats.upcoming_sessions} sắp tới
               </p>
@@ -324,10 +308,13 @@ const TutorDashboardOverview: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Tổng thu nhập</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {formatCurrency(stats.total_earnings)}
-              </p>
-              <p className="text-sm text-green-600 mt-2">+12% tháng này</p>
+              {loading ? (
+                <div className="animate-pulse bg-gray-200 h-8 w-24 rounded mt-1"></div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  {formatCurrency(stats.total_earnings)}
+                </p>
+              )}
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <CurrencySolidIcon className="w-6 h-6 text-green-600" />
@@ -344,24 +331,34 @@ const TutorDashboardOverview: React.FC = () => {
               <p className="text-sm font-medium text-gray-600">
                 Điểm đánh giá trung bình
               </p>
-              <div className="flex items-center mt-1">
-                <p className="text-2xl font-bold text-gray-900">
-                  {stats.avg_rating}
-                </p>
-                <div className="flex ml-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <StarSolidIcon
-                      key={star}
-                      className={`w-4 h-4 ${
-                        star <= Math.floor(stats.avg_rating)
-                          ? "text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
+              {loading ? (
+                <div className="animate-pulse bg-gray-200 h-8 w-20 rounded mt-1"></div>
+              ) : (
+                <div className="flex items-center mt-1">
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.avg_rating > 0 ? stats.avg_rating.toFixed(1) : "--"}
+                  </p>
+                  {stats.avg_rating > 0 && (
+                    <div className="flex ml-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <StarSolidIcon
+                          key={star}
+                          className={`w-4 h-4 ${
+                            star <= Math.floor(stats.avg_rating)
+                              ? "text-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-              <p className="text-sm text-gray-500 mt-2">Dựa trên 48 đánh giá</p>
+              )}
+              <p className="text-sm text-gray-400 mt-2">
+                {stats.avg_rating > 0
+                  ? "Từ học sinh của bạn"
+                  : "Chưa có đánh giá"}
+              </p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-lg">
               <StarSolidIcon className="w-6 h-6 text-yellow-500" />
@@ -428,45 +425,67 @@ const TutorDashboardOverview: React.FC = () => {
             </Link>
           </div>
           <div className="space-y-4">
-            {upcomingSessions.map((session) => {
-              const timeInfo = formatSessionTime(session.scheduled_at);
-              return (
-                <div
-                  key={session.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <AcademicCapIcon className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {session.student_name}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {session.subject} • {session.duration_minutes} phút
-                      </p>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">
-                      {timeInfo.time}
-                    </p>
-                    <p className="text-xs text-gray-500">{timeInfo.date}</p>
-                    {session.status === "confirmed" && (
-                      <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
-                        Đã xác nhận
-                      </span>
-                    )}
-                    {session.status === "pending" && (
-                      <span className="inline-block mt-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
-                        Đang chờ
-                      </span>
-                    )}
+                ))}
+              </div>
+            ) : upcomingSessions.length === 0 ? (
+              <div className="text-center py-8">
+                <CalendarIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Không có buổi học sắp tới</p>
+              </div>
+            ) : (
+              upcomingSessions.map((session) => {
+                const timeInfo = formatSessionTime(session.scheduled_at);
+                return (
+                  <div
+                    key={session.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <AcademicCapIcon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {session.student_name}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {session.subject} • {session.duration_minutes} phút
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">
+                        {timeInfo.time}
+                      </p>
+                      <p className="text-xs text-gray-500">{timeInfo.date}</p>
+                      {session.status === "confirmed" && (
+                        <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                          Đã xác nhận
+                        </span>
+                      )}
+                      {session.status === "pending" && (
+                        <span className="inline-block mt-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
+                          Đang chờ
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </motion.div>
 
@@ -489,39 +508,64 @@ const TutorDashboardOverview: React.FC = () => {
             </Link>
           </div>
           <div className="space-y-4">
-            {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-start space-x-3">
-                <div
-                  className={`p-2 rounded-lg ${getActivityColor(
-                    activity.type
-                  )}`}
-                >
-                  {getActivityIcon(activity.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">
-                    {activity.title}
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {activity.description}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(activity.timestamp).toLocaleTimeString("vi-VN", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: false,
-                    })}
-                  </p>
-                </div>
-                {activity.amount && (
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-green-600">
-                      +{formatCurrency(activity.amount)}
+            {loadingActivities ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse flex items-start space-x-3"
+                  >
+                    <div className="w-9 h-9 bg-gray-200 rounded-lg"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : recentActivities.length === 0 ? (
+              <div className="text-center py-8">
+                <BellAlertIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Chưa có hoạt động gần đây</p>
+              </div>
+            ) : (
+              recentActivities.map((activity) => (
+                <div key={activity.id} className="flex items-start space-x-3">
+                  <div
+                    className={`p-2 rounded-lg ${getActivityColor(
+                      activity.type
+                    )}`}
+                  >
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900">
+                      {activity.title}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {activity.description}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(activity.timestamp).toLocaleTimeString(
+                        "vi-VN",
+                        {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: false,
+                        }
+                      )}
                     </p>
                   </div>
-                )}
-              </div>
-            ))}
+                  {activity.amount && (
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-green-600">
+                        +{formatCurrency(activity.amount)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </motion.div>
       </div>

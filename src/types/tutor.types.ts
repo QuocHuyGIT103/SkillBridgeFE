@@ -226,3 +226,82 @@ export interface AvailabilitySlot {
   end_time: string; // HH:mm format
   is_available: boolean;
 }
+
+// Finance Management Types
+export interface PaymentInstallment {
+  _id?: string;
+  installment_number: number;
+  amount: number;
+  due_date: string;
+  status: "PENDING" | "PAID" | "OVERDUE" | "CANCELLED";
+  paid_at?: string;
+  payment_id?: string;
+}
+
+export interface TutorPaymentSchedule {
+  _id: string;
+  contractId: {
+    _id: string;
+    title?: string;
+  };
+  learningClassId?: string;
+  studentId: {
+    _id: string;
+    full_name: string;
+    email: string;
+    avatar_url?: string;
+  };
+  tutorId: string;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  paymentMethod: "FULL_PAYMENT" | "INSTALLMENTS";
+  installments: PaymentInstallment[];
+  status: "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELLED" | "OVERDUE";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TutorEarningsStats {
+  totalEarnings: number; // Total earned by tutor (80% of paid amounts)
+  platformFee: number; // Total platform fee (20% of paid amounts)
+  grossRevenue: number; // Total paid amount (100%)
+  pendingEarnings: number; // Upcoming payments (tutor's 80%)
+  pendingPlatformFee: number; // Upcoming platform fee (20%)
+  totalPending: number; // Total upcoming payments (100%)
+  totalStudents: number;
+  completedPayments: number;
+  pendingPayments: number;
+  overduePayments: number;
+  monthlyTrend: MonthlyEarningsTrend[];
+  paymentsByStatus: {
+    PENDING: number;
+    PAID: number;
+    OVERDUE: number;
+    CANCELLED: number;
+  };
+}
+
+export interface MonthlyEarningsTrend {
+  month: string; // Format: "YYYY-MM"
+  grossAmount: number; // 100% of paid
+  tutorEarnings: number; // 80% of paid
+  platformFee: number; // 20% of paid
+  paymentCount: number;
+}
+
+export interface TutorFinancialTransaction {
+  _id: string;
+  scheduleId: string;
+  studentName: string;
+  studentAvatar?: string;
+  contractTitle?: string;
+  amount: number; // Gross amount (100%)
+  tutorEarnings: number; // Tutor's share (80%)
+  platformFee: number; // Platform's share (20%)
+  installmentNumber?: number;
+  status: "PENDING" | "PAID" | "OVERDUE" | "CANCELLED";
+  dueDate: string;
+  paidAt?: string;
+  paymentMethod: "FULL_PAYMENT" | "INSTALLMENTS";
+}

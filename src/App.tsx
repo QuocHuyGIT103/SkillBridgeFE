@@ -78,6 +78,7 @@ import TutorClassesPage from "./pages/tutor/TutorClassesPage";
 import TutorClassDetailPage from "./pages/tutor/TutorClassDetailPage";
 import TutorClassSchedulePage from "./pages/tutor/TutorClassSchedulePage";
 import TutorMessagesPage from "./pages/tutor/TutorMessagesPage";
+import TutorFinancePage from "./pages/tutor/TutorFinancePage";
 import RequireTutorOperate from "./features/tutor/RequireTutorOperate";
 
 // Protected Route wrapper for role-based access
@@ -389,22 +390,7 @@ function App() {
               />
               <Route path="messages" element={<TutorMessagesPage />} />
               <Route path="messages/*" element={<TutorMessagesPage />} />
-              <Route
-                path="finance"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Finance Management - Coming Soon
-                  </div>
-                }
-              />
-              <Route
-                path="finance/*"
-                element={
-                  <div className="text-center py-8 text-gray-500">
-                    Finance Management - Coming Soon
-                  </div>
-                }
-              />
+              <Route path="finance" element={<TutorFinancePage />} />
             </Route>
 
             {/* Admin Dashboard Routes - giữ nguyên như cũ */}
