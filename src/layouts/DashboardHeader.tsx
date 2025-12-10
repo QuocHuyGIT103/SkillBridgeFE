@@ -30,8 +30,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const { isDark, toggleDarkMode } = useDarkMode();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } =
-    useNotifications();
+  const { notifications, unreadCount, markAsRead } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

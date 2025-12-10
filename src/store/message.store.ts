@@ -17,6 +17,7 @@ interface MessageState {
   conversations: ConversationData[];
   selectedConversation: ConversationData | null;
   conversationsLoading: boolean;
+  lastFetchAt?: number;
 
   // Messages
   messages: MessageData[];

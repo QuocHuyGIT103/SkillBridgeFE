@@ -450,9 +450,12 @@ const TutorPostForm: React.FC<TutorPostFormProps> = ({
                 value={formData.pricePerSession}
                 onChange={(price) => updateFormData("pricePerSession", price)}
                 label="Học phí mỗi buổi (VNĐ)"
-                error={errors.pricePerSession}
-                required
               />
+              {errors.pricePerSession && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.pricePerSession}
+                </p>
+              )}
             </div>
 
             <div>

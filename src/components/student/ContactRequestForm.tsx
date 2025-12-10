@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import {
@@ -79,7 +79,6 @@ const ContactRequestForm: React.FC<ContactRequestFormProps> = ({
   useEffect(() => {
     if (availableSubjects.length === 1) {
       setValue("subject", availableSubjects[0]._id);
-      setSelectedSubject(availableSubjects[0]._id);
     }
   }, [availableSubjects, setValue]);
 
@@ -131,7 +130,6 @@ const ContactRequestForm: React.FC<ContactRequestFormProps> = ({
           <select
             {...register("subject", { required: "Vui lòng chọn môn học" })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            onChange={(e) => setSelectedSubject(e.target.value)}
           >
             <option value="">Chọn môn học</option>
             {availableSubjects.map((subject) => (

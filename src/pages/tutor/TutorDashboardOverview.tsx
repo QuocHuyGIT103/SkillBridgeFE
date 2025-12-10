@@ -6,12 +6,9 @@ import {
   UserGroupIcon,
   CalendarIcon,
   CurrencyDollarIcon,
-  ClockIcon,
   ChatBubbleLeftRightIcon,
   AcademicCapIcon,
-  ArrowTrendingUpIcon,
   BookOpenIcon,
-  VideoCameraIcon,
   BellAlertIcon,
   PlusCircleIcon,
   MagnifyingGlassIcon,
@@ -55,7 +52,7 @@ const TutorDashboardOverview: React.FC = () => {
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
     []
   );
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
   // Load profile and dashboard data on mount (guard against double-invoke in StrictMode)
   const fetchedRef = useRef(false);

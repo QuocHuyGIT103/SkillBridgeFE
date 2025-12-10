@@ -6,14 +6,14 @@ interface MessageData {
   senderId: string;
   receiverId: string;
   content: string;
-  messageType: 'text' | 'image' | 'file';
+  messageType: "text" | "image" | "file";
   fileMetadata?: {
     fileName: string;
     fileSize: number;
     fileType: string;
     fileUrl: string;
   };
-  status: 'sent' | 'delivered' | 'read';
+  status: "sent" | "delivered" | "read";
   replyTo?: {
     messageId: string;
     content: string;
@@ -29,7 +29,7 @@ interface ConversationData {
   tutorId: any;
   tutorPostId: any;
   subject: any;
-  status: 'active' | 'closed';
+  status: "active" | "closed";
   lastMessage?: {
     content: string;
     senderId: string;
@@ -98,74 +98,82 @@ class SocketService {
 
   // Chat-specific methods
   joinChat(userId: string): void {
-    this.emit('join-chat', userId);
+    this.emit("join-chat", userId);
   }
 
   joinConversation(conversationId: string): void {
-    this.emit('join-conversation', conversationId);
+    this.emit("join-conversation", conversationId);
   }
 
   leaveConversation(conversationId: string): void {
-    this.emit('leave-conversation', conversationId);
+    this.emit("leave-conversation", conversationId);
   }
 
   startTyping(conversationId: string, userId: string): void {
-    this.emit('typing-start', { conversationId, userId });
+    this.emit("typing-start", { conversationId, userId });
   }
 
   stopTyping(conversationId: string, userId: string): void {
-    this.emit('typing-stop', { conversationId, userId });
+    this.emit("typing-stop", { conversationId, userId });
   }
 
   // Event listeners for chat
   onNewMessage(callback: (message: MessageData) => void): void {
-    this.on('new-message', callback);
+    this.on("new-message", callback);
   }
 
   // Conversation room message event from backend
   onMessageReceived(callback: (message: MessageData) => void): void {
-    this.on('message-received', callback);
+    this.on("message-received", callback);
   }
 
-  onMessageStatusUpdate(callback: (data: { messageId: string; status: string }) => void): void {
-    this.on('message-status-update', callback);
+  onMessageStatusUpdate(
+    callback: (data: { messageId: string; status: string }) => void
+  ): void {
+    this.on("message-status-update", callback);
   }
 
-  onConversationUpdate(callback: (conversation: ConversationData) => void): void {
-    this.on('conversation-update', callback);
+  onConversationUpdate(
+    callback: (conversation: ConversationData) => void
+  ): void {
+    this.on("conversation-update", callback);
   }
 
   onUserTyping(callback: (data: TypingData) => void): void {
-    this.on('user-typing', callback);
+    this.on("user-typing", callback);
   }
 
   onConversationClosed(callback: (conversationId: string) => void): void {
-    this.on('conversation-closed', callback);
+    this.on("conversation-closed", callback);
   }
 
   // Remove chat event listeners
   offNewMessage(callback?: (message: MessageData) => void): void {
-    this.off('new-message', callback);
+    this.off("new-message", callback);
   }
 
   offMessageReceived(callback?: (message: MessageData) => void): void {
-    this.off('message-received', callback);
+    this.off("message-received", callback);
   }
 
-  offMessageStatusUpdate(callback?: (data: { messageId: string; status: string }) => void): void {
-    this.off('message-status-update', callback);
+  offMessageStatusUpdate(
+    callback?: (data: { messageId: string; status: string }) => void
+  ): void {
+    this.off("message-status-update", callback);
   }
 
-  offConversationUpdate(callback?: (conversation: ConversationData) => void): void {
-    this.off('conversation-update', callback);
+  offConversationUpdate(
+    callback?: (conversation: ConversationData) => void
+  ): void {
+    this.off("conversation-update", callback);
   }
 
   offUserTyping(callback?: (data: TypingData) => void): void {
-    this.off('user-typing', callback);
+    this.off("user-typing", callback);
   }
 
   offConversationClosed(callback?: (conversationId: string) => void): void {
-    this.off('conversation-closed', callback);
+    this.off("conversation-closed", callback);
   }
 
   disconnect(): void {

@@ -1,6 +1,6 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { CheckIcon } from '@heroicons/react/24/solid';
+import React from "react";
+import { motion } from "framer-motion";
+import { CheckIcon } from "@heroicons/react/24/solid";
 
 interface SurveyProgressProps {
   currentStep: number;
@@ -23,7 +23,7 @@ const SurveyProgress: React.FC<SurveyProgressProps> = ({
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
             className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
           />
         </div>
@@ -33,7 +33,7 @@ const SurveyProgress: React.FC<SurveyProgressProps> = ({
           {Array.from({ length: totalSteps }).map((_, index) => {
             const isCompleted = index < currentStep;
             const isCurrent = index === currentStep;
-            const isFuture = index > currentStep;
+            // Check if step is in the future: index > currentStep
 
             return (
               <motion.div
@@ -48,10 +48,10 @@ const SurveyProgress: React.FC<SurveyProgressProps> = ({
                     w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all
                     ${
                       isCompleted
-                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 border-purple-500'
+                        ? "bg-gradient-to-r from-purple-500 to-blue-500 border-purple-500"
                         : isCurrent
-                        ? 'bg-white border-purple-500 shadow-lg'
-                        : 'bg-white border-gray-300'
+                        ? "bg-white border-purple-500 shadow-lg"
+                        : "bg-white border-gray-300"
                     }
                   `}
                 >
@@ -61,7 +61,7 @@ const SurveyProgress: React.FC<SurveyProgressProps> = ({
                     <span
                       className={`
                         text-sm font-semibold
-                        ${isCurrent ? 'text-purple-600' : 'text-gray-400'}
+                        ${isCurrent ? "text-purple-600" : "text-gray-400"}
                       `}
                     >
                       {index + 1}
@@ -74,7 +74,11 @@ const SurveyProgress: React.FC<SurveyProgressProps> = ({
                   <div
                     className={`
                       absolute top-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs
-                      ${isCurrent ? 'text-purple-600 font-semibold' : 'text-gray-500'}
+                      ${
+                        isCurrent
+                          ? "text-purple-600 font-semibold"
+                          : "text-gray-500"
+                      }
                     `}
                   >
                     {stepTitles[index]}
@@ -89,10 +93,12 @@ const SurveyProgress: React.FC<SurveyProgressProps> = ({
       {/* Progress Text */}
       <div className="flex justify-between items-center mt-12 text-sm">
         <span className="text-gray-600">
-          Câu hỏi <strong className="text-purple-600">{currentStep + 1}</strong> / {totalSteps}
+          Câu hỏi <strong className="text-purple-600">{currentStep + 1}</strong>{" "}
+          / {totalSteps}
         </span>
         <span className="text-gray-600">
-          <strong className="text-purple-600">{Math.round(progress)}%</strong> hoàn thành
+          <strong className="text-purple-600">{Math.round(progress)}%</strong>{" "}
+          hoàn thành
         </span>
       </div>
     </div>

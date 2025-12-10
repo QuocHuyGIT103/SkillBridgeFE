@@ -5,12 +5,10 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   CheckCircleIcon,
-  XCircleIcon,
   ClockIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
   ArrowPathIcon,
-  DocumentArrowDownIcon,
 } from "@heroicons/react/24/outline";
 import { CurrencyDollarIcon as CurrencySolidIcon } from "@heroicons/react/24/solid";
 import { format } from "date-fns";
@@ -155,7 +153,6 @@ const TransactionsManagement: React.FC = () => {
   // Calculate derived stats
   const completedStats = stats?.statusStats.find((s) => s._id === "COMPLETED");
   const pendingStats = stats?.statusStats.find((s) => s._id === "PENDING");
-  const failedStats = stats?.statusStats.find((s) => s._id === "FAILED");
 
   return (
     <div className="space-y-6">

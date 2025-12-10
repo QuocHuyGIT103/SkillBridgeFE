@@ -1,103 +1,109 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import usePostStore from '../../store/post.store';
-import type { IPost } from '../../types';
-import { toast } from 'react-hot-toast';
-import { 
-    ArrowPathIcon, 
-    EyeIcon, 
-    PencilIcon, 
-    TrashIcon, 
-    PlusIcon,
-    AcademicCapIcon,
-    BookOpenIcon,
-    CalendarDaysIcon,
-    InformationCircleIcon,
-    DocumentTextIcon,
-    CheckCircleIcon,
-    ClockIcon,
-    XCircleIcon,
-    MagnifyingGlassIcon,
-    FunnelIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    SparklesIcon,
+import React, { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import usePostStore from "../../store/post.store";
+import type { IPost } from "../../types";
+import { toast } from "react-hot-toast";
+import {
+  ArrowPathIcon,
+  EyeIcon,
+  PencilIcon,
+  TrashIcon,
+  PlusIcon,
+  AcademicCapIcon,
+  BookOpenIcon,
+  CalendarDaysIcon,
+  InformationCircleIcon,
+  DocumentTextIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  XCircleIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
-import { AISmartSearchButton } from '../../components/ai';
+import { AISmartSearchButton } from "../../components/ai";
 
 // ==================== CONSTANTS ====================
 const ITEMS_PER_PAGE = 6;
 
 const STATUS_CONFIG = {
   all: {
-    label: 'Tất cả',
-    icon: '📋',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    activeGradient: 'from-blue-500 to-indigo-500',
+    label: "Tất cả",
+    icon: "📋",
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200",
+    activeGradient: "from-blue-500 to-indigo-500",
   },
   approved: {
-    label: 'Đã duyệt',
-    icon: '✅',
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    activeGradient: 'from-emerald-500 to-green-500',
+    label: "Đã duyệt",
+    icon: "✅",
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-50",
+    borderColor: "border-emerald-200",
+    activeGradient: "from-emerald-500 to-green-500",
   },
   pending: {
-    label: 'Chờ duyệt',
-    icon: '⏳',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
-    activeGradient: 'from-amber-500 to-orange-500',
+    label: "Chờ duyệt",
+    icon: "⏳",
+    color: "text-amber-600",
+    bgColor: "bg-amber-50",
+    borderColor: "border-amber-200",
+    activeGradient: "from-amber-500 to-orange-500",
   },
   rejected: {
-    label: 'Bị từ chối',
-    icon: '❌',
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    activeGradient: 'from-red-500 to-rose-500',
+    label: "Bị từ chối",
+    icon: "❌",
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-200",
+    activeGradient: "from-red-500 to-rose-500",
   },
 };
 
 // ==================== COMPONENTS ====================
-const StatusBadge: React.FC<{ status: IPost['status']; size?: 'sm' | 'md' }> = ({ status, size = 'md' }) => {
+const StatusBadge: React.FC<{
+  status: IPost["status"];
+  size?: "sm" | "md";
+}> = ({ status, size = "md" }) => {
   const config = {
-    pending: { 
-      text: 'Chờ duyệt', 
-      className: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-amber-500/30',
+    pending: {
+      text: "Chờ duyệt",
+      className:
+        "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-amber-500/30",
       icon: ClockIcon,
     },
-    approved: { 
-      text: 'Đã duyệt', 
-      className: 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-emerald-500/30',
+    approved: {
+      text: "Đã duyệt",
+      className:
+        "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-emerald-500/30",
       icon: CheckCircleIcon,
     },
-    rejected: { 
-      text: 'Bị từ chối', 
-      className: 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-red-500/30',
+    rejected: {
+      text: "Bị từ chối",
+      className:
+        "bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-red-500/30",
       icon: XCircleIcon,
     },
   };
-  
-  const statusInfo = config[status] || { 
-    text: 'Không rõ', 
-    className: 'bg-gray-500 text-white',
+
+  const statusInfo = config[status] || {
+    text: "Không rõ",
+    className: "bg-gray-500 text-white",
     icon: InformationCircleIcon,
   };
   const Icon = statusInfo.icon;
-  
-  const sizeClasses = size === 'sm' 
-    ? 'px-2.5 py-1 text-xs gap-1' 
-    : 'px-3 py-1.5 text-xs gap-1.5';
-  
+
+  const sizeClasses =
+    size === "sm" ? "px-2.5 py-1 text-xs gap-1" : "px-3 py-1.5 text-xs gap-1.5";
+
   return (
-    <span className={`inline-flex items-center font-bold rounded-full shadow-lg ${sizeClasses} ${statusInfo.className}`}>
-      <Icon className={size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
+    <span
+      className={`inline-flex items-center font-bold rounded-full shadow-lg ${sizeClasses} ${statusInfo.className}`}
+    >
+      <Icon className={size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5"} />
       {statusInfo.text}
     </span>
   );
@@ -126,7 +132,7 @@ const PostCardSkeleton: React.FC = () => (
 );
 
 const EmptyState: React.FC = () => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     className="text-center py-16 px-8 bg-white rounded-2xl border-2 border-dashed border-gray-200"
@@ -134,15 +140,18 @@ const EmptyState: React.FC = () => (
     <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center">
       <DocumentTextIcon className="w-10 h-10 text-blue-600" />
     </div>
-    <h3 className="text-xl font-bold text-gray-900 mb-2">Bạn chưa có bài đăng nào</h3>
+    <h3 className="text-xl font-bold text-gray-900 mb-2">
+      Bạn chưa có bài đăng nào
+    </h3>
     <p className="text-gray-500 mb-8 max-w-md mx-auto">
-      Hãy tạo một yêu cầu tìm gia sư để nhận được sự hỗ trợ tốt nhất từ các gia sư trên hệ thống.
+      Hãy tạo một yêu cầu tìm gia sư để nhận được sự hỗ trợ tốt nhất từ các gia
+      sư trên hệ thống.
     </p>
-    <Link 
-      to="/student/posts/create" 
+    <Link
+      to="/student/posts/create"
       className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-semibold shadow-lg shadow-blue-500/25"
     >
-      <PlusIcon className="w-5 h-5"/>
+      <PlusIcon className="w-5 h-5" />
       Tạo yêu cầu tìm gia sư
     </Link>
   </motion.div>
@@ -150,9 +159,15 @@ const EmptyState: React.FC = () => (
 
 // ==================== MAIN COMPONENT ====================
 const MyPostsPage: React.FC = () => {
-  const { posts: myPosts, isLoading, error, fetchMyPosts, deletePost } = usePostStore();
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const {
+    posts: myPosts,
+    isLoading,
+    error,
+    fetchMyPosts,
+    deletePost,
+  } = usePostStore();
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -167,13 +182,15 @@ const MyPostsPage: React.FC = () => {
   const handleDelete = (postId: string) => {
     toast((t) => (
       <div className="flex flex-col gap-3 p-1">
-        <p className="font-medium text-gray-800">Bạn có chắc chắn muốn xóa bài đăng này không?</p>
+        <p className="font-medium text-gray-800">
+          Bạn có chắc chắn muốn xóa bài đăng này không?
+        </p>
         <div className="flex gap-3">
           <button
             className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold transition-colors shadow-sm"
             onClick={() => {
               toast.dismiss(t.id);
-              deletePost(postId); 
+              deletePost(postId);
             }}
           >
             Xác nhận Xóa
@@ -191,9 +208,11 @@ const MyPostsPage: React.FC = () => {
 
   // Filter posts
   const filteredPosts = useMemo(() => {
-    return (myPosts || []).filter(post => {
-      const matchesStatus = filterStatus === 'all' || post.status === filterStatus;
-      const matchesSearch = !searchQuery || 
+    return (myPosts || []).filter((post) => {
+      const matchesStatus =
+        filterStatus === "all" || post.status === filterStatus;
+      const matchesSearch =
+        !searchQuery ||
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.content?.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesStatus && matchesSearch;
@@ -206,7 +225,7 @@ const MyPostsPage: React.FC = () => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
     const posts = filteredPosts.slice(startIndex, endIndex);
-    
+
     return {
       posts,
       totalPages,
@@ -217,19 +236,26 @@ const MyPostsPage: React.FC = () => {
   }, [filteredPosts, currentPage]);
 
   // Status counts
-  const statusCounts = useMemo(() => ({
-    all: myPosts?.length || 0,
-    approved: myPosts?.filter(p => p.status === 'approved').length || 0,
-    pending: myPosts?.filter(p => p.status === 'pending').length || 0,
-    rejected: myPosts?.filter(p => p.status === 'rejected').length || 0,
-  }), [myPosts]);
+  const statusCounts = useMemo(
+    () => ({
+      all: myPosts?.length || 0,
+      approved: myPosts?.filter((p) => p.status === "approved").length || 0,
+      pending: myPosts?.filter((p) => p.status === "pending").length || 0,
+      rejected: myPosts?.filter((p) => p.status === "rejected").length || 0,
+    }),
+    [myPosts]
+  );
 
   const getStatusBarColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'from-emerald-400 via-green-500 to-emerald-600';
-      case 'pending': return 'from-amber-400 via-orange-500 to-amber-600';
-      case 'rejected': return 'from-red-400 via-rose-500 to-red-600';
-      default: return 'from-gray-400 to-gray-500';
+      case "approved":
+        return "from-emerald-400 via-green-500 to-emerald-600";
+      case "pending":
+        return "from-amber-400 via-orange-500 to-amber-600";
+      case "rejected":
+        return "from-red-400 via-rose-500 to-red-600";
+      default:
+        return "from-gray-400 to-gray-500";
     }
   };
 
@@ -237,7 +263,7 @@ const MyPostsPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* ==================== HEADER ==================== */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
@@ -258,11 +284,11 @@ const MyPostsPage: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link 
-                to="/student/posts/create" 
+              <Link
+                to="/student/posts/create"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-semibold shadow-md hover:shadow-lg"
               >
-                <PlusIcon className="w-5 h-5"/>
+                <PlusIcon className="w-5 h-5" />
                 Tạo yêu cầu mới
               </Link>
               <button
@@ -270,7 +296,9 @@ const MyPostsPage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all font-medium shadow-sm"
                 disabled={isLoading}
               >
-                <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                <ArrowPathIcon
+                  className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
+                />
                 <span>Làm mới</span>
               </button>
             </div>
@@ -278,7 +306,7 @@ const MyPostsPage: React.FC = () => {
         </motion.div>
 
         {/* ==================== FILTER TABS ==================== */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -289,25 +317,32 @@ const MyPostsPage: React.FC = () => {
               {Object.entries(STATUS_CONFIG).map(([key, config]) => {
                 const count = statusCounts[key as keyof typeof statusCounts];
                 const isActive = filterStatus === key;
-                
+
                 return (
                   <button
                     key={key}
                     onClick={() => setFilterStatus(key)}
                     className={`
                       relative flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200
-                      ${isActive 
-                        ? `bg-gradient-to-r ${config.activeGradient} text-white shadow-md` 
-                        : `${config.bgColor} ${config.color} hover:shadow-sm border ${config.borderColor}`
+                      ${
+                        isActive
+                          ? `bg-gradient-to-r ${config.activeGradient} text-white shadow-md`
+                          : `${config.bgColor} ${config.color} hover:shadow-sm border ${config.borderColor}`
                       }
                     `}
                   >
                     <span className="text-base">{config.icon}</span>
                     <span>{config.label}</span>
-                    <span className={`
+                    <span
+                      className={`
                       px-2 py-0.5 rounded-full text-xs font-bold
-                      ${isActive ? 'bg-white/25 text-white' : 'bg-white text-gray-700'}
-                    `}>
+                      ${
+                        isActive
+                          ? "bg-white/25 text-white"
+                          : "bg-white text-gray-700"
+                      }
+                    `}
+                    >
                       {count}
                     </span>
                   </button>
@@ -318,7 +353,7 @@ const MyPostsPage: React.FC = () => {
         </motion.div>
 
         {/* ==================== SEARCH & INFO BAR ==================== */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
@@ -334,13 +369,17 @@ const MyPostsPage: React.FC = () => {
               className="w-full pl-12 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm text-sm"
             />
           </div>
-          
+
           {filteredPosts.length > 0 && (
             <div className="flex items-center gap-2 text-sm text-gray-600 bg-white px-4 py-2.5 rounded-xl border border-gray-100">
               <span>Hiển thị</span>
-              <span className="font-bold text-blue-600">{paginatedData.posts.length}</span>
+              <span className="font-bold text-blue-600">
+                {paginatedData.posts.length}
+              </span>
               <span>trong</span>
-              <span className="font-bold text-gray-900">{paginatedData.totalItems}</span>
+              <span className="font-bold text-gray-900">
+                {paginatedData.totalItems}
+              </span>
               <span>bài đăng</span>
             </div>
           )}
@@ -348,7 +387,7 @@ const MyPostsPage: React.FC = () => {
 
         {/* ==================== ERROR ==================== */}
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-red-50 text-red-700 p-4 rounded-xl mb-6 border border-red-200 flex items-center gap-3"
@@ -361,12 +400,14 @@ const MyPostsPage: React.FC = () => {
         {/* ==================== CONTENT ==================== */}
         {isLoading && !myPosts?.length ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {[...Array(6)].map((_, i) => <PostCardSkeleton key={i} />)}
+            {[...Array(6)].map((_, i) => (
+              <PostCardSkeleton key={i} />
+            ))}
           </div>
         ) : paginatedData.posts.length > 0 ? (
           <>
             {/* Posts Grid */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -374,7 +415,7 @@ const MyPostsPage: React.FC = () => {
             >
               <AnimatePresence mode="popLayout">
                 {paginatedData.posts.map((post, index) => (
-                  <motion.div 
+                  <motion.div
                     key={post.id}
                     layout
                     initial={{ opacity: 0, y: 20 }}
@@ -384,8 +425,12 @@ const MyPostsPage: React.FC = () => {
                     className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex flex-col"
                   >
                     {/* Status Bar */}
-                    <div className={`h-2 bg-gradient-to-r ${getStatusBarColor(post.status)}`}></div>
-                    
+                    <div
+                      className={`h-2 bg-gradient-to-r ${getStatusBarColor(
+                        post.status
+                      )}`}
+                    ></div>
+
                     <div className="p-6 flex flex-col flex-1">
                       {/* Header: Title + Status */}
                       <div className="flex items-start justify-between gap-3 mb-5">
@@ -394,28 +439,32 @@ const MyPostsPage: React.FC = () => {
                         </h2>
                         <StatusBadge status={post.status} size="md" />
                       </div>
-                      
+
                       {/* Key Info - Highlighted - 2 columns */}
                       <div className="grid grid-cols-2 gap-3 mb-4">
                         {/* Cấp học */}
                         <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-3.5 border border-purple-100">
                           <div className="flex items-center gap-2 mb-2">
-                            <AcademicCapIcon className="w-5 h-5 text-purple-600"/>
-                            <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Cấp học</span>
+                            <AcademicCapIcon className="w-5 h-5 text-purple-600" />
+                            <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">
+                              Cấp học
+                            </span>
                           </div>
                           <p className="text-sm font-bold text-gray-900 line-clamp-1">
-                            {post.grade_levels?.join(', ') || 'Chưa rõ'}
+                            {post.grade_levels?.join(", ") || "Chưa rõ"}
                           </p>
                         </div>
-                        
+
                         {/* Môn học */}
                         <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3.5 border border-blue-100">
                           <div className="flex items-center gap-2 mb-2">
-                            <BookOpenIcon className="w-5 h-5 text-blue-600"/>
-                            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Môn học</span>
+                            <BookOpenIcon className="w-5 h-5 text-blue-600" />
+                            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+                              Môn học
+                            </span>
                           </div>
                           <p className="text-sm font-bold text-gray-900 line-clamp-1">
-                            {post.subjects?.join(', ') || 'Chưa rõ'}
+                            {post.subjects?.join(", ") || "Chưa rõ"}
                           </p>
                         </div>
                       </div>
@@ -426,45 +475,84 @@ const MyPostsPage: React.FC = () => {
                         {post.hourly_rate && (
                           <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3.5 border border-emerald-100">
                             <div className="flex items-center gap-2 mb-2">
-                              <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              <svg
+                                className="w-5 h-5 text-emerald-600"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
                               </svg>
-                              <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Học phí</span>
+                              <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">
+                                Học phí
+                              </span>
                             </div>
                             <p className="text-sm font-bold text-gray-900">
-                              {post.hourly_rate.min?.toLocaleString('vi-VN')} - {post.hourly_rate.max?.toLocaleString('vi-VN')} đ
+                              {post.hourly_rate.min?.toLocaleString("vi-VN")} -{" "}
+                              {post.hourly_rate.max?.toLocaleString("vi-VN")} đ
                             </p>
                           </div>
                         )}
-                        
+
                         {/* Hình thức */}
                         <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3.5 border border-amber-100">
                           <div className="flex items-center gap-2 mb-2">
-                            <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            <svg
+                              className="w-5 h-5 text-amber-600"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                              />
                             </svg>
-                            <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Hình thức</span>
+                            <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">
+                              Hình thức
+                            </span>
                           </div>
                           <p className="text-sm font-bold text-gray-900">
-                            {post.is_online ? '💻 Trực tuyến' : '🏠 Tại nhà'}
+                            {post.is_online ? "💻 Trực tuyến" : "🏠 Tại nhà"}
                           </p>
                         </div>
                       </div>
-                      
+
                       {/* Meta Info */}
                       <div className="flex items-center gap-4 text-xs text-gray-500 mb-4 pb-4 border-b border-gray-100">
                         <div className="flex items-center gap-1.5">
-                          <CalendarDaysIcon className="w-4 h-4"/>
-                          <span>Tạo: <span className="font-medium text-gray-700">{new Date(post.created_at).toLocaleDateString('vi-VN')}</span></span>
+                          <CalendarDaysIcon className="w-4 h-4" />
+                          <span>
+                            Tạo:{" "}
+                            <span className="font-medium text-gray-700">
+                              {new Date(post.created_at).toLocaleDateString(
+                                "vi-VN"
+                              )}
+                            </span>
+                          </span>
                         </div>
                         {post.expiry_date && (
                           <div className="flex items-center gap-1.5">
-                            <ClockIcon className="w-4 h-4"/>
-                            <span>Hết hạn: <span className="font-medium text-gray-700">{new Date(post.expiry_date).toLocaleDateString('vi-VN')}</span></span>
+                            <ClockIcon className="w-4 h-4" />
+                            <span>
+                              Hết hạn:{" "}
+                              <span className="font-medium text-gray-700">
+                                {new Date(post.expiry_date).toLocaleDateString(
+                                  "vi-VN"
+                                )}
+                              </span>
+                            </span>
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Content Preview */}
                       {post.content && (
                         <div className="mb-4">
@@ -473,27 +561,31 @@ const MyPostsPage: React.FC = () => {
                           </p>
                         </div>
                       )}
-                      
+
                       {/* Rejection Note */}
-                      {post.status === 'rejected' && post.admin_note && (
+                      {post.status === "rejected" && post.admin_note && (
                         <div className="mb-4 p-4 bg-red-50 rounded-xl border border-red-200">
                           <div className="flex items-start gap-2">
-                            <InformationCircleIcon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"/>
+                            <InformationCircleIcon className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                             <div className="text-sm">
-                              <p className="font-bold text-red-700 mb-1">Lý do từ chối:</p>
-                              <p className="text-red-600 leading-relaxed">{post.admin_note}</p>
+                              <p className="font-bold text-red-700 mb-1">
+                                Lý do từ chối:
+                              </p>
+                              <p className="text-red-600 leading-relaxed">
+                                {post.admin_note}
+                              </p>
                             </div>
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Spacer */}
                       <div className="flex-grow"></div>
-                      
+
                       {/* AI Button for approved posts */}
-                      {post.status === 'approved' && (
+                      {post.status === "approved" && (
                         <div className="mb-4">
-                          <AISmartSearchButton 
+                          <AISmartSearchButton
                             postId={post.id}
                             variant="secondary"
                             size="md"
@@ -501,27 +593,27 @@ const MyPostsPage: React.FC = () => {
                           />
                         </div>
                       )}
-                      
+
                       {/* Action Buttons */}
                       <div className="flex items-center gap-3">
-                        <Link 
-                          to={`/student/posts/${post.id}`} 
+                        <Link
+                          to={`/student/posts/${post.id}`}
                           className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all font-medium shadow-sm"
                         >
                           <EyeIcon className="w-4 h-4" />
                           Chi tiết
                         </Link>
 
-                        <Link 
-                          to={`/student/posts/edit/${post.id}`} 
+                        <Link
+                          to={`/student/posts/edit/${post.id}`}
                           className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-blue-50 border border-blue-200 text-blue-700 rounded-xl hover:bg-blue-100 hover:border-blue-300 transition-all font-medium shadow-sm"
                         >
                           <PencilIcon className="w-4 h-4" />
                           Sửa
                         </Link>
 
-                        <button 
-                          onClick={() => handleDelete(post.id)} 
+                        <button
+                          onClick={() => handleDelete(post.id)}
                           className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm bg-red-50 border border-red-200 text-red-700 rounded-xl hover:bg-red-100 hover:border-red-300 transition-all font-medium shadow-sm"
                         >
                           <TrashIcon className="w-4 h-4" />
@@ -536,30 +628,41 @@ const MyPostsPage: React.FC = () => {
 
             {/* ==================== PAGINATION ==================== */}
             {paginatedData.totalPages > 1 && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
               >
                 {/* Info */}
                 <p className="text-sm text-gray-600">
-                  Trang <span className="font-bold text-gray-900">{currentPage}</span> / <span className="font-bold text-gray-900">{paginatedData.totalPages}</span>
+                  Trang{" "}
+                  <span className="font-bold text-gray-900">{currentPage}</span>{" "}
+                  /{" "}
+                  <span className="font-bold text-gray-900">
+                    {paginatedData.totalPages}
+                  </span>
                 </p>
 
                 {/* Page Numbers */}
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={!paginatedData.hasPrev}
                     className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
                     <ChevronLeftIcon className="w-5 h-5" />
                   </button>
 
-                  {Array.from({ length: paginatedData.totalPages }, (_, i) => i + 1)
-                    .filter(page => {
+                  {Array.from(
+                    { length: paginatedData.totalPages },
+                    (_, i) => i + 1
+                  )
+                    .filter((page) => {
                       if (paginatedData.totalPages <= 5) return true;
-                      if (page === 1 || page === paginatedData.totalPages) return true;
+                      if (page === 1 || page === paginatedData.totalPages)
+                        return true;
                       if (Math.abs(page - currentPage) <= 1) return true;
                       return false;
                     })
@@ -574,9 +677,10 @@ const MyPostsPage: React.FC = () => {
                             onClick={() => setCurrentPage(page)}
                             className={`
                               min-w-[40px] h-10 rounded-lg font-medium text-sm transition-all
-                              ${currentPage === page
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                                : 'border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+                              ${
+                                currentPage === page
+                                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                                  : "border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
                               }
                             `}
                           >
@@ -587,7 +691,11 @@ const MyPostsPage: React.FC = () => {
                     })}
 
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(paginatedData.totalPages, prev + 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.min(paginatedData.totalPages, prev + 1)
+                      )
+                    }
                     disabled={!paginatedData.hasNext}
                     className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
@@ -606,18 +714,22 @@ const MyPostsPage: React.FC = () => {
           <EmptyState />
         ) : (
           /* No Results from Filter */
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-12 bg-white rounded-2xl border border-gray-100"
           >
             <FunnelIcon className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Không tìm thấy bài đăng</h3>
-            <p className="text-gray-500 mb-4">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              Không tìm thấy bài đăng
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+            </p>
             <button
               onClick={() => {
-                setFilterStatus('all');
-                setSearchQuery('');
+                setFilterStatus("all");
+                setSearchQuery("");
               }}
               className="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium"
             >

@@ -1,13 +1,13 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MapPinIcon,
   CurrencyDollarIcon,
   AcademicCapIcon,
   UserIcon,
   ClockIcon,
-} from '@heroicons/react/24/outline';
-import type { IPost } from '../../types/post.types';
+} from "@heroicons/react/24/outline";
+import type { IPost } from "../../types/post.types";
 
 interface StudentPostCardProps {
   post: IPost & {
@@ -36,35 +36,37 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
     if (onClick) {
       onClick();
     } else {
-      navigate(`/tutor/posts/student/${post.id || post._id}`);
+      navigate(`/tutor/posts/student/${post.id}`);
     }
   };
 
   const formatPrice = (min?: number, max?: number): string => {
     if (min !== undefined && max !== undefined) {
-      return `${min.toLocaleString('vi-VN')} - ${max.toLocaleString('vi-VN')} VNĐ/giờ`;
+      return `${min.toLocaleString("vi-VN")} - ${max.toLocaleString(
+        "vi-VN"
+      )} VNĐ/giờ`;
     } else if (min !== undefined) {
-      return `Từ ${min.toLocaleString('vi-VN')} VNĐ/giờ`;
+      return `Từ ${min.toLocaleString("vi-VN")} VNĐ/giờ`;
     } else if (max !== undefined) {
-      return `Đến ${max.toLocaleString('vi-VN')} VNĐ/giờ`;
+      return `Đến ${max.toLocaleString("vi-VN")} VNĐ/giờ`;
     }
-    return 'Thỏa thuận';
+    return "Thỏa thuận";
   };
 
   const getCompatibilityColor = (score?: number): string => {
-    if (!score) return 'text-gray-600 bg-gray-50 border-gray-200';
-    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200';
-    if (score >= 60) return 'text-blue-600 bg-blue-50 border-blue-200';
-    if (score >= 40) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-gray-600 bg-gray-50 border-gray-200';
+    if (!score) return "text-gray-600 bg-gray-50 border-gray-200";
+    if (score >= 80) return "text-green-600 bg-green-50 border-green-200";
+    if (score >= 60) return "text-blue-600 bg-blue-50 border-blue-200";
+    if (score >= 40) return "text-yellow-600 bg-yellow-50 border-yellow-200";
+    return "text-gray-600 bg-gray-50 border-gray-200";
   };
 
   const getInitials = (name?: string): string => {
-    if (!name) return 'U';
+    if (!name) return "U";
     return name
-      .split(' ')
+      .split(" ")
       .map((p) => p[0])
-      .join('')
+      .join("")
       .slice(0, 2)
       .toUpperCase();
   };
@@ -73,9 +75,9 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
     (post.author_id as any)?.avatar_url ||
     (post.author_id as any)?.avatarUrl ||
     (post.author_id as any)?.avatar ||
-    '';
+    "";
 
-  const authorName = (post.author_id as any)?.full_name || 'N/A';
+  const authorName = (post.author_id as any)?.full_name || "N/A";
 
   const isBestMatch = rank === 1 && showCompatibility;
 
@@ -84,8 +86,8 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
       className={`group relative rounded-xl border-2 transition-all duration-300 overflow-hidden flex flex-col h-full
         ${
           isBestMatch
-            ? 'bg-gradient-to-br from-yellow-50 via-white to-yellow-50 border-yellow-400 shadow-2xl hover:shadow-3xl hover:border-yellow-500'
-            : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-xl hover:scale-[1.02]'
+            ? "bg-gradient-to-br from-yellow-50 via-white to-yellow-50 border-yellow-400 shadow-2xl hover:shadow-3xl hover:border-yellow-500"
+            : "bg-white border-gray-200 hover:border-blue-400 hover:shadow-xl hover:scale-[1.02]"
         }`}
     >
       {/* Rank Badge */}
@@ -94,12 +96,20 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
           <div
             className={`
             flex items-center justify-center rounded-full font-bold text-white text-lg shadow-lg
-            ${rank === 1 ? 'w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 ring-4 ring-yellow-200 animate-pulse' : 'w-10 h-10'}
-            ${rank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500' : ''}
-            ${rank === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : ''}
+            ${
+              rank === 1
+                ? "w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 ring-4 ring-yellow-200 animate-pulse"
+                : "w-10 h-10"
+            }
+            ${rank === 2 ? "bg-gradient-to-br from-gray-300 to-gray-500" : ""}
+            ${
+              rank === 3
+                ? "bg-gradient-to-br from-orange-400 to-orange-600"
+                : ""
+            }
           `}
           >
-            {rank === 1 ? '⭐' : rank}
+            {rank === 1 ? "⭐" : rank}
           </div>
         </div>
       )}
@@ -124,12 +134,20 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
         </div>
       )}
 
-      <div className={`p-6 flex flex-col flex-grow ${isBestMatch ? 'pt-20' : 'pt-12'}`}>
+      <div
+        className={`p-6 flex flex-col flex-grow ${
+          isBestMatch ? "pt-20" : "pt-12"
+        }`}
+      >
         {/* Header with Avatar and Title */}
         <div className="flex items-start gap-4 mb-5">
           <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 overflow-hidden flex-shrink-0 ring-2 ring-gray-200 flex items-center justify-center text-base font-bold text-white shadow-lg">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={authorName} className="w-full h-full object-cover" />
+              <img
+                src={avatarUrl}
+                alt={authorName}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <span>{getInitials(authorName)}</span>
             )}
@@ -147,26 +165,32 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
 
         {/* Content Preview */}
         {post.content && (
-          <p className="text-sm text-gray-600 mb-5 line-clamp-3 leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">{post.content}</p>
+          <p className="text-sm text-gray-600 mb-5 line-clamp-3 leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">
+            {post.content}
+          </p>
         )}
 
         {/* Subjects and Grade Levels */}
         <div className="flex flex-wrap gap-2 mb-4">
           {post.subjects?.slice(0, 3).map((subject, idx) => {
-            const subjectName = typeof subject === 'string' ? subject : (subject as any)?.name || subject;
-            const isMatched = showCompatibility && post.matchDetails?.subjectMatch === 100;
+            const subjectName =
+              typeof subject === "string"
+                ? subject
+                : (subject as any)?.name || subject;
+            const isMatched =
+              showCompatibility && post.matchDetails?.subjectMatch === 100;
             return (
               <span
                 key={idx}
                 className={`px-2.5 py-1 text-xs font-medium rounded-full border
                   ${
                     isMatched
-                      ? 'bg-green-100 text-green-800 border-green-300 font-bold shadow-sm'
-                      : 'bg-blue-50 text-blue-700 border-blue-200'
+                      ? "bg-green-100 text-green-800 border-green-300 font-bold shadow-sm"
+                      : "bg-blue-50 text-blue-700 border-blue-200"
                   }`}
               >
                 {subjectName}
-                {isMatched && ' ✓'}
+                {isMatched && " ✓"}
               </span>
             );
           })}
@@ -176,19 +200,20 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
             </span>
           )}
           {post.grade_levels?.slice(0, 2).map((level, idx) => {
-            const isMatched = showCompatibility && post.matchDetails?.levelMatch === 100;
+            const isMatched =
+              showCompatibility && post.matchDetails?.levelMatch === 100;
             return (
               <span
                 key={idx}
                 className={`px-2.5 py-1 text-xs font-medium rounded-full border
                   ${
                     isMatched
-                      ? 'bg-green-100 text-green-800 border-green-300 font-bold shadow-sm'
-                      : 'bg-purple-50 text-purple-700 border-purple-200'
+                      ? "bg-green-100 text-green-800 border-green-300 font-bold shadow-sm"
+                      : "bg-purple-50 text-purple-700 border-purple-200"
                   }`}
               >
                 {level}
-                {isMatched && ' ✓'}
+                {isMatched && " ✓"}
               </span>
             );
           })}
@@ -200,16 +225,22 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
             className={`flex items-center space-x-2 rounded-lg p-2 transition-all
               ${
                 showCompatibility && post.matchDetails?.levelMatch === 100
-                  ? 'bg-green-50 text-green-800 font-semibold border border-green-200'
-                  : 'text-gray-600'
+                  ? "bg-green-50 text-green-800 font-semibold border border-green-200"
+                  : "text-gray-600"
               }`}
           >
             <AcademicCapIcon
-              className={`w-4 h-4 ${showCompatibility && post.matchDetails?.levelMatch === 100 ? 'text-green-600' : ''}`}
+              className={`w-4 h-4 ${
+                showCompatibility && post.matchDetails?.levelMatch === 100
+                  ? "text-green-600"
+                  : ""
+              }`}
             />
             <span className="text-xs line-clamp-1">
-              {post.grade_levels?.join(', ') || 'N/A'}
-              {showCompatibility && post.matchDetails?.levelMatch === 100 && ' ✓'}
+              {post.grade_levels?.join(", ") || "N/A"}
+              {showCompatibility &&
+                post.matchDetails?.levelMatch === 100 &&
+                " ✓"}
             </span>
           </div>
 
@@ -217,16 +248,22 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
             className={`flex items-center space-x-2 rounded-lg p-2 transition-all
               ${
                 showCompatibility && post.matchDetails?.priceMatch === 100
-                  ? 'bg-green-50 text-green-800 font-semibold border border-green-200'
-                  : 'text-gray-600'
+                  ? "bg-green-50 text-green-800 font-semibold border border-green-200"
+                  : "text-gray-600"
               }`}
           >
             <CurrencyDollarIcon
-              className={`w-4 h-4 ${showCompatibility && post.matchDetails?.priceMatch === 100 ? 'text-green-600' : ''}`}
+              className={`w-4 h-4 ${
+                showCompatibility && post.matchDetails?.priceMatch === 100
+                  ? "text-green-600"
+                  : ""
+              }`}
             />
             <span className="text-xs">
               {formatPrice(post.hourly_rate?.min, post.hourly_rate?.max)}
-              {showCompatibility && post.matchDetails?.priceMatch === 100 && ' ✓'}
+              {showCompatibility &&
+                post.matchDetails?.priceMatch === 100 &&
+                " ✓"}
             </span>
           </div>
 
@@ -234,17 +271,23 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
             className={`flex items-center space-x-2 rounded-lg p-2 transition-all
               ${
                 showCompatibility && post.matchDetails?.modeMatch === 100
-                  ? 'bg-green-50 text-green-800 font-semibold border border-green-200'
-                  : 'text-gray-600'
+                  ? "bg-green-50 text-green-800 font-semibold border border-green-200"
+                  : "text-gray-600"
               }`}
           >
             <MapPinIcon
-              className={`w-4 h-4 ${showCompatibility && post.matchDetails?.modeMatch === 100 ? 'text-green-600' : ''}`}
+              className={`w-4 h-4 ${
+                showCompatibility && post.matchDetails?.modeMatch === 100
+                  ? "text-green-600"
+                  : ""
+              }`}
             />
             <span className="text-xs">
-              {post.is_online ? '💻 Online' : '🏠 Offline'}
+              {post.is_online ? "💻 Online" : "🏠 Offline"}
               {post.location && !post.is_online && ` • ${post.location}`}
-              {showCompatibility && post.matchDetails?.modeMatch === 100 && ' ✓'}
+              {showCompatibility &&
+                post.matchDetails?.modeMatch === 100 &&
+                " ✓"}
             </span>
           </div>
 
@@ -252,7 +295,7 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
             <div className="flex items-center space-x-2 text-gray-600">
               <ClockIcon className="w-4 h-4" />
               <span className="text-xs">
-                {new Date(post.created_at).toLocaleDateString('vi-VN')}
+                {new Date(post.created_at).toLocaleDateString("vi-VN")}
               </span>
             </div>
           )}
@@ -261,7 +304,9 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
         {/* Match Details (if smart mode) */}
         {showCompatibility && post.matchDetails && (
           <div className="border-t pt-3 mb-4">
-            <p className="text-xs font-medium text-gray-600 mb-2">Chi tiết khớp:</p>
+            <p className="text-xs font-medium text-gray-600 mb-2">
+              Chi tiết khớp:
+            </p>
             <div className="flex flex-wrap gap-2">
               {post.matchDetails.subjectMatch === 100 && (
                 <span className="flex items-center space-x-1 px-2 py-1 bg-green-50 text-green-700 text-xs rounded-full border border-green-200">
@@ -302,21 +347,33 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
                       transition-all duration-200 shadow-md hover:shadow-lg
                       ${
                         isBestMatch
-                          ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 font-bold'
-                          : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                          ? "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 font-bold"
+                          : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
                       }`}
           >
-            {isBestMatch ? '⭐ Xem chi tiết bài đăng phù hợp nhất' : 'Xem chi tiết bài đăng'}
+            {isBestMatch
+              ? "⭐ Xem chi tiết bài đăng phù hợp nhất"
+              : "Xem chi tiết bài đăng"}
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/tutor/posts/student/${post.id || post._id}/request`);
+              navigate(`/tutor/posts/student/${post.id}/request`);
             }}
             className="w-full px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-medium rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             Gửi đề nghị dạy
           </button>
@@ -327,4 +384,3 @@ const StudentPostCard: React.FC<StudentPostCardProps> = ({
 };
 
 export default StudentPostCard;
-

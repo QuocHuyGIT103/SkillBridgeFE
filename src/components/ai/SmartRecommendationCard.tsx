@@ -577,17 +577,26 @@ const SmartRecommendationCard: React.FC<SmartRecommendationCardProps> = ({
                 <XMarkIcon className="w-6 h-6" />
               </button>
               <ContactRequestForm
-                tutorPost={{
-                  ...tutorPost,
-                  id: tutorPost.id || tutorPost._id,
-                  _id: tutorPost._id || tutorPost.id,
-                  tutorId: {
-                    _id: recommendation.tutorId,
-                    name: tutor.name,
-                    email: tutor.email || "",
-                    avatar: tutor.avatar,
-                  },
-                }}
+                tutorPost={
+                  {
+                    ...tutorPost,
+                    id: tutorPost.id || tutorPost._id,
+                    _id: tutorPost._id || tutorPost.id,
+                    teachingSchedule: [],
+                    status: "ACTIVE" as const,
+                    viewCount: 0,
+                    contactCount: 0,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    tutorId: {
+                      _id: recommendation.tutorId,
+                      full_name: tutor.name,
+                      email: tutor.email || "",
+                      avatar_url: tutor.avatar,
+                    } as any,
+                    subjects: tutorPost.subjects as any,
+                  } as any
+                }
                 onSuccess={() => {
                   setShowContactModal(false);
                 }}

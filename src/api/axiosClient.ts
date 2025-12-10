@@ -1,6 +1,11 @@
-import axios from 'axios';
-import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import type { ApiResponse } from '../types/index';
+import axios from "axios";
+import type {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+} from "axios";
+import type { ApiResponse } from "../types/index";
 
 // Remove the local ApiResponse interface definition that was here.
 
@@ -24,13 +29,17 @@ class AxiosClient {
     this.instance.interceptors.request.use(
       (config) => {
         // Check both possible token keys for compatibility
-        const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+        const token =
+          localStorage.getItem("token") || localStorage.getItem("access_token");
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
         // Debug logging for auth issues
-        if (config.url?.includes('/ai/') && !token) {
-          console.warn('[AxiosClient] No token found for AI request:', config.url);
+        if (config.url?.includes("/ai/") && !token) {
+          console.warn(
+            "[AxiosClient] No token found for AI request:",
+            config.url
+          );
         }
         return config;
       },
@@ -51,12 +60,12 @@ class AxiosClient {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
           const errorData = error.response.data as any;
-          
+
           // Handle 401 specifically for better UX
           if (error.response.status === 401) {
-            console.warn('[AxiosClient] 401 Unauthorized:', error.config?.url);
+            console.warn("[AxiosClient] 401 Unauthorized:", error.config?.url);
           }
-          
+
           return Promise.reject({
             success: false,
             message: errorData.message || errorData.error || "Đã xảy ra lỗi",
@@ -65,7 +74,11 @@ class AxiosClient {
           });
         } else if (error.request) {
           // The request was made but no response was received
-          console.error('[AxiosClient] No response received:', error.config?.url, error.message);
+          console.error(
+            "[AxiosClient] No response received:",
+            error.config?.url,
+            error.message
+          );
           return Promise.reject({
             success: false,
             message: "Không thể kết nối đến máy chủ",

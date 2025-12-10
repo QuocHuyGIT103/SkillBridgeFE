@@ -400,7 +400,11 @@ const RequestCard: React.FC<RequestCardProps> = ({
           {request.status === "ACCEPTED" && (
             <ChatButton
               contactRequestId={request.id}
-              currentUserId={request.studentId}
+              currentUserId={
+                typeof request.studentId === "string"
+                  ? request.studentId
+                  : request.studentId?.id || ""
+              }
               variant="outline"
               size="sm"
               className="text-xs"
