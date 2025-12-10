@@ -11,7 +11,6 @@ import {
   CheckCircleIcon,
   UserGroupIcon,
   DocumentTextIcon,
-  BanknotesIcon,
 } from "@heroicons/react/24/outline";
 import { attendanceService } from "../../services/attendance.service";
 import type { WeeklySession } from "../../types/attendance";
@@ -173,7 +172,7 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
           <div className="flex items-center space-x-2">
             <button
               onClick={goToPreviousWeek}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
               title="Tuần trước"
             >
               <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
@@ -181,14 +180,14 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
 
             <button
               onClick={goToCurrentWeek}
-              className="px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-medium transition-colors"
+              className="px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-medium transition-colors cursor-pointer"
             >
               Hôm nay
             </button>
 
             <button
               onClick={goToNextWeek}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
               title="Tuần sau"
             >
               <ChevronRightIcon className="w-5 h-5 text-gray-600" />
@@ -314,31 +313,49 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                         </div>
 
                         {/* Attendance Status */}
-                        <div className="flex items-center space-x-2 mb-2">
-                          <div className="flex items-center space-x-1">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                session.attendance.tutorAttended
-                                  ? "bg-green-500"
-                                  : "bg-gray-300"
-                              }`}
-                            />
-                            <span className="text-xs text-gray-600">
-                              Gia sư
-                            </span>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-1">
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  session.attendance.tutorAttended
+                                    ? "bg-green-500"
+                                    : "bg-gray-300"
+                                }`}
+                              />
+                              <span className="text-xs text-gray-600">
+                                Gia sư
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  session.attendance.studentAttended
+                                    ? "bg-green-500"
+                                    : "bg-gray-300"
+                                }`}
+                              />
+                              <span className="text-xs text-gray-600">
+                                Học viên
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                session.attendance.studentAttended
-                                  ? "bg-green-500"
-                                  : "bg-gray-300"
-                              }`}
-                            />
-                            <span className="text-xs text-gray-600">
-                              Học viên
-                            </span>
-                          </div>
+
+                          {/* Payment Status Badge - Only show if not paid */}
+                          {session.paymentRequired &&
+                            session.paymentStatus !== "PAID" && (
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                  session.paymentStatus === "UNPAID"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                                }`}
+                              >
+                                {session.paymentStatus === "UNPAID"
+                                  ? "Chưa thanh toán"
+                                  : "Chờ thanh toán"}
+                              </span>
+                            )}
                         </div>
 
                         {/* Removed homework badges from calendar item as requested */}
@@ -355,104 +372,120 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                                     `/student/classes/${session.classId}/payment`
                                   )
                                 }
-                                className="w-full px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
+                                className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer"
                               >
-                                <BanknotesIcon className="w-4 h-4" />
+                                <span>Thanh toán ngay</span>
+                              </button>
+                            )}
+
+                          {/* Show payment warning for non-student users */}
+                          {session.paymentRequired &&
+                            session.paymentStatus === "UNPAID" &&
+                            userRole !== "STUDENT" && (
+                              <div className="w-full px-3 py-1.5 bg-red-50 text-red-600 text-xs font-medium rounded-lg text-center">
                                 <span>Chưa thanh toán</span>
-                              </button>
-                            )}
-
-                          {/* Show Attendance Button only if paid (or payment not required) and user hasn't attended yet */}
-                          {(!session.paymentRequired ||
-                            session.paymentStatus === "PAID") &&
-                            !session.attendance[
-                              userRole === "TUTOR"
-                                ? "tutorAttended"
-                                : "studentAttended"
-                            ] && (
-                              <button
-                                onClick={() =>
-                                  handleAttendance(
-                                    session.classId,
-                                    session.sessionNumber
-                                  )
-                                }
-                                disabled={!session.canAttend}
-                                className={`w-full px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1 ${
-                                  session.canAttend
-                                    ? "bg-green-600 hover:bg-green-700 cursor-pointer"
-                                    : "bg-gray-400 cursor-not-allowed"
-                                }`}
-                              >
-                                <CheckCircleIcon className="w-4 h-4" />
-                                {(() => {
-                                  const now = new Date();
-                                  const start = new Date(session.scheduledDate);
-                                  const end = new Date(
-                                    start.getTime() +
-                                      (session.duration || 0) * 60000
-                                  );
-                                  const isPast = now > end;
-                                  return (
-                                    <span>
-                                      {session.canAttend
-                                        ? "Điểm danh"
-                                        : isPast
-                                        ? "Đã quá giờ"
-                                        : "Chưa đến giờ"}
-                                    </span>
-                                  );
-                                })()}
-                              </button>
-                            )}
-
-                          {/* Show Join Button if both attended */}
-                          {session.canJoin && session.meetingLink && (
-                            <a
-                              href={session.meetingLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
-                            >
-                              <VideoCameraIcon className="w-4 h-4" />
-                              <span>Vào phòng học</span>
-                            </a>
-                          )}
-
-                          {/* Waiting State - User attended but other hasn't */}
-                          {session.attendance[
-                            userRole === "TUTOR"
-                              ? "tutorAttended"
-                              : "studentAttended"
-                          ] &&
-                            !session.canJoin && (
-                              <div className="w-full px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
-                                <UserGroupIcon className="w-4 h-4" />
-                                <span>
-                                  Chờ{" "}
-                                  {userRole === "TUTOR" ? "học viên" : "gia sư"}
-                                </span>
                               </div>
                             )}
 
-                          {/* Homework Button - Show after session is completed or both attended */}
-                          {(session.status === "COMPLETED" ||
-                            session.canJoin) && (
-                            <button
-                              onClick={() => handleOpenHomework(session)}
-                              className="w-full px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
-                            >
-                              <DocumentTextIcon className="w-4 h-4" />
-                              <span>
-                                {userRole === "TUTOR"
-                                  ? session.homework.hasAssignment
-                                    ? "Quản lý bài tập"
-                                    : "Giao bài tập"
-                                  : session.homework.hasAssignment
-                                  ? "Xem bài tập"
-                                  : "Chưa có bài tập"}
-                              </span>
-                            </button>
+                          {/* Only show other actions if payment is NOT required OR session is PAID */}
+                          {(!session.paymentRequired ||
+                            session.paymentStatus === "PAID") && (
+                            <>
+                              {/* Show Attendance Button only if paid (or payment not required) and user hasn't attended yet */}
+                              {!session.attendance[
+                                userRole === "TUTOR"
+                                  ? "tutorAttended"
+                                  : "studentAttended"
+                              ] && (
+                                <button
+                                  onClick={() =>
+                                    handleAttendance(
+                                      session.classId,
+                                      session.sessionNumber
+                                    )
+                                  }
+                                  disabled={!session.canAttend}
+                                  className={`w-full px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1 ${
+                                    session.canAttend
+                                      ? "bg-green-600 hover:bg-green-700 cursor-pointer"
+                                      : "bg-gray-400 cursor-not-allowed"
+                                  }`}
+                                >
+                                  <CheckCircleIcon className="w-4 h-4" />
+                                  {(() => {
+                                    const now = new Date();
+                                    const start = new Date(
+                                      session.scheduledDate
+                                    );
+                                    const end = new Date(
+                                      start.getTime() +
+                                        (session.duration || 0) * 60000
+                                    );
+                                    const isPast = now > end;
+                                    return (
+                                      <span>
+                                        {session.canAttend
+                                          ? "Điểm danh"
+                                          : isPast
+                                          ? "Đã quá giờ"
+                                          : "Chưa đến giờ"}
+                                      </span>
+                                    );
+                                  })()}
+                                </button>
+                              )}
+
+                              {/* Show Join Button if both attended */}
+                              {session.canJoin && session.meetingLink && (
+                                <a
+                                  href={session.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
+                                >
+                                  <VideoCameraIcon className="w-4 h-4" />
+                                  <span>Vào phòng học</span>
+                                </a>
+                              )}
+
+                              {/* Waiting State - User attended but other hasn't */}
+                              {session.attendance[
+                                userRole === "TUTOR"
+                                  ? "tutorAttended"
+                                  : "studentAttended"
+                              ] &&
+                                !session.canJoin && (
+                                  <div className="w-full px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
+                                    <UserGroupIcon className="w-4 h-4" />
+                                    <span>
+                                      Chờ{" "}
+                                      {userRole === "TUTOR"
+                                        ? "học viên"
+                                        : "gia sư"}
+                                    </span>
+                                  </div>
+                                )}
+
+                              {/* Homework Button - Show after session is completed or both attended */}
+                              {(session.status === "COMPLETED" ||
+                                session.canJoin) && (
+                                <button
+                                  onClick={() => handleOpenHomework(session)}
+                                  className="w-full px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer flex items-center justify-center space-x-1"
+                                >
+                                  <DocumentTextIcon className="w-4 h-4" />
+                                  <span>
+                                    {userRole === "TUTOR"
+                                      ? session.homework.hasAssignment
+                                        ? "Quản lý bài tập"
+                                        : "Giao bài tập"
+                                      : session.homework.hasAssignment
+                                      ? "Xem bài tập"
+                                      : "Chưa có bài tập"}
+                                  </span>
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
 

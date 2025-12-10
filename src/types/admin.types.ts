@@ -153,3 +153,64 @@ export interface SessionAnalytics {
   average_session_duration: number;
   popular_subjects: { subject: string; count: number }[];
 }
+
+// User Management Types
+export interface AdminUserListItem {
+  id: string;
+  full_name: string;
+  email: string;
+  phone_number?: string;
+  avatar_url?: string;
+  role: "STUDENT" | "TUTOR";
+  status: "active" | "locked" | "pending_verification";
+  created_at: string;
+  violation_count: number;
+}
+
+export interface AdminUserFilters {
+  role?: "STUDENT" | "TUTOR";
+  status?: "active" | "locked" | "pending_verification";
+  search?: string;
+  page?: number;
+  limit?: number;
+  sort_by?: "created_at" | "updated_at" | "full_name" | "violation_count";
+  sort_order?: "asc" | "desc";
+}
+
+export interface AdminUserStats {
+  total_users: number;
+  total_students: number;
+  total_tutors: number;
+  active_users: number;
+  locked_users: number;
+  pending_users: number;
+  total_violations: number;
+}
+
+export interface UserViolationSummary {
+  total_violations: number;
+  student_fault_count: number;
+  tutor_fault_count: number;
+  both_fault_count: number;
+  no_fault_count: number;
+  dismissed_count: number;
+  recent_reports: any[];
+}
+
+export interface UserDetailedInfo extends AdminUserListItem {
+  address?: string;
+  date_of_birth?: string;
+  gender?: string;
+  updated_at?: string;
+}
+
+export interface AdminUserResponse {
+  users: AdminUserListItem[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  stats: AdminUserStats;
+}

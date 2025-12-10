@@ -219,7 +219,7 @@ const SessionPaymentSelector: React.FC<SessionPaymentSelectorProps> = ({
             className={`mt-6 w-full flex items-center justify-center gap-2 px-6 py-4 rounded-lg font-semibold text-white transition-all ${
               isInitiatingPayment || selectedSessions.length === 0
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 active:scale-95"
+                : "bg-blue-600 hover:bg-blue-700 active:scale-95 cursor-pointer"
             }`}
           >
             {isInitiatingPayment ? (

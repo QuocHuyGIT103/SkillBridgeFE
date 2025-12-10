@@ -11,6 +11,7 @@ import type {
   VerificationErrorResponse,
   TutorProfile as QualificationTutorProfile,
 } from "../types/qualification.types";
+import { useAuthStore } from "./auth.store";
 
 // Types for the store
 export interface User {
@@ -209,6 +210,17 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
             isUpdatingPersonal: false,
           });
         }
+
+        // ✅ Đồng bộ dữ liệu với auth.store để cập nhật header
+        useAuthStore.getState().updateUser({
+          full_name: response.data.full_name,
+          phone_number: response.data.phone_number,
+          avatar_url: response.data.avatar_url,
+          gender: response.data.gender,
+          date_of_birth: response.data.date_of_birth,
+          address: response.data.address,
+          structured_address: response.data.structured_address,
+        });
       } else {
         // Handle validation response (warning or blocked)
         if (response.data) {
