@@ -145,6 +145,24 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
     }
   };
 
+  // Helper function to check session time status
+  const getSessionTimeStatus = (session: WeeklySession) => {
+    const now = new Date();
+    const start = new Date(session.scheduledDate);
+    const end = new Date(start.getTime() + (session.duration || 90) * 60000); // Default 90 minutes if no duration
+    
+    // Allow joining 10 minutes before start time
+    const canJoinStart = new Date(start.getTime() - 10 * 60000);
+    
+    if (now < canJoinStart) {
+      return { status: 'NOT_STARTED', canJoinMeeting: false, isPast: false, message: 'Chưa đến giờ' };
+    } else if (now >= canJoinStart && now <= end) {
+      return { status: 'IN_PROGRESS', canJoinMeeting: true, isPast: false, message: 'Đang diễn ra' };
+    } else {
+      return { status: 'ENDED', canJoinMeeting: false, isPast: true, message: 'Đã kết thúc' };
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -435,36 +453,67 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                                 </button>
                               )}
 
-                              {/* Show Join Button if both attended */}
-                              {session.canJoin && session.meetingLink && (
-                                <a
-                                  href={session.meetingLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
-                                >
-                                  <VideoCameraIcon className="w-4 h-4" />
-                                  <span>Vào phòng học</span>
-                                </a>
-                              )}
+                              {/* Show Join Button if both attended AND session is in progress */}
+                              {(() => {
+                                const timeStatus = getSessionTimeStatus(session);
+                                const canShowJoinButton = session.canJoin && session.meetingLink && timeStatus.canJoinMeeting;
+                                const sessionEnded = timeStatus.status === 'ENDED';
+                                
+                                if (canShowJoinButton) {
+                                  return (
+                                    <a
+                                      href={session.meetingLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
+                                    >
+                                      <VideoCameraIcon className="w-4 h-4" />
+                                      <span>Vào phòng học</span>
+                                    </a>
+                                  );
+                                } else if (session.canJoin && session.meetingLink && sessionEnded) {
+                                  // Session ended but both attended - show completed status
+                                  return (
+                                    <div className="w-full px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
+                                      <CheckCircleIcon className="w-4 h-4" />
+                                      <span>Buổi học đã kết thúc</span>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
 
-                              {/* Waiting State - User attended but other hasn't */}
-                              {session.attendance[
-                                userRole === "TUTOR"
-                                  ? "tutorAttended"
-                                  : "studentAttended"
-                              ] &&
-                                !session.canJoin && (
-                                  <div className="w-full px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
-                                    <UserGroupIcon className="w-4 h-4" />
-                                    <span>
-                                      Chờ{" "}
-                                      {userRole === "TUTOR"
-                                        ? "học viên"
-                                        : "gia sư"}
-                                    </span>
-                                  </div>
-                                )}
+                              {/* Waiting State - User attended but other hasn't AND session is still in progress */}
+                              {(() => {
+                                const timeStatus = getSessionTimeStatus(session);
+                                const userAttended = session.attendance[
+                                  userRole === "TUTOR" ? "tutorAttended" : "studentAttended"
+                                ];
+                                const otherNotAttended = !session.canJoin;
+                                const sessionStillActive = timeStatus.status !== 'ENDED';
+                                
+                                if (userAttended && otherNotAttended && sessionStillActive) {
+                                  return (
+                                    <div className="w-full px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
+                                      <UserGroupIcon className="w-4 h-4" />
+                                      <span>
+                                        Chờ {userRole === "TUTOR" ? "học viên" : "gia sư"}
+                                      </span>
+                                    </div>
+                                  );
+                                } else if (userAttended && otherNotAttended && !sessionStillActive) {
+                                  // Session ended but other person didn't attend
+                                  return (
+                                    <div className="w-full px-3 py-1.5 bg-red-50 text-red-600 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
+                                      <UserGroupIcon className="w-4 h-4" />
+                                      <span>
+                                        {userRole === "TUTOR" ? "Học viên" : "Gia sư"} vắng mặt
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
 
                               {/* Homework Button - Show after session is completed or both attended */}
                               {(session.status === "COMPLETED" ||
