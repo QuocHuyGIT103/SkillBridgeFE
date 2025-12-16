@@ -13,6 +13,7 @@ import {
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import { attendanceService } from "../../services/attendance.service";
+import { classService } from "../../services/class.service";
 import type { WeeklySession } from "../../types/attendance";
 import { toast } from "react-hot-toast";
 import HomeworkModal from "../modals/HomeworkModal";
@@ -73,6 +74,21 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Điểm danh thất bại");
+    }
+  };
+
+  // NEW: Track join session automatically
+  const handleJoinSession = async (classId: string, sessionNumber: number, meetingLink: string) => {
+    try {
+      // Navigate to embedded meeting page (with auto tracking)
+      const meetingPath = userRole === 'TUTOR' 
+        ? `/tutor/meeting/${classId}/${sessionNumber}`
+        : `/student/meeting/${classId}/${sessionNumber}`;
+      
+      navigate(meetingPath);
+    } catch (error: any) {
+      console.error('Failed to join meeting:', error);
+      toast.error('Không thể vào phòng học');
     }
   };
 
@@ -409,106 +425,39 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                           {(!session.paymentRequired ||
                             session.paymentStatus === "PAID") && (
                             <>
-                              {/* Show Attendance Button only if paid (or payment not required) and user hasn't attended yet */}
-                              {!session.attendance[
-                                userRole === "TUTOR"
-                                  ? "tutorAttended"
-                                  : "studentAttended"
-                              ] && (
-                                <button
-                                  onClick={() =>
-                                    handleAttendance(
-                                      session.classId,
-                                      session.sessionNumber
-                                    )
-                                  }
-                                  disabled={!session.canAttend}
-                                  className={`w-full px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1 ${
-                                    session.canAttend
-                                      ? "bg-green-600 hover:bg-green-700 cursor-pointer"
-                                      : "bg-gray-400 cursor-not-allowed"
-                                  }`}
-                                >
-                                  <CheckCircleIcon className="w-4 h-4" />
-                                  {(() => {
-                                    const now = new Date();
-                                    const start = new Date(
-                                      session.scheduledDate
-                                    );
-                                    const end = new Date(
-                                      start.getTime() +
-                                        (session.duration || 0) * 60000
-                                    );
-                                    const isPast = now > end;
-                                    return (
-                                      <span>
-                                        {session.canAttend
-                                          ? "Điểm danh"
-                                          : isPast
-                                          ? "Đã quá giờ"
-                                          : "Chưa đến giờ"}
-                                      </span>
-                                    );
-                                  })()}
-                                </button>
-                              )}
-
-                              {/* Show Join Button if both attended AND session is in progress */}
-                              {(() => {
-                                const timeStatus = getSessionTimeStatus(session);
-                                const canShowJoinButton = session.canJoin && session.meetingLink && timeStatus.canJoinMeeting;
-                                const sessionEnded = timeStatus.status === 'ENDED';
+                              {/* NEW: Direct Join Button - No Attendance Required */}
+                              {session.learningMode === "ONLINE" && session.meetingLink && (() => {
+                                const now = new Date();
+                                const start = new Date(session.scheduledDate);
+                                const canJoinTime = new Date(start.getTime() - 15 * 60000); // 15 min before
+                                const end = new Date(start.getTime() + (session.duration || 0) * 60000);
                                 
-                                if (canShowJoinButton) {
+                                const canJoinNow = now >= canJoinTime && now <= end;
+                                const sessionEnded = now > end;
+                                const sessionNotYet = now < canJoinTime;
+                                
+                                if (canJoinNow) {
                                   return (
-                                    <a
-                                      href={session.meetingLink}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                    <button
+                                      onClick={() => handleJoinSession(session.classId, session.sessionNumber, session.meetingLink!)}
                                       className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
                                     >
                                       <VideoCameraIcon className="w-4 h-4" />
                                       <span>Vào phòng học</span>
-                                    </a>
+                                    </button>
                                   );
-                                } else if (session.canJoin && session.meetingLink && sessionEnded) {
-                                  // Session ended but both attended - show completed status
+                                } else if (sessionEnded) {
                                   return (
                                     <div className="w-full px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
                                       <CheckCircleIcon className="w-4 h-4" />
                                       <span>Buổi học đã kết thúc</span>
                                     </div>
                                   );
-                                }
-                                return null;
-                              })()}
-
-                              {/* Waiting State - User attended but other hasn't AND session is still in progress */}
-                              {(() => {
-                                const timeStatus = getSessionTimeStatus(session);
-                                const userAttended = session.attendance[
-                                  userRole === "TUTOR" ? "tutorAttended" : "studentAttended"
-                                ];
-                                const otherNotAttended = !session.canJoin;
-                                const sessionStillActive = timeStatus.status !== 'ENDED';
-                                
-                                if (userAttended && otherNotAttended && sessionStillActive) {
+                                } else if (sessionNotYet) {
                                   return (
-                                    <div className="w-full px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
-                                      <UserGroupIcon className="w-4 h-4" />
-                                      <span>
-                                        Chờ {userRole === "TUTOR" ? "học viên" : "gia sư"}
-                                      </span>
-                                    </div>
-                                  );
-                                } else if (userAttended && otherNotAttended && !sessionStillActive) {
-                                  // Session ended but other person didn't attend
-                                  return (
-                                    <div className="w-full px-3 py-1.5 bg-red-50 text-red-600 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
-                                      <UserGroupIcon className="w-4 h-4" />
-                                      <span>
-                                        {userRole === "TUTOR" ? "Học viên" : "Gia sư"} vắng mặt
-                                      </span>
+                                    <div className="w-full px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
+                                      <ClockIcon className="w-4 h-4" />
+                                      <span>Chưa đến giờ học</span>
                                     </div>
                                   );
                                 }

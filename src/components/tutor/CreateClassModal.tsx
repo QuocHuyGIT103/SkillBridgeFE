@@ -815,11 +815,11 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                     <button
                       key={day.value}
                       type="button"
-                      onClick={() => handleDayToggle(day.value)}
-                      className={`p-2 text-sm border rounded-lg transition-colors ${
+                      disabled
+                      className={`p-2 text-sm border rounded-lg cursor-not-allowed ${
                         selectedDays.includes(day.value)
-                          ? "border-blue-500 bg-blue-50 text-blue-700 font-medium"
-                          : "border-gray-200 hover:border-blue-300"
+                          ? "border-blue-500 bg-blue-100 text-blue-600 font-medium"
+                          : "border-gray-200 bg-gray-100 text-gray-400"
                       }`}
                     >
                       {day.label}
@@ -844,7 +844,8 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                       required: "Vui lòng chọn giờ bắt đầu",
                     })}
                     type="time"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
                   {errors.schedule?.startTime && (
                     <p className="mt-1 text-sm text-red-600">
@@ -868,7 +869,8 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({
                       },
                     })}
                     type="time"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
                   {errors.schedule?.endTime && (
                     <p className="mt-1 text-sm text-red-600">

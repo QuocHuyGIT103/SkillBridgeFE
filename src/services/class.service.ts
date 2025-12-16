@@ -222,5 +222,47 @@ export const classService = {
       payload
     );
     return response;
-  }
+  },
+
+  // NEW: Automatic participation tracking
+  trackJoinSession: async (classId: string, sessionNumber: number) => {
+    const response = await axiosClient.post(
+      `/classes/${classId}/sessions/${sessionNumber}/track/join`
+    );
+    return response;
+  },
+
+  trackLeaveSession: async (classId: string, sessionNumber: number) => {
+    const response = await axiosClient.post(
+      `/classes/${classId}/sessions/${sessionNumber}/track/leave`
+    );
+    return response;
+  },
+
+  updateSessionRecording: async (
+    classId: string,
+    sessionNumber: number,
+    recordingData: {
+      recordingId?: string;
+      recordingUrl?: string;
+      recordingStartedAt?: Date;
+      recordingEndedAt?: Date;
+      duration?: number;
+      fileSize?: number;
+      status?: 'RECORDING' | 'PROCESSING' | 'READY' | 'FAILED';
+    }
+  ) => {
+    const response = await axiosClient.post(
+      `/classes/${classId}/sessions/${sessionNumber}/recording`,
+      recordingData
+    );
+    return response;
+  },
+
+  canJoinSession: async (classId: string, sessionNumber: number) => {
+    const response = await axiosClient.get(
+      `/classes/${classId}/sessions/${sessionNumber}/can-join`
+    );
+    return response;
+  },
 };

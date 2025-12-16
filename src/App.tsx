@@ -40,6 +40,7 @@ import StudentPreferencesPage from "./pages/student/profile/StudentPreferencesPa
 import StudentContactRequestsPage from "./pages/student/StudentContactRequestsPage";
 import StudentContractsPage from "./pages/student/StudentContractsPage";
 import StudentContractDetailPage from "./pages/student/StudentContractDetailPage";
+import StudentOnlineMeetingPage from "./pages/student/StudentOnlineMeetingPage";
 
 // ✅ AI Survey Pages
 import AISurveyPage from "./pages/student/AISurveyPage";
@@ -77,6 +78,7 @@ import StudentFinancePaymentPage from "./pages/student/StudentFinancePaymentPage
 import TutorClassesPage from "./pages/tutor/TutorClassesPage";
 import TutorClassDetailPage from "./pages/tutor/TutorClassDetailPage";
 import TutorClassSchedulePage from "./pages/tutor/TutorClassSchedulePage";
+import TutorOnlineMeetingPage from "./pages/tutor/TutorOnlineMeetingPage";
 import TutorMessagesPage from "./pages/tutor/TutorMessagesPage";
 import TutorFinancePage from "./pages/tutor/TutorFinancePage";
 import RequireTutorOperate from "./features/tutor/RequireTutorOperate";
@@ -250,6 +252,13 @@ function App() {
               <Route path="payment/success" element={<PaymentSuccessPage />} />
               <Route path="payment/failure" element={<PaymentFailurePage />} />
               <Route path="assignments" element={<StudentAssignmentsPage />} />
+              
+              {/* Online Meeting Route */}
+              <Route
+                path="meeting/:classId/:sessionNumber"
+                element={<StudentOnlineMeetingPage />}
+              />
+              
               <Route
                 path="ratings"
                 element={
@@ -322,6 +331,12 @@ function App() {
               <Route
                 path="classes/:classId/schedule"
                 element={<TutorClassSchedulePage />}
+              />
+              
+              {/* Online Meeting Route */}
+              <Route
+                path="meeting/:classId/:sessionNumber"
+                element={<TutorOnlineMeetingPage />}
               />
 
               <Route
