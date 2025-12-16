@@ -14,7 +14,6 @@ interface ChatButtonProps {
 
 const ChatButton: React.FC<ChatButtonProps> = ({
   contactRequestId,
-  currentUserId,
   className = "",
   variant = "primary",
   size = "md",

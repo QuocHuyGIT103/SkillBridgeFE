@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  XMarkIcon,
   ExclamationTriangleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";

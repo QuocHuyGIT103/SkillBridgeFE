@@ -9,10 +9,7 @@ import {
   CurrencyDollarIcon,
   AcademicCapIcon,
   ComputerDesktopIcon,
-  CheckIcon,
-  Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
-import SubjectSelector from "./SubjectSelector";
 import PriceInput from "./PriceInput";
 import { useTutorPostStore } from "../../store/tutorPost.store";
 import { useSubjectStore } from "../../store/subject.store";
@@ -124,7 +121,6 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
   // Local state
   const [localFilters, setLocalFilters] =
     useState<TutorPostSearchQuery>(filters);
-  const [isMobile, setIsMobile] = useState(false);
 
   // DROPDOWN STATES
   const [openDropdowns, setOpenDropdowns] = useState<{
@@ -147,22 +143,17 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
 
   // Store hooks
   const {
-    filterOptions,
-    filterLoading,
     provinces,
     districts,
-    wards,
-    locationLoading,
     getFilterOptions,
     getDistrictsByProvince,
     getWardsByDistrict,
-    resetFilters,
     error,
     clearError,
   } = useTutorPostStore();
 
   // Subject store
-  const { activeSubjects, getActiveSubjects, isLoading: subjectsLoading } = useSubjectStore();
+  const { activeSubjects, getActiveSubjects } = useSubjectStore();
 
   // Ref for click outside detection
   const filterContainerRef = useRef<HTMLDivElement>(null);
@@ -170,29 +161,32 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
   // Click outside handler to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (filterContainerRef.current && !filterContainerRef.current.contains(event.target as Node)) {
+      if (
+        filterContainerRef.current &&
+        !filterContainerRef.current.contains(event.target as Node)
+      ) {
         closeAllDropdowns();
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   // Debounced search - only trigger when search text changes
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
   useEffect(() => {
     // Clear previous timer
     if (searchTimerRef.current) {
       clearTimeout(searchTimerRef.current);
     }
-    
+
     // Only trigger search if there's search text or if it was cleared
-    const searchText = localFilters.search?.trim() || '';
-    
+    const searchText = localFilters.search?.trim() || "";
+
     searchTimerRef.current = setTimeout(() => {
       onFiltersChange({ ...localFilters, search: searchText || undefined });
     }, 800);
@@ -205,16 +199,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localFilters.search]);
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  // Mobile detection removed - not used
 
   useEffect(() => {
     getFilterOptions().catch((err) => {
@@ -347,8 +332,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
   );
 
   const getCurrentSortValue = () => {
-    return `${localFilters.sortBy || "createdAt"}_${localFilters.sortOrder || "desc"
-      }`;
+    return `${localFilters.sortBy || "createdAt"}_${
+      localFilters.sortOrder || "desc"
+    }`;
   };
 
   const hasActiveFilters = () => {
@@ -446,8 +432,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
       ref={filterContainerRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white rounded-2xl shadow-sm border border-gray-200 overflow-visible relative ${className} ${disabled ? "opacity-50 pointer-events-none" : ""
-        }`}
+      className={`bg-white rounded-2xl shadow-sm border border-gray-200 overflow-visible relative ${className} ${
+        disabled ? "opacity-50 pointer-events-none" : ""
+      }`}
       style={{ zIndex: 20 }}
     >
       {/* HEADER */}
@@ -458,7 +445,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
               <FunnelIcon className="w-5 h-5 text-blue-600" />
             </div>
             <h3 className="text-base font-bold text-gray-900 truncate">
-              Bộ lọc {isSmartSearchMode && <span className="text-blue-500">AI</span>}
+              Bộ lọc{" "}
+              {isSmartSearchMode && <span className="text-blue-500">AI</span>}
             </h3>
             {getActiveFilterCount() > 0 && (
               <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full flex-shrink-0">
@@ -539,10 +527,11 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("subjects")}
-              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.subjects?.length
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-between ${
+                localFilters.subjects?.length
                   ? "border-blue-400 bg-blue-50 text-blue-700"
                   : "border-gray-200 text-gray-700 hover:border-gray-300"
-                }`}
+              }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <AcademicCapIcon className="w-4 h-4 flex-shrink-0" />
@@ -551,8 +540,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 flex-shrink-0 transition-transform ${openDropdowns.subjects ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                  openDropdowns.subjects ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -563,28 +553,30 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl"
-                  style={{ 
-                    zIndex: 9999, 
-                    minWidth: '300px', 
-                    maxHeight: '400px',
-                    pointerEvents: 'auto'
+                  style={{
+                    zIndex: 9999,
+                    minWidth: "300px",
+                    maxHeight: "400px",
+                    pointerEvents: "auto",
                   }}
                   onClick={(e) => e.stopPropagation()}
                   onWheel={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
-                  <div 
+                  <div
                     className="p-3 overflow-y-scroll"
-                    style={{ 
-                      maxHeight: '380px',
-                      overflowY: 'scroll',
-                      WebkitOverflowScrolling: 'touch'
+                    style={{
+                      maxHeight: "380px",
+                      overflowY: "scroll",
+                      WebkitOverflowScrolling: "touch",
                     }}
                   >
                     <div className="space-y-2">
                       {activeSubjects && activeSubjects.length > 0 ? (
                         activeSubjects.map((subject: any) => {
-                          const isSelected = (localFilters.subjects || []).includes(subject._id);
+                          const isSelected = (
+                            localFilters.subjects || []
+                          ).includes(subject._id);
                           return (
                             <label
                               key={subject._id}
@@ -598,13 +590,18 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={(e) => {
-                                  const currentSubjects = localFilters.subjects || [];
+                                  const currentSubjects =
+                                    localFilters.subjects || [];
                                   const newSubjects = e.target.checked
                                     ? [...currentSubjects, subject._id]
-                                    : currentSubjects.filter((id) => id !== subject._id);
+                                    : currentSubjects.filter(
+                                        (id) => id !== subject._id
+                                      );
                                   updateFilter(
                                     "subjects",
-                                    newSubjects.length > 0 ? newSubjects : undefined
+                                    newSubjects.length > 0
+                                      ? newSubjects
+                                      : undefined
                                   );
                                 }}
                                 className="mr-2 h-4 w-4"
@@ -614,7 +611,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                           );
                         })
                       ) : (
-                        <p className="text-sm text-gray-500 text-center py-2">Không có môn học</p>
+                        <p className="text-sm text-gray-500 text-center py-2">
+                          Không có môn học
+                        </p>
                       )}
                     </div>
                   </div>
@@ -627,10 +626,11 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("studentLevel")}
-              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.studentLevel?.length
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
+                localFilters.studentLevel?.length
                   ? "border-green-400 bg-green-50 text-green-700"
                   : "border-gray-200 text-gray-700"
-                }`}
+              }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="text-sm flex-shrink-0">🎓</span>
@@ -639,8 +639,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 flex-shrink-0 transition-transform ${openDropdowns.studentLevel ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                  openDropdowns.studentLevel ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -651,7 +652,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
-                  style={{ zIndex: 50, minWidth: '250px' }}
+                  style={{ zIndex: 50, minWidth: "250px" }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="grid grid-cols-1 gap-2">
@@ -662,10 +663,11 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                       return (
                         <label
                           key={level.value}
-                          className={`flex items-center p-2 rounded cursor-pointer transition-colors ${isSelected
+                          className={`flex items-center p-2 rounded cursor-pointer transition-colors ${
+                            isSelected
                               ? "bg-green-50 border border-green-200"
                               : "hover:bg-gray-50"
-                            }`}
+                          }`}
                         >
                           <input
                             type="checkbox"
@@ -676,8 +678,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                               const newLevels = e.target.checked
                                 ? [...currentLevels, level.value]
                                 : currentLevels.filter(
-                                  (l) => l !== level.value
-                                );
+                                    (l) => l !== level.value
+                                  );
                               updateFilter(
                                 "studentLevel",
                                 newLevels.length > 0 ? newLevels : undefined
@@ -700,10 +702,11 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("teachingMode")}
-              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.teachingMode
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
+                localFilters.teachingMode
                   ? "border-purple-400 bg-purple-50 text-purple-700"
                   : "border-gray-200 text-gray-700"
-                }`}
+              }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <ComputerDesktopIcon className="w-4 h-4 flex-shrink-0" />
@@ -712,8 +715,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 flex-shrink-0 transition-transform ${openDropdowns.teachingMode ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                  openDropdowns.teachingMode ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -724,7 +728,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3"
-                  style={{ zIndex: 50, minWidth: '280px' }}
+                  style={{ zIndex: 50, minWidth: "280px" }}
                 >
                   <div className="space-y-2">
                     {TEACHING_MODES.map((mode) => {
@@ -741,10 +745,11 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                             );
                             closeAllDropdowns();
                           }}
-                          className={`w-full p-2.5 rounded text-left transition-colors flex items-center gap-3 ${isSelected
+                          className={`w-full p-2.5 rounded text-left transition-colors flex items-center gap-3 ${
+                            isSelected
                               ? "bg-purple-50 border border-purple-200 text-purple-700"
                               : "hover:bg-gray-50"
-                            }`}
+                          }`}
                         >
                           <span className="text-xl">{mode.icon}</span>
                           <div>
@@ -769,10 +774,11 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("price")}
-              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.priceMin || localFilters.priceMax
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
+                localFilters.priceMin || localFilters.priceMax
                   ? "border-green-400 bg-green-50 text-green-700"
                   : "border-gray-200 text-gray-700"
-                }`}
+              }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <CurrencyDollarIcon className="w-4 h-4 flex-shrink-0" />
@@ -781,8 +787,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${openDropdowns.price ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 transition-transform ${
+                  openDropdowns.price ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -793,7 +800,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4"
-                  style={{ zIndex: 50, minWidth: '320px' }}
+                  style={{ zIndex: 50, minWidth: "320px" }}
                 >
                   {/* Price Presets */}
                   <div className="mb-3">
@@ -844,10 +851,11 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("quality")}
-              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.minRating || localFilters.minReviews
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
+                localFilters.minRating || localFilters.minReviews
                   ? "border-yellow-400 bg-yellow-50 text-yellow-700"
                   : "border-gray-200 text-gray-700"
-                }`}
+              }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="text-sm flex-shrink-0">⭐</span>
@@ -856,8 +864,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 flex-shrink-0 transition-transform ${openDropdowns.quality ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                  openDropdowns.quality ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -868,7 +877,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-4"
-                  style={{ zIndex: 50, minWidth: '320px' }}
+                  style={{ zIndex: 50, minWidth: "320px" }}
                 >
                   <div className="space-y-4">
                     <div>
@@ -878,7 +887,8 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                       <div className="grid grid-cols-2 gap-2">
                         {RATING_PRESETS.map((preset) => {
                           const isSelected =
-                            Number(localFilters.minRating?.toFixed(1)) === preset.value;
+                            Number(localFilters.minRating?.toFixed(1)) ===
+                            preset.value;
                           return (
                             <button
                               key={preset.value}
@@ -889,10 +899,11 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                                   isSelected ? undefined : preset.value
                                 );
                               }}
-                              className={`px-3 py-2 rounded-lg text-base border transition-colors ${isSelected
+                              className={`px-3 py-2 rounded-lg text-base border transition-colors ${
+                                isSelected
                                   ? "border-yellow-500 bg-yellow-50 text-yellow-800"
                                   : "border-gray-200 hover:bg-gray-50"
-                                }`}
+                              }`}
                             >
                               {preset.label}
                             </button>
@@ -928,7 +939,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                             const value = e.target.value;
                             updateFilter(
                               "minReviews",
-                              value === "" ? undefined : Math.max(0, Number(value))
+                              value === ""
+                                ? undefined
+                                : Math.max(0, Number(value))
                             );
                           }}
                           onClick={(e) => e.stopPropagation()}
@@ -963,10 +976,11 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
           <div className="relative">
             <button
               onClick={() => toggleDropdown("location")}
-              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${localFilters.province
+              className={`w-full px-3 py-2.5 text-sm font-medium border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
+                localFilters.province
                   ? "border-red-400 bg-red-50 text-red-700"
                   : "border-gray-200 text-gray-700"
-                }`}
+              }`}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <MapPinIcon className="w-4 h-4 flex-shrink-0" />
@@ -975,8 +989,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 </span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 flex-shrink-0 transition-transform ${openDropdowns.location ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                  openDropdowns.location ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -987,7 +1002,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-3 max-h-96 overflow-y-auto"
-                  style={{ zIndex: 50, minWidth: '280px' }}
+                  style={{ zIndex: 50, minWidth: "280px" }}
                 >
                   <div className="space-y-3">
                     <div>
@@ -1084,8 +1099,9 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                 <span className="truncate">{getFilterDisplayText("sort")}</span>
               </div>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${openDropdowns.sort ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 transition-transform ${
+                  openDropdowns.sort ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -1096,7 +1112,7 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl p-2"
-                  style={{ zIndex: 50, minWidth: '200px' }}
+                  style={{ zIndex: 50, minWidth: "200px" }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-1">
@@ -1110,10 +1126,11 @@ const TutorPostFilter: React.FC<TutorPostFilterProps> = ({
                           onClick={() =>
                             handleSortChange(`${option.value}_${option.order}`)
                           }
-                          className={`w-full p-2.5 rounded text-left transition-colors flex items-center gap-3 ${isSelected
+                          className={`w-full p-2.5 rounded text-left transition-colors flex items-center gap-3 ${
+                            isSelected
                               ? "bg-indigo-50 text-indigo-700"
                               : "hover:bg-gray-50"
-                            }`}
+                          }`}
                         >
                           {/* ✅ TĂNG CỠ CHỮ */}
                           <span className="text-base">{option.icon}</span>

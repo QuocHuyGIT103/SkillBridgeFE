@@ -1,12 +1,7 @@
 import axios from "axios";
 
 // Support either VITE_API_URL or VITE_API_BASE_URL; fallback to localhost
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.VITE_API_BASE_URL
-    ? `${import.meta.env.VITE_API_BASE_URL}/api/v1`
-    : undefined) ||
-  "http://localhost:3000/api/v1";
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
 
 export interface MessageData {
   _id: string;
@@ -465,7 +460,9 @@ class MessageService {
   }
 
   // Get or create conversation by class ID
-  async getOrCreateConversationByClass(classId: string): Promise<ConversationData> {
+  async getOrCreateConversationByClass(
+    classId: string
+  ): Promise<ConversationData> {
     try {
       const response = await axios.get(
         `${API_BASE_URL}/messages/conversations/class/${classId}`,
@@ -473,7 +470,9 @@ class MessageService {
       );
       return normalizeConversation(response.data.data);
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Lỗi khi lấy cuộc trò chuyện');
+      throw new Error(
+        error.response?.data?.message || "Lỗi khi lấy cuộc trò chuyện"
+      );
     }
   }
 

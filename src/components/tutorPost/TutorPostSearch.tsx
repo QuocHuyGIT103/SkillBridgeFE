@@ -3,9 +3,6 @@ import { useTutorPostStore } from "../../store/tutorPost.store";
 import TutorPostCard from "./TutorPostCard";
 import TutorPostFilter from "./TutorPostFilter";
 import type { TutorPostSearchQuery } from "../../services/tutorPost.service";
-import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../store/auth.store";
-import toast from "react-hot-toast";
 
 interface TutorPostSearchProps {
   initialFilters?: Partial<TutorPostSearchQuery>;
@@ -27,16 +24,8 @@ const TutorPostSearch: React.FC<TutorPostSearchProps> = ({
   compact = false,
   className = "",
 }) => {
-  const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuthStore();
-  const {
-    posts,
-    pagination,
-    searchLoading,
-    searchTutorPosts,
-    incrementContactCount,
-    clearPosts,
-  } = useTutorPostStore();
+  const { posts, pagination, searchLoading, searchTutorPosts, clearPosts } =
+    useTutorPostStore();
 
   const [filters, setFilters] = useState<TutorPostSearchQuery>({
     ...DEFAULT_FILTERS,
@@ -87,28 +76,6 @@ const TutorPostSearch: React.FC<TutorPostSearchProps> = ({
 
     // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleContactClick = async (tutorPost: any) => {
-    if (!isAuthenticated) {
-      toast.error("Vui lòng đăng nhập để liên hệ với gia sư");
-      navigate("/auth/login");
-      return;
-    }
-
-    if (user?.role === "TUTOR" && user?.id === tutorPost.tutorId._id) {
-      toast.error("Bạn không thể liên hệ với chính mình");
-      return;
-    }
-
-    try {
-      await incrementContactCount(tutorPost._id);
-
-      // Navigate to tutor post detail or show contact modal
-      navigate(`/tutors/${tutorPost._id}`);
-    } catch (error) {
-      toast.error("Có lỗi xảy ra, vui lòng thử lại");
-    }
   };
 
   const PaginationComponent = () => {
@@ -351,14 +318,10 @@ const TutorPostSearch: React.FC<TutorPostSearchProps> = ({
               `}
               >
                 {posts.map((post) => (
-                  <TutorPostCard
-                    key={post._id}
-                    post={post}
-                    
-                  />
+                  <TutorPostCard key={post._id} post={post} />
                 ))}
               </div>
-                
+
               <PaginationComponent />
             </>
           )}

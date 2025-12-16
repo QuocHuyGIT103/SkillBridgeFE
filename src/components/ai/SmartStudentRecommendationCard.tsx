@@ -1,18 +1,15 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   SparklesIcon,
   MapPinIcon,
   CurrencyDollarIcon,
   AcademicCapIcon,
-  CheckCircleIcon,
-  StarIcon,
   UserIcon,
-} from '@heroicons/react/24/outline';
-import { SparklesIcon as SparklesSolidIcon } from '@heroicons/react/24/solid';
-import type { SmartStudentRecommendation } from '../../services/ai.service';
-import AIService from '../../services/ai.service';
+} from "@heroicons/react/24/outline";
+import type { SmartStudentRecommendation } from "../../services/ai.service";
+import AIService from "../../services/ai.service";
 
 interface SmartStudentRecommendationCardProps {
   recommendation: SmartStudentRecommendation;
@@ -21,17 +18,16 @@ interface SmartStudentRecommendationCardProps {
   tutorPostId?: string;
 }
 
-const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardProps> = ({
-  recommendation,
-  rank,
-  onClick,
-  tutorPostId,
-}) => {
+const SmartStudentRecommendationCard: React.FC<
+  SmartStudentRecommendationCardProps
+> = ({ recommendation, rank, onClick, tutorPostId }) => {
   const navigate = useNavigate();
-  
+
   // On-demand explanation states
   const [isExplanationExpanded, setIsExplanationExpanded] = useState(false);
-  const [onDemandExplanation, setOnDemandExplanation] = useState<string | null>(null);
+  const [onDemandExplanation, setOnDemandExplanation] = useState<string | null>(
+    null
+  );
   const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
 
   const handleCardClick = () => {
@@ -40,7 +36,7 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
     } else {
       // Navigate to student post detail with tutorPostId in state
       navigate(`/tutor/posts/student/${recommendation.postId}`, {
-        state: { tutorPostId, fromAIRecommendations: true }
+        state: { tutorPostId, fromAIRecommendations: true },
       });
     }
   };
@@ -48,69 +44,82 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
   // Fetch on-demand explanation when user clicks
   const handleToggleExplanation = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     // If already expanded with explanation, just collapse
     if (isExplanationExpanded && (explanation || onDemandExplanation)) {
       setIsExplanationExpanded(false);
       return;
     }
-    
+
     // If auto-generated explanation exists and not empty, show it
     if (explanation && explanation.trim().length > 0) {
       setIsExplanationExpanded(true);
       return;
     }
-    
+
     // If already fetched, show it
     if (onDemandExplanation) {
       setIsExplanationExpanded(true);
       return;
     }
-    
+
     // Fetch from API (on-demand AI explanation)
     if (!tutorPostId || !recommendation.postId) {
-      toast.error('Thiếu thông tin bài đăng');
+      toast.error("Thiếu thông tin bài đăng");
       return;
     }
 
     // Check if user is authenticated before making request
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem("access_token");
     if (!token) {
-      toast.error('Vui lòng đăng nhập lại để sử dụng tính năng này');
+      toast.error("Vui lòng đăng nhập lại để sử dụng tính năng này");
       return;
     }
-    
-    console.log('🔍 [SmartStudentRecommendationCard] Fetching AI explanation...');
-    console.log('🔍 [SmartStudentRecommendationCard] tutorPostId:', tutorPostId);
-    console.log('🔍 [SmartStudentRecommendationCard] studentPostId:', recommendation.postId);
-    
+
+    console.log(
+      "🔍 [SmartStudentRecommendationCard] Fetching AI explanation..."
+    );
+    console.log(
+      "🔍 [SmartStudentRecommendationCard] tutorPostId:",
+      tutorPostId
+    );
+    console.log(
+      "🔍 [SmartStudentRecommendationCard] studentPostId:",
+      recommendation.postId
+    );
+
     setIsLoadingExplanation(true);
     setIsExplanationExpanded(true);
-    
+
     try {
       // Use the new on-demand API endpoint for tutors
-      console.log('🔍 [SmartStudentRecommendationCard] Calling AIService.getOnDemandStudentExplanation...');
+      console.log(
+        "🔍 [SmartStudentRecommendationCard] Calling AIService.getOnDemandStudentExplanation..."
+      );
       const response = await AIService.getOnDemandStudentExplanation(
         tutorPostId,
         recommendation.postId
       );
-      console.log('✅ [SmartStudentRecommendationCard] API Response:', response);
+      console.log(
+        "✅ [SmartStudentRecommendationCard] API Response:",
+        response
+      );
       setOnDemandExplanation(response.data.explanation);
     } catch (error: any) {
-      console.error('Failed to fetch explanation:', error);
-      
+      console.error("Failed to fetch explanation:", error);
+
       // Handle different error types
-      let errorMessage = 'Không thể tạo giải thích AI';
+      let errorMessage = "Không thể tạo giải thích AI";
       if (error.status === 401) {
-        errorMessage = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
+        errorMessage = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
       } else if (error.status === 403) {
-        errorMessage = 'Bạn không có quyền xem thông tin này';
+        errorMessage = "Bạn không có quyền xem thông tin này";
       } else if (error.status === 404) {
-        errorMessage = 'Không tìm thấy thông tin bài đăng';
+        errorMessage = "Không tìm thấy thông tin bài đăng";
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       toast.error(errorMessage);
       setIsExplanationExpanded(false);
     } finally {
@@ -119,32 +128,27 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
   };
 
   const getMatchScoreColor = (score: number): string => {
-    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200';
-    if (score >= 60) return 'text-blue-600 bg-blue-50 border-blue-200';
-    if (score >= 40) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-gray-600 bg-gray-50 border-gray-200';
-  };
-
-  const getMatchScoreLabel = (score: number): string => {
-    if (score >= 80) return 'Rất phù hợp';
-    if (score >= 60) return 'Phù hợp';
-    if (score >= 40) return 'Tương đối';
-    return 'Có thể phù hợp';
+    if (score >= 80) return "text-green-600 bg-green-50 border-green-200";
+    if (score >= 60) return "text-blue-600 bg-blue-50 border-blue-200";
+    if (score >= 40) return "text-yellow-600 bg-yellow-50 border-yellow-200";
+    return "text-gray-600 bg-gray-50 border-gray-200";
   };
 
   const formatPrice = (min?: number, max?: number): string => {
     if (min !== undefined && max !== undefined) {
-      return `${min.toLocaleString('vi-VN')} - ${max.toLocaleString('vi-VN')} VNĐ/giờ`;
+      return `${min.toLocaleString("vi-VN")} - ${max.toLocaleString(
+        "vi-VN"
+      )} VNĐ/giờ`;
     } else if (min !== undefined) {
-      return `Từ ${min.toLocaleString('vi-VN')} VNĐ/giờ`;
+      return `Từ ${min.toLocaleString("vi-VN")} VNĐ/giờ`;
     } else if (max !== undefined) {
-      return `Đến ${max.toLocaleString('vi-VN')} VNĐ/giờ`;
+      return `Đến ${max.toLocaleString("vi-VN")} VNĐ/giờ`;
     }
-    return 'Thỏa thuận';
+    return "Thỏa thuận";
   };
 
   const { studentPost, matchScore, explanation, matchDetails } = recommendation;
-  
+
   // Check if this is the best match (rank 1)
   const isBestMatch = rank === 1;
 
@@ -159,20 +163,36 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
           <div
             className={`
             flex items-center justify-center rounded-full font-bold text-white text-lg shadow-lg
-            ${rank === 1 ? 'w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 ring-4 ring-yellow-200' : 'w-10 h-10'}
-            ${rank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-500' : ''}
-            ${rank === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600' : ''}
+            ${
+              rank === 1
+                ? "w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 ring-4 ring-yellow-200"
+                : "w-10 h-10"
+            }
+            ${rank === 2 ? "bg-gradient-to-br from-gray-300 to-gray-500" : ""}
+            ${
+              rank === 3
+                ? "bg-gradient-to-br from-orange-400 to-orange-600"
+                : ""
+            }
           `}
           >
-            {rank === 1 ? '⭐' : rank}
+            {rank === 1 ? "⭐" : rank}
           </div>
         </div>
       )}
 
-      <div className={`p-6 flex flex-col flex-grow ${rank && rank <= 3 ? 'pt-16' : ''}`}>
+      <div
+        className={`p-6 flex flex-col flex-grow ${
+          rank && rank <= 3 ? "pt-16" : ""
+        }`}
+      >
         {/* Header with Match Score */}
         <div className="flex items-start justify-between mb-4">
-          <h4 className={`text-gray-900 line-clamp-2 flex-1 ${isBestMatch ? 'font-bold text-lg' : 'font-semibold text-base'}`}>
+          <h4
+            className={`text-gray-900 line-clamp-2 flex-1 ${
+              isBestMatch ? "font-bold text-lg" : "font-semibold text-base"
+            }`}
+          >
             {studentPost.title}
           </h4>
           <div className="ml-3 flex-shrink-0">
@@ -192,12 +212,12 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
             <div
               className={`h-full transition-all duration-500 rounded-full ${
                 matchScore >= 80
-                  ? 'bg-gradient-to-r from-green-400 to-green-600'
+                  ? "bg-gradient-to-r from-green-400 to-green-600"
                   : matchScore >= 60
-                  ? 'bg-gradient-to-r from-blue-400 to-blue-600'
+                  ? "bg-gradient-to-r from-blue-400 to-blue-600"
                   : matchScore >= 40
-                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-600'
-                  : 'bg-gradient-to-r from-gray-400 to-gray-600'
+                  ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
+                  : "bg-gradient-to-r from-gray-400 to-gray-600"
               }`}
               style={{ width: `${matchScore}%` }}
             />
@@ -208,7 +228,11 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
         <div className="space-y-3 mb-4">
           {/* Content Preview */}
           {studentPost.content && (
-            <p className={`text-sm text-gray-600 line-clamp-2 ${isBestMatch ? 'font-semibold' : ''}`}>
+            <p
+              className={`text-sm text-gray-600 line-clamp-2 ${
+                isBestMatch ? "font-semibold" : ""
+              }`}
+            >
               {studentPost.content}
             </p>
           )}
@@ -220,28 +244,35 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
               className="w-full text-left p-3 rounded-lg border-2 border-purple-200 hover:border-purple-400 
                          transition-all duration-200 bg-gradient-to-r from-purple-50 to-pink-50"
             >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <SparklesIcon className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-medium text-purple-800">
-                  {isLoadingExplanation ? 'Đang tạo giải thích...' : 'Lý do AI gợi ý'}
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <SparklesIcon className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-medium text-purple-800">
+                    {isLoadingExplanation
+                      ? "Đang tạo giải thích..."
+                      : "Lý do AI gợi ý"}
+                  </span>
+                </div>
+                {!isLoadingExplanation && (
+                  <svg
+                    className={`w-4 h-4 text-purple-600 transition-transform duration-200 ${
+                      isExplanationExpanded ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                )}
               </div>
-              {!isLoadingExplanation && (
-                <svg
-                  className={`w-4 h-4 text-purple-600 transition-transform duration-200 ${
-                    isExplanationExpanded ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              )}
-            </div>
             </button>
-            
+
             {isExplanationExpanded && (explanation || onDemandExplanation) && (
               <div className="mt-2 p-3 rounded-lg border border-purple-200 bg-white/50">
                 <p className="text-sm leading-relaxed text-purple-800">
@@ -259,14 +290,14 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
                 className={`px-3 py-1.5 text-xs rounded-full border transition-all
                   ${
                     matchDetails.subjectMatch
-                      ? isBestMatch 
-                        ? 'bg-green-100 text-green-900 border-green-400 font-extrabold text-sm shadow-md'
-                        : 'bg-green-100 text-green-800 border-green-300 font-bold'
-                      : 'bg-blue-50 text-blue-700 border-blue-200 font-medium'
+                      ? isBestMatch
+                        ? "bg-green-100 text-green-900 border-green-400 font-extrabold text-sm shadow-md"
+                        : "bg-green-100 text-green-800 border-green-300 font-bold"
+                      : "bg-blue-50 text-blue-700 border-blue-200 font-medium"
                   }`}
               >
                 {subject.name}
-                {matchDetails.subjectMatch && ' ✓'}
+                {matchDetails.subjectMatch && " ✓"}
               </span>
             ))}
             {studentPost.subjects.length > 3 && (
@@ -279,56 +310,102 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
           {/* Details Grid - Cleaner Layout */}
           <div className="space-y-2 text-sm">
             {/* Grade Levels */}
-            <div className={`flex items-center space-x-2 p-2.5 rounded-lg border
-                ${matchDetails.levelMatch
-                  ? isBestMatch 
-                    ? 'bg-green-100 border-green-400 font-extrabold text-green-900'
-                    : 'bg-green-50 border-green-200 font-bold text-green-800'
-                  : 'bg-gray-50 border-gray-200 text-gray-700'
-                }`}>
-              <AcademicCapIcon className={`w-5 h-5 flex-shrink-0 ${matchDetails.levelMatch ? 'text-green-600' : 'text-gray-500'}`} />
+            <div
+              className={`flex items-center space-x-2 p-2.5 rounded-lg border
+                ${
+                  matchDetails.levelMatch
+                    ? isBestMatch
+                      ? "bg-green-100 border-green-400 font-extrabold text-green-900"
+                      : "bg-green-50 border-green-200 font-bold text-green-800"
+                    : "bg-gray-50 border-gray-200 text-gray-700"
+                }`}
+            >
+              <AcademicCapIcon
+                className={`w-5 h-5 flex-shrink-0 ${
+                  matchDetails.levelMatch ? "text-green-600" : "text-gray-500"
+                }`}
+              />
               <div className="flex-1 min-w-0">
                 <span className="text-xs text-gray-600">Cấp độ:</span>
-                <p className={`truncate ${matchDetails.levelMatch && isBestMatch ? 'text-sm' : 'text-xs'}`}>
-                  {studentPost.grade_levels.join(', ')}
-                  {matchDetails.levelMatch && ' ✓'}
+                <p
+                  className={`truncate ${
+                    matchDetails.levelMatch && isBestMatch
+                      ? "text-sm"
+                      : "text-xs"
+                  }`}
+                >
+                  {studentPost.grade_levels.join(", ")}
+                  {matchDetails.levelMatch && " ✓"}
                 </p>
               </div>
             </div>
 
             {/* Price */}
-            <div className={`flex items-center space-x-2 p-2.5 rounded-lg border
-                ${matchDetails.priceMatch
-                  ? isBestMatch
-                    ? 'bg-green-100 border-green-400 font-extrabold text-green-900'
-                    : 'bg-green-50 border-green-200 font-bold text-green-800'
-                  : 'bg-gray-50 border-gray-200 text-gray-700'
-                }`}>
-              <CurrencyDollarIcon className={`w-5 h-5 flex-shrink-0 ${matchDetails.priceMatch ? 'text-green-600' : 'text-gray-500'}`} />
+            <div
+              className={`flex items-center space-x-2 p-2.5 rounded-lg border
+                ${
+                  matchDetails.priceMatch
+                    ? isBestMatch
+                      ? "bg-green-100 border-green-400 font-extrabold text-green-900"
+                      : "bg-green-50 border-green-200 font-bold text-green-800"
+                    : "bg-gray-50 border-gray-200 text-gray-700"
+                }`}
+            >
+              <CurrencyDollarIcon
+                className={`w-5 h-5 flex-shrink-0 ${
+                  matchDetails.priceMatch ? "text-green-600" : "text-gray-500"
+                }`}
+              />
               <div className="flex-1 min-w-0">
                 <span className="text-xs text-gray-600">Học phí:</span>
-                <p className={`truncate ${matchDetails.priceMatch && isBestMatch ? 'text-sm' : 'text-xs'}`}>
-                  {formatPrice(studentPost.hourly_rate?.min, studentPost.hourly_rate?.max)}
-                  {matchDetails.priceMatch && ' ✓'}
+                <p
+                  className={`truncate ${
+                    matchDetails.priceMatch && isBestMatch
+                      ? "text-sm"
+                      : "text-xs"
+                  }`}
+                >
+                  {formatPrice(
+                    studentPost.hourly_rate?.min,
+                    studentPost.hourly_rate?.max
+                  )}
+                  {matchDetails.priceMatch && " ✓"}
                 </p>
               </div>
             </div>
 
             {/* Teaching Mode & Location */}
-            <div className={`flex items-center space-x-2 p-2.5 rounded-lg border
-                ${matchDetails.scheduleMatch
-                  ? isBestMatch
-                    ? 'bg-green-100 border-green-400 font-extrabold text-green-900'
-                    : 'bg-green-50 border-green-200 font-bold text-green-800'
-                  : 'bg-gray-50 border-gray-200 text-gray-700'
-                }`}>
-              <MapPinIcon className={`w-5 h-5 flex-shrink-0 ${matchDetails.scheduleMatch ? 'text-green-600' : 'text-gray-500'}`} />
+            <div
+              className={`flex items-center space-x-2 p-2.5 rounded-lg border
+                ${
+                  matchDetails.scheduleMatch
+                    ? isBestMatch
+                      ? "bg-green-100 border-green-400 font-extrabold text-green-900"
+                      : "bg-green-50 border-green-200 font-bold text-green-800"
+                    : "bg-gray-50 border-gray-200 text-gray-700"
+                }`}
+            >
+              <MapPinIcon
+                className={`w-5 h-5 flex-shrink-0 ${
+                  matchDetails.scheduleMatch
+                    ? "text-green-600"
+                    : "text-gray-500"
+                }`}
+              />
               <div className="flex-1 min-w-0">
                 <span className="text-xs text-gray-600">Hình thức:</span>
-                <p className={`truncate ${matchDetails.scheduleMatch && isBestMatch ? 'text-sm' : 'text-xs'}`}>
-                  {studentPost.is_online ? '💻 Online' : '🏠 Offline'}
-                  {studentPost.location && !studentPost.is_online && ` • ${studentPost.location}`}
-                  {matchDetails.scheduleMatch && ' ✓'}
+                <p
+                  className={`truncate ${
+                    matchDetails.scheduleMatch && isBestMatch
+                      ? "text-sm"
+                      : "text-xs"
+                  }`}
+                >
+                  {studentPost.is_online ? "💻 Online" : "🏠 Offline"}
+                  {studentPost.location &&
+                    !studentPost.is_online &&
+                    ` • ${studentPost.location}`}
+                  {matchDetails.scheduleMatch && " ✓"}
                 </p>
               </div>
             </div>
@@ -338,7 +415,9 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
               <div className="flex items-center space-x-2 p-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700">
                 <UserIcon className="w-5 h-5 flex-shrink-0 text-gray-500" />
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-xs font-medium">{studentPost.author.name}</p>
+                  <p className="truncate text-xs font-medium">
+                    {studentPost.author.name}
+                  </p>
                 </div>
               </div>
             )}
@@ -358,8 +437,18 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
                       flex items-center justify-center space-x-2"
           >
             <span>Xem chi tiết</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>
@@ -369,4 +458,3 @@ const SmartStudentRecommendationCard: React.FC<SmartStudentRecommendationCardPro
 };
 
 export default SmartStudentRecommendationCard;
-

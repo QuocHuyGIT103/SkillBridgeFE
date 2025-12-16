@@ -14,11 +14,10 @@ import {
   ClipboardDocumentListIcon,
   BellAlertIcon,
 } from "@heroicons/react/24/outline";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
 import usePostStore from "../../store/post.store";
 import { useSurveyStore } from "../../store/survey.store";
-import toast from "react-hot-toast";
 
 interface DashboardStats {
   totalPosts: number;
@@ -32,11 +31,10 @@ interface DashboardStats {
 }
 
 const NewStudentDashboard: React.FC = () => {
-  const navigate = useNavigate();
   const { user } = useAuthStore();
   const { posts, fetchMyPosts } = usePostStore();
   const { surveyResults, hasCompletedSurvey, getSurvey } = useSurveyStore();
-  
+
   const [stats, setStats] = useState<DashboardStats>({
     totalPosts: 0,
     approvedPosts: 0,
@@ -57,11 +55,11 @@ const NewStudentDashboard: React.FC = () => {
 
   useEffect(() => {
     if (posts && posts.length > 0) {
-      const approved = posts.filter((p: any) => p.status === 'approved').length;
-      const pending = posts.filter((p: any) => p.status === 'pending').length;
-      const rejected = posts.filter((p: any) => p.status === 'rejected').length;
-      
-      setStats(prev => ({
+      const approved = posts.filter((p: any) => p.status === "approved").length;
+      const pending = posts.filter((p: any) => p.status === "pending").length;
+      const rejected = posts.filter((p: any) => p.status === "rejected").length;
+
+      setStats((prev) => ({
         ...prev,
         totalPosts: posts.length,
         approvedPosts: approved,
@@ -104,7 +102,7 @@ const NewStudentDashboard: React.FC = () => {
     },
     {
       title: "Yêu cầu liên hệ",
-      value: posts?.filter((p: any) => p.status === 'approved').length || 0,
+      value: posts?.filter((p: any) => p.status === "approved").length || 0,
       icon: UserGroupIcon,
       color: "from-orange-500 to-orange-600",
       bgColor: "bg-orange-50",
@@ -161,10 +159,11 @@ const NewStudentDashboard: React.FC = () => {
           className="mb-8"
         >
           <h1 className="text-3xl font-bold text-gray-900">
-            Chào mừng trở lại, {user?.full_name || 'Minh Anh'}! 👋
+            Chào mừng trở lại, {user?.full_name || "Minh Anh"}! 👋
           </h1>
           <p className="mt-2 text-gray-600">
-            Hôm nay bạn có {stats.approvedPosts} bài đăng và {stats.pendingPosts} bài tập cần hoàn thành
+            Hôm nay bạn có {stats.approvedPosts} bài đăng và{" "}
+            {stats.pendingPosts} bài tập cần hoàn thành
           </p>
         </motion.div>
 
@@ -183,7 +182,9 @@ const NewStudentDashboard: React.FC = () => {
                     <div className={`p-3 rounded-lg ${stat.bgColor}`}>
                       <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
                     </div>
-                    <div className={`bg-gradient-to-r ${stat.color} text-white px-3 py-1 rounded-full text-sm font-semibold`}>
+                    <div
+                      className={`bg-gradient-to-r ${stat.color} text-white px-3 py-1 rounded-full text-sm font-semibold`}
+                    >
                       {stat.value}
                     </div>
                   </div>
@@ -209,7 +210,9 @@ const NewStudentDashboard: React.FC = () => {
               className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Thao tác nhanh</h2>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Thao tác nhanh
+                </h2>
                 <SparklesIcon className="w-5 h-5 text-purple-500" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -221,13 +224,17 @@ const NewStudentDashboard: React.FC = () => {
                           {action.badge}
                         </span>
                       )}
-                      <div className={`inline-flex p-2 rounded-lg bg-gradient-to-r ${action.color} mb-3`}>
+                      <div
+                        className={`inline-flex p-2 rounded-lg bg-gradient-to-r ${action.color} mb-3`}
+                      >
                         <action.icon className="w-5 h-5 text-white" />
                       </div>
                       <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                         {action.title}
                       </h3>
-                      <p className="text-sm text-gray-600">{action.description}</p>
+                      <p className="text-sm text-gray-600">
+                        {action.description}
+                      </p>
                     </div>
                   </Link>
                 ))}
@@ -242,8 +249,13 @@ const NewStudentDashboard: React.FC = () => {
               className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Bài đăng gần đây</h2>
-                <Link to="/student/posts" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                <h2 className="text-lg font-bold text-gray-900">
+                  Bài đăng gần đây
+                </h2>
+                <Link
+                  to="/student/posts"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
                   Xem tất cả →
                 </Link>
               </div>
@@ -254,14 +266,18 @@ const NewStudentDashboard: React.FC = () => {
                       key={post.id || post._id}
                       className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      <div className={`p-2 rounded-lg ${
-                        post.status === 'approved' ? 'bg-green-50' :
-                        post.status === 'pending' ? 'bg-yellow-50' :
-                        'bg-red-50'
-                      }`}>
-                        {post.status === 'approved' ? (
+                      <div
+                        className={`p-2 rounded-lg ${
+                          post.status === "approved"
+                            ? "bg-green-50"
+                            : post.status === "pending"
+                            ? "bg-yellow-50"
+                            : "bg-red-50"
+                        }`}
+                      >
+                        {post.status === "approved" ? (
                           <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                        ) : post.status === 'pending' ? (
+                        ) : post.status === "pending" ? (
                           <ClockIcon className="w-5 h-5 text-yellow-600" />
                         ) : (
                           <XCircleIcon className="w-5 h-5 text-red-600" />
@@ -272,20 +288,28 @@ const NewStudentDashboard: React.FC = () => {
                           {post.title}
                         </h3>
                         <p className="text-sm text-gray-500 truncate">
-                          {post.subjects?.map((s: any) => s.name).join(', ')}
+                          {post.subjects?.map((s: any) => s.name).join(", ")}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                          {new Date(post.created_at).toLocaleDateString('vi-VN')}
+                          {new Date(post.created_at).toLocaleDateString(
+                            "vi-VN"
+                          )}
                         </p>
                       </div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        post.status === 'approved' ? 'bg-green-100 text-green-700' :
-                        post.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {post.status === 'approved' ? 'Đã duyệt' :
-                         post.status === 'pending' ? 'Chờ duyệt' :
-                         'Từ chối'}
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          post.status === "approved"
+                            ? "bg-green-100 text-green-700"
+                            : post.status === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {post.status === "approved"
+                          ? "Đã duyệt"
+                          : post.status === "pending"
+                          ? "Chờ duyệt"
+                          : "Từ chối"}
                       </span>
                     </div>
                   ))}
@@ -316,7 +340,9 @@ const NewStudentDashboard: React.FC = () => {
             >
               <div className="flex items-center gap-2 mb-4">
                 <SparklesIcon className="w-5 h-5 text-purple-600" />
-                <h2 className="text-lg font-bold text-purple-900">Gợi ý AI cho bạn</h2>
+                <h2 className="text-lg font-bold text-purple-900">
+                  Gợi ý AI cho bạn
+                </h2>
               </div>
               {hasCompletedSurvey && aiRecommendations.length > 0 ? (
                 <div className="space-y-3">
@@ -372,13 +398,13 @@ const NewStudentDashboard: React.FC = () => {
             >
               <div className="flex items-center gap-2 mb-4">
                 <CalendarDaysIcon className="w-5 h-5 text-blue-600" />
-                <h2 className="text-lg font-bold text-gray-900">Lịch học hôm nay</h2>
+                <h2 className="text-lg font-bold text-gray-900">
+                  Lịch học hôm nay
+                </h2>
               </div>
               <div className="text-center py-8">
                 <CalendarDaysIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">
-                  Chưa có lịch học nào
-                </p>
+                <p className="text-gray-500 text-sm">Chưa có lịch học nào</p>
               </div>
             </motion.div>
 
@@ -395,9 +421,7 @@ const NewStudentDashboard: React.FC = () => {
               </div>
               <div className="text-center py-8">
                 <BellAlertIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">
-                  Không có thông báo mới
-                </p>
+                <p className="text-gray-500 text-sm">Không có thông báo mới</p>
               </div>
             </motion.div>
           </div>

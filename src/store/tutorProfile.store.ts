@@ -216,10 +216,6 @@ export const useTutorProfileStore = create<TutorProfileState>((set, get) => ({
           full_name: response.data.full_name,
           phone_number: response.data.phone_number,
           avatar_url: response.data.avatar_url,
-          gender: response.data.gender,
-          date_of_birth: response.data.date_of_birth,
-          address: response.data.address,
-          structured_address: response.data.structured_address,
         });
       } else {
         // Handle validation response (warning or blocked)

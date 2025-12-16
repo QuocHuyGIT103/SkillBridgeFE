@@ -19,7 +19,6 @@ import {
   formatDate,
   formatDuration,
   getPlatformDisplayName,
-  getPaymentMethodDisplayName,
 } from "../../utils/contractFormatters";
 
 interface ContractDataWithClassInfo extends CreateContractInput {

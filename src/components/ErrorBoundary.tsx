@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component } from "react";
+import type { ErrorInfo, ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
@@ -30,7 +31,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
     this.setState({
       error,
       errorInfo,
@@ -43,7 +44,7 @@ class ErrorBoundary extends Component<Props, State> {
       error: null,
       errorInfo: null,
     });
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   render() {
@@ -82,16 +83,17 @@ class ErrorBoundary extends Component<Props, State> {
                   <p className="text-sm font-mono text-red-800 break-all">
                     {this.state.error.toString()}
                   </p>
-                  {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
-                    <details className="mt-4">
-                      <summary className="text-sm text-red-700 cursor-pointer">
-                        Chi tiết lỗi (Development)
-                      </summary>
-                      <pre className="mt-2 text-xs text-red-600 overflow-auto max-h-64">
-                        {this.state.errorInfo.componentStack}
-                      </pre>
-                    </details>
-                  )}
+                  {process.env.NODE_ENV === "development" &&
+                    this.state.errorInfo && (
+                      <details className="mt-4">
+                        <summary className="text-sm text-red-700 cursor-pointer">
+                          Chi tiết lỗi (Development)
+                        </summary>
+                        <pre className="mt-2 text-xs text-red-600 overflow-auto max-h-64">
+                          {this.state.errorInfo.componentStack}
+                        </pre>
+                      </details>
+                    )}
                 </div>
               )}
               <div className="flex gap-4 justify-center">
@@ -119,4 +121,3 @@ class ErrorBoundary extends Component<Props, State> {
 }
 
 export default ErrorBoundary;
-

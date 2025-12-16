@@ -14,10 +14,7 @@ import type {
   QualificationsData,
   VerificationRequest,
 } from "../../types/qualification.types";
-import {
-  translateEducationLevel,
-  translateVerificationStatus,
-} from "../../utils/enumTranslations";
+import { translateEducationLevel } from "../../utils/enumTranslations";
 import { canEditItem, getDisplayData } from "../../utils/qualification.utils";
 
 interface EducationTabProps {

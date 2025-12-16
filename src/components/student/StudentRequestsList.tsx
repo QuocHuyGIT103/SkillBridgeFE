@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
   ExclamationTriangleIcon,
   EyeIcon,
-  TrashIcon
-} from '@heroicons/react/24/outline';
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 
-import { useContactRequestStore } from '../../store/contactRequest.store';
-import { REQUEST_STATUS_LABELS } from '../../types/contactRequest.types';
-import type { ContactRequest } from '../../types/contactRequest.types';
-import { ChatButton } from '../chat';
+import { useContactRequestStore } from "../../store/contactRequest.store";
+import { REQUEST_STATUS_LABELS } from "../../types/contactRequest.types";
+import type { ContactRequest } from "../../types/contactRequest.types";
+import { ChatButton } from "../chat";
 
 const StudentRequestsList: React.FC = () => {
   const {
@@ -22,10 +22,10 @@ const StudentRequestsList: React.FC = () => {
     filters,
     getStudentRequests,
     cancelRequest,
-    setFilters
+    setFilters,
   } = useContactRequestStore();
 
-  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [showCancelDialog, setShowCancelDialog] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,15 +54,15 @@ const StudentRequestsList: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'PENDING':
+      case "PENDING":
         return <ClockIcon className="w-5 h-5 text-yellow-500" />;
-      case 'ACCEPTED':
+      case "ACCEPTED":
         return <CheckCircleIcon className="w-5 h-5 text-green-500" />;
-      case 'REJECTED':
+      case "REJECTED":
         return <XCircleIcon className="w-5 h-5 text-red-500" />;
-      case 'CANCELLED':
+      case "CANCELLED":
         return <TrashIcon className="w-5 h-5 text-gray-500" />;
-      case 'EXPIRED':
+      case "EXPIRED":
         return <ExclamationTriangleIcon className="w-5 h-5 text-orange-500" />;
       default:
         return <ClockIcon className="w-5 h-5 text-gray-500" />;
@@ -71,35 +71,35 @@ const StudentRequestsList: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'ACCEPTED':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'REJECTED':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'CANCELLED':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'EXPIRED':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "ACCEPTED":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "REJECTED":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "CANCELLED":
+        return "bg-gray-100 text-gray-800 border-gray-200";
+      case "EXPIRED":
+        return "bg-orange-100 text-orange-800 border-orange-200";
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -127,11 +127,11 @@ const StudentRequestsList: React.FC = () => {
         {/* Status Filter */}
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => handleStatusFilter('')}
+            onClick={() => handleStatusFilter("")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              selectedStatus === '' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              selectedStatus === ""
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             Tất cả
@@ -141,9 +141,9 @@ const StudentRequestsList: React.FC = () => {
               key={status}
               onClick={() => handleStatusFilter(status)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedStatus === status 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                selectedStatus === status
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               {label}
@@ -163,7 +163,8 @@ const StudentRequestsList: React.FC = () => {
               Chưa có yêu cầu nào
             </h3>
             <p className="text-gray-600">
-              Bạn chưa gửi yêu cầu học tập nào. Hãy tìm kiếm gia sư phù hợp và gửi yêu cầu!
+              Bạn chưa gửi yêu cầu học tập nào. Hãy tìm kiếm gia sư phù hợp và
+              gửi yêu cầu!
             </p>
           </div>
         ) : (
@@ -191,21 +192,23 @@ const StudentRequestsList: React.FC = () => {
           >
             Trước
           </button>
-          
-          {Array.from({ length: pagination.total }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => handlePageChange(page)}
-              className={`px-4 py-2 text-sm border rounded-lg ${
-                pagination.current === page
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-          
+
+          {Array.from({ length: pagination.total }, (_, i) => i + 1).map(
+            (page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`px-4 py-2 text-sm border rounded-lg ${
+                  pagination.current === page
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {page}
+              </button>
+            )
+          )}
+
           <button
             onClick={() => handlePageChange(pagination.current + 1)}
             disabled={pagination.current === pagination.total}
@@ -232,7 +235,8 @@ const StudentRequestsList: React.FC = () => {
               Xác nhận hủy yêu cầu
             </h3>
             <p className="text-gray-600 mb-6">
-              Bạn có chắc chắn muốn hủy yêu cầu này không? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn hủy yêu cầu này không? Hành động này không
+              thể hoàn tác.
             </p>
             <div className="flex justify-end space-x-3">
               <button
@@ -271,9 +275,11 @@ const RequestCard: React.FC<RequestCardProps> = ({
   getStatusIcon,
   getStatusColor,
   formatCurrency,
-  formatDate
+  formatDate,
 }) => {
-  const canCancel = ['PENDING', 'ACCEPTED'].includes(request.status);
+  const canCancel = request.status
+    ? ["PENDING", "ACCEPTED"].includes(request.status)
+    : false;
 
   return (
     <motion.div
@@ -285,9 +291,17 @@ const RequestCard: React.FC<RequestCardProps> = ({
         <div className="flex-1">
           {/* Header */}
           <div className="flex items-center space-x-3 mb-4">
-            {getStatusIcon(request.status)}
-            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
-              {REQUEST_STATUS_LABELS[request.status as keyof typeof REQUEST_STATUS_LABELS]}
+            {getStatusIcon(request.status || "PENDING")}
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                request.status || "PENDING"
+              )}`}
+            >
+              {
+                REQUEST_STATUS_LABELS[
+                  request.status as keyof typeof REQUEST_STATUS_LABELS
+                ]
+              }
             </span>
             <span className="text-sm text-gray-500">
               {formatDate(request.createdAt)}
@@ -301,10 +315,12 @@ const RequestCard: React.FC<RequestCardProps> = ({
                 {request.tutorPost?.title}
               </h3>
               <p className="text-sm text-gray-600 mb-2">
-                Gia sư: <span className="font-medium">{request.tutor?.full_name}</span>
+                Gia sư:{" "}
+                <span className="font-medium">{request.tutor?.full_name}</span>
               </p>
               <p className="text-sm text-gray-600">
-                Môn: <span className="font-medium">{request.subjectInfo?.name}</span>
+                Môn:{" "}
+                <span className="font-medium">{request.subjectInfo?.name}</span>
               </p>
             </div>
 
@@ -315,12 +331,16 @@ const RequestCard: React.FC<RequestCardProps> = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Thời lượng:</span>
-                <span className="font-medium">{request.sessionDuration} phút</span>
+                <span className="font-medium">
+                  {request.sessionDuration} phút
+                </span>
               </div>
               {request.expectedPrice && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Giá mong muốn:</span>
-                  <span className="font-medium">{formatCurrency(request.expectedPrice)}</span>
+                  <span className="font-medium">
+                    {formatCurrency(request.expectedPrice)}
+                  </span>
                 </div>
               )}
             </div>
@@ -329,29 +349,41 @@ const RequestCard: React.FC<RequestCardProps> = ({
           {/* Message */}
           <div className="mb-4">
             <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">
-              "{request.message.substring(0, 150)}{request.message.length > 150 ? '...' : ''}"
+              "{request.message.substring(0, 150)}
+              {request.message.length > 150 ? "..." : ""}"
             </p>
           </div>
 
           {/* Tutor Response */}
           {request.tutorResponse && (
             <div className="bg-blue-50 rounded-lg p-4 mb-4">
-              <h4 className="font-medium text-blue-900 mb-2">Phản hồi từ gia sư:</h4>
+              <h4 className="font-medium text-blue-900 mb-2">
+                Phản hồi từ gia sư:
+              </h4>
               <p className="text-sm text-blue-800 mb-2">
                 {request.tutorResponse.message}
               </p>
-              
+
               {request.tutorResponse.counterOffer && (
                 <div className="text-xs text-blue-700 space-y-1">
                   <div className="font-medium">Đề xuất:</div>
                   {request.tutorResponse.counterOffer.pricePerSession && (
-                    <div>Giá: {formatCurrency(request.tutorResponse.counterOffer.pricePerSession)}</div>
+                    <div>
+                      Giá:{" "}
+                      {formatCurrency(
+                        request.tutorResponse.counterOffer.pricePerSession
+                      )}
+                    </div>
                   )}
                   {request.tutorResponse.counterOffer.schedule && (
-                    <div>Lịch: {request.tutorResponse.counterOffer.schedule}</div>
+                    <div>
+                      Lịch: {request.tutorResponse.counterOffer.schedule}
+                    </div>
                   )}
                   {request.tutorResponse.counterOffer.conditions && (
-                    <div>Điều kiện: {request.tutorResponse.counterOffer.conditions}</div>
+                    <div>
+                      Điều kiện: {request.tutorResponse.counterOffer.conditions}
+                    </div>
                   )}
                 </div>
               )}
@@ -364,11 +396,15 @@ const RequestCard: React.FC<RequestCardProps> = ({
           <button className="p-2 text-gray-500 hover:text-blue-600 transition-colors">
             <EyeIcon className="w-5 h-5" />
           </button>
-          
-          {request.status === 'ACCEPTED' && (
+
+          {request.status === "ACCEPTED" && (
             <ChatButton
               contactRequestId={request.id}
-              currentUserId={request.studentId}
+              currentUserId={
+                typeof request.studentId === "string"
+                  ? request.studentId
+                  : request.studentId?.id || ""
+              }
               variant="outline"
               size="sm"
               className="text-xs"
@@ -376,7 +412,7 @@ const RequestCard: React.FC<RequestCardProps> = ({
               Nhắn tin
             </ChatButton>
           )}
-          
+
           {canCancel && (
             <button
               onClick={() => onCancel(request.id)}

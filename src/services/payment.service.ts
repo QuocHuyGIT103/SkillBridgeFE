@@ -152,7 +152,7 @@ const PaymentService = {
         schedule.installments?.forEach((installment) => {
           const dueDate = new Date(installment.dueDate);
           if (
-            (installment.status === "UNPAID" ||
+            (installment.status === "PENDING" ||
               installment.status === "OVERDUE") &&
             dueDate <= next30Days
           ) {
@@ -162,7 +162,7 @@ const PaymentService = {
               className: subjectName,
               tutorName: tutorName,
               classId: classId,
-              sessionNumber: installment.sessionNumber,
+              sessionNumber: 0,
               status: installment.status,
             });
           }

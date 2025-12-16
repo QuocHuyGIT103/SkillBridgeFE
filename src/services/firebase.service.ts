@@ -1,7 +1,12 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
 
 // Firebase config - Replace with your actual config
 const firebaseConfig = {
@@ -34,20 +39,25 @@ try {
     app = initializeApp(firebaseConfig);
 
     // Initialize Firebase Storage (force correct bucket if env misconfigured)
-    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
-    const storageBucketEnv = (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined)?.trim();
+    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as
+      | string
+      | undefined;
+    const storageBucketEnv = (
+      import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined
+    )?.trim();
 
     function toGsUrl(bucket?: string): string | undefined {
       if (!bucket) return undefined;
       // Strip gs:// or https:// prefix and any path, keep host only
       const normalized = bucket
-        .replace(/^gs:\/\//i, '')
-        .replace(/^https?:\/\/([^/]+).*/i, '$1')
+        .replace(/^gs:\/\//i, "")
+        .replace(/^https?:\/\/([^/]+).*/i, "$1")
         .trim();
       return `gs://${normalized}`;
     }
 
-    const envBucketLooksValid = storageBucketEnv && /appspot\.com$/i.test(storageBucketEnv);
+    const envBucketLooksValid =
+      storageBucketEnv && /appspot\.com$/i.test(storageBucketEnv);
     const bucketUrl = envBucketLooksValid
       ? toGsUrl(storageBucketEnv)
       : projectId
@@ -60,15 +70,20 @@ try {
     auth = getAuth(app);
 
     // Initialize Firebase Cloud Messaging (only if in browser)
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
         messaging = getMessaging(app);
       } catch (error) {
-        console.warn("Firebase Messaging initialization failed (may not be supported in this environment):", error);
+        console.warn(
+          "Firebase Messaging initialization failed (may not be supported in this environment):",
+          error
+        );
       }
     }
   } else {
-    console.warn("Firebase config is incomplete. Firebase features will be disabled.");
+    console.warn(
+      "Firebase config is incomplete. Firebase features will be disabled."
+    );
   }
 } catch (error) {
   console.error("Firebase initialization error:", error);
@@ -78,10 +93,8 @@ try {
 // VAPID key for web push - Replace with your actual VAPID key
 const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
-// Compute backend API base URL robustly (supports either VITE_API_URL or VITE_API_BASE_URL)
-const API_BASE_URL = (import.meta.env.VITE_API_URL
-  || (import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/api/v1` : undefined)
-  || 'http://localhost:3000/api/v1') as string;
+// Backend API base URL from environment variable
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/v1`;
 
 class FirebaseService {
   private signingIn?: Promise<void>;
@@ -96,19 +109,29 @@ class FirebaseService {
       // Extract conversationId from destPath: conversations/:id/(images|files)
       const match = destPath.match(/^conversations\/([^/]+)/i);
       const conversationId = match?.[1];
-      const subdir = destPath.includes('/images') ? 'images' : (destPath.includes('/files') ? 'files' : 'attachments');
+      const subdir = destPath.includes("/images")
+        ? "images"
+        : destPath.includes("/files")
+        ? "files"
+        : "attachments";
       if (!conversationId) {
-        throw new Error('Không xác định được conversationId từ đường dẫn');
+        throw new Error("Không xác định được conversationId từ đường dẫn");
       }
 
-      const token = localStorage.getItem('access_token') || localStorage.getItem('accessToken') || '';
+      const token =
+        localStorage.getItem("access_token") ||
+        localStorage.getItem("accessToken") ||
+        "";
       const form = new FormData();
-      form.append('file', file);
+      form.append("file", file);
 
       if (onProgress) onProgress(10);
-      const resp = await fetch(`${API_BASE_URL}/messages/conversations/${conversationId}/attachments?subdir=${encodeURIComponent(subdir)}`,
+      const resp = await fetch(
+        `${API_BASE_URL}/messages/conversations/${conversationId}/attachments?subdir=${encodeURIComponent(
+          subdir
+        )}`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -117,15 +140,20 @@ class FirebaseService {
       );
       if (!resp.ok) {
         const text = await resp.text();
-        throw new Error(text || 'Lỗi upload tệp qua backend');
+        throw new Error(text || "Lỗi upload tệp qua backend");
       }
       const json = await resp.json();
       const data = json?.data || json;
       if (onProgress) onProgress(100);
-      return { url: data.url, name: file.name, type: file.type || 'application/octet-stream', size: file.size };
+      return {
+        url: data.url,
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+      };
     } catch (err: any) {
-      console.error('Backend upload error', err);
-      throw new Error(err?.message || 'Lỗi tải tệp lên qua backend');
+      console.error("Backend upload error", err);
+      throw new Error(err?.message || "Lỗi tải tệp lên qua backend");
     }
   }
 
@@ -140,9 +168,9 @@ class FirebaseService {
           this.signingIn = signInAnonymously(auth)
             .then(() => {})
             .catch((err) => {
-            this.signingIn = undefined;
-            throw err;
-          });
+              this.signingIn = undefined;
+              throw err;
+            });
         }
         await this.signingIn;
       }
@@ -185,7 +213,11 @@ class FirebaseService {
       const WATCHDOG_MS = 8000; // 8s without progress -> fallback
       const watchdog = setTimeout(() => {
         if (!madeProgress) {
-          try { (task as any).cancel?.(); } catch { /* ignore cancel errors */ }
+          try {
+            (task as any).cancel?.();
+          } catch {
+            /* ignore cancel errors */
+          }
         }
       }, WATCHDOG_MS);
 
@@ -194,7 +226,8 @@ class FirebaseService {
           "state_changed",
           (snapshot) => {
             if (onProgress) {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              const progress =
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
               onProgress(Math.round(progress));
             }
             // Mark progress and clear watchdog when bytes start transferring
@@ -205,29 +238,35 @@ class FirebaseService {
           },
           (error) => {
             clearTimeout(watchdog);
-            const code = (error as any)?.code || 'unknown';
-            let message = 'Lỗi tải tệp lên';
+            const code = (error as any)?.code || "unknown";
+            let message = "Lỗi tải tệp lên";
             switch (code) {
-              case 'storage/unauthorized':
-                message = 'Không có quyền truy cập Storage (kiểm tra rules hoặc đăng nhập).';
+              case "storage/unauthorized":
+                message =
+                  "Không có quyền truy cập Storage (kiểm tra rules hoặc đăng nhập).";
                 break;
-              case 'storage/bucket-not-found':
-                message = 'Bucket không tồn tại hoặc cấu hình sai.';
+              case "storage/bucket-not-found":
+                message = "Bucket không tồn tại hoặc cấu hình sai.";
                 break;
-              case 'storage/quota-exceeded':
-                message = 'Vượt quá quota Firebase Storage.';
+              case "storage/quota-exceeded":
+                message = "Vượt quá quota Firebase Storage.";
                 break;
-              case 'storage/canceled':
-                message = 'Tải tệp đã bị hủy.';
+              case "storage/canceled":
+                message = "Tải tệp đã bị hủy.";
                 break;
-              case 'storage/invalid-argument':
-                message = 'Đường dẫn hoặc tham số upload không hợp lệ.';
+              case "storage/invalid-argument":
+                message = "Đường dẫn hoặc tham số upload không hợp lệ.";
                 break;
               default:
                 // If watchdog canceled due to no progress, surface specific message
-                message = message || 'Không có tiến trình upload, chuyển sang backend.';
+                message =
+                  message || "Không có tiến trình upload, chuyển sang backend.";
             }
-            console.error('Firebase Storage upload error', { path: fullPath, code, error });
+            console.error("Firebase Storage upload error", {
+              path: fullPath,
+              code,
+              error,
+            });
             reject(new Error(message));
           },
           () => {
@@ -241,7 +280,7 @@ class FirebaseService {
       return { url, name: safeName, type: file.type, size: file.size };
     } catch (err) {
       // Fallback: upload via backend Cloudinary endpoint
-      console.warn('Firebase upload thất bại, chuyển sang backend upload', err);
+      console.warn("Firebase upload thất bại, chuyển sang backend upload", err);
       return await this.uploadViaBackend(file, destPath, onProgress);
     }
   }
@@ -303,8 +342,10 @@ class FirebaseService {
   async sendTokenToServer(token: string): Promise<void> {
     try {
       // Get access token from localStorage (support both key formats)
-      const accessToken = localStorage.getItem("access_token") || localStorage.getItem("accessToken");
-      
+      const accessToken =
+        localStorage.getItem("access_token") ||
+        localStorage.getItem("accessToken");
+
       if (!accessToken) {
         console.warn("No access token found, skipping FCM token registration");
         return;
@@ -328,7 +369,9 @@ class FirebaseService {
       if (response.ok) {
         console.log("FCM token sent to server successfully");
       } else {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Unknown error" }));
         console.error("Failed to send FCM token to server:", {
           status: response.status,
           statusText: response.statusText,

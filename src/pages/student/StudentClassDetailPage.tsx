@@ -17,7 +17,6 @@ import {
   CalendarDaysIcon,
   CheckCircleIcon,
   BanknotesIcon,
-  CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid"; // Icon ngôi sao (đầy)
 import RatingModal from "../../components/modals/RatingModal";
@@ -94,7 +93,7 @@ const StudentClassDetailPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
@@ -103,7 +102,9 @@ const StudentClassDetailPage: React.FC = () => {
             <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/25">
               <AcademicCapIcon className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Chi tiết lớp học</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              Chi tiết lớp học
+            </h1>
           </div>
           <button
             onClick={() => navigate("/student/classes")}
@@ -115,7 +116,7 @@ const StudentClassDetailPage: React.FC = () => {
         </motion.div>
 
         {/* Main Content Card */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -200,13 +201,17 @@ const StudentClassDetailPage: React.FC = () => {
                     <div className="flex justify-between py-2 border-b border-blue-100">
                       <dt className="text-sm text-gray-600">Đã hoàn thành</dt>
                       <dd className="text-sm font-medium text-gray-900">
-                        <span className="text-emerald-600">{currentClass.completedSessions}</span> / {currentClass.totalSessions} buổi
+                        <span className="text-emerald-600">
+                          {currentClass.completedSessions}
+                        </span>{" "}
+                        / {currentClass.totalSessions} buổi
                       </dd>
                     </div>
                     <div className="flex justify-between py-2 border-b border-blue-100">
                       <dt className="text-sm text-gray-600">Giá/buổi</dt>
                       <dd className="text-sm font-bold text-blue-600">
-                        {currentClass.pricePerSession?.toLocaleString("vi-VN")} VND
+                        {currentClass.pricePerSession?.toLocaleString("vi-VN")}{" "}
+                        VND
                       </dd>
                     </div>
                     <div className="flex justify-between py-2">
@@ -232,13 +237,22 @@ const StudentClassDetailPage: React.FC = () => {
                           <p className="text-sm font-semibold text-gray-900">
                             {currentClass.schedule.dayOfWeek
                               .map((day) => {
-                                const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+                                const days = [
+                                  "CN",
+                                  "T2",
+                                  "T3",
+                                  "T4",
+                                  "T5",
+                                  "T6",
+                                  "T7",
+                                ];
                                 return days[day];
                               })
                               .join(", ")}
                           </p>
                           <p className="text-sm text-gray-600">
-                            {currentClass.schedule.startTime} - {currentClass.schedule.endTime}
+                            {currentClass.schedule.startTime} -{" "}
+                            {currentClass.schedule.endTime}
                           </p>
                         </div>
                       </div>
@@ -247,7 +261,9 @@ const StudentClassDetailPage: React.FC = () => {
                         <div className="text-sm">
                           <span className="text-gray-600">Bắt đầu: </span>
                           <span className="font-medium text-gray-900">
-                            {new Date(currentClass.startDate).toLocaleDateString("vi-VN")}
+                            {new Date(
+                              currentClass.startDate
+                            ).toLocaleDateString("vi-VN")}
                           </span>
                         </div>
                       </div>
@@ -257,7 +273,9 @@ const StudentClassDetailPage: React.FC = () => {
                           <div className="text-sm">
                             <span className="text-gray-600">Kết thúc: </span>
                             <span className="font-medium text-gray-900">
-                              {new Date(currentClass.expectedEndDate).toLocaleDateString("vi-VN")}
+                              {new Date(
+                                currentClass.expectedEndDate
+                              ).toLocaleDateString("vi-VN")}
                             </span>
                           </div>
                         </div>
@@ -302,7 +320,9 @@ const StudentClassDetailPage: React.FC = () => {
                       </dd>
                     </div>
                     <div className="flex justify-between py-2 border-t border-emerald-100">
-                      <dt className="text-sm text-emerald-700">Số điện thoại</dt>
+                      <dt className="text-sm text-emerald-700">
+                        Số điện thoại
+                      </dt>
                       <dd className="text-sm text-gray-900">
                         {currentClass.tutorId?.phone_number || "Không có"}
                       </dd>
@@ -311,34 +331,38 @@ const StudentClassDetailPage: React.FC = () => {
                 </div>
 
                 {/* Location - OFFLINE */}
-                {currentClass.learningMode === "OFFLINE" && currentClass.location && (
-                  <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-5 border border-red-100">
-                    <h3 className="text-base font-semibold text-gray-900 mb-3 inline-flex items-center gap-2">
-                      <MapPinIcon className="h-5 w-5 text-red-600" />
-                      Địa điểm học
-                    </h3>
-                    <p className="text-gray-900 text-sm">{currentClass.location.address}</p>
-                  </div>
-                )}
+                {currentClass.learningMode === "OFFLINE" &&
+                  currentClass.location && (
+                    <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-5 border border-red-100">
+                      <h3 className="text-base font-semibold text-gray-900 mb-3 inline-flex items-center gap-2">
+                        <MapPinIcon className="h-5 w-5 text-red-600" />
+                        Địa điểm học
+                      </h3>
+                      <p className="text-gray-900 text-sm">
+                        {currentClass.location.address}
+                      </p>
+                    </div>
+                  )}
 
                 {/* Online Meeting Link */}
-                {currentClass.learningMode === "ONLINE" && currentClass.onlineInfo?.meetingLink && (
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-5 border border-blue-100">
-                    <h3 className="text-base font-semibold text-gray-900 mb-3 inline-flex items-center gap-2">
-                      <VideoCameraIcon className="h-5 w-5 text-blue-600" />
-                      Học trực tuyến
-                    </h3>
-                    <a
-                      href={currentClass.onlineInfo.meetingLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-medium text-sm shadow-md hover:shadow-lg"
-                    >
-                      <VideoCameraIcon className="h-5 w-5" />
-                      Tham gia lớp học Online
-                    </a>
-                  </div>
-                )}
+                {currentClass.learningMode === "ONLINE" &&
+                  currentClass.onlineInfo?.meetingLink && (
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-5 border border-blue-100">
+                      <h3 className="text-base font-semibold text-gray-900 mb-3 inline-flex items-center gap-2">
+                        <VideoCameraIcon className="h-5 w-5 text-blue-600" />
+                        Học trực tuyến
+                      </h3>
+                      <a
+                        href={currentClass.onlineInfo.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-medium text-sm shadow-md hover:shadow-lg"
+                      >
+                        <VideoCameraIcon className="h-5 w-5" />
+                        Tham gia lớp học Online
+                      </a>
+                    </div>
+                  )}
               </div>
             </div>
 

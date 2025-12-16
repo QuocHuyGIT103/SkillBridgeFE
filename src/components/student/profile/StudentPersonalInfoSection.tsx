@@ -1,31 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { toast } from 'react-hot-toast';
-import { 
-  UserIcon, 
-  PhotoIcon, 
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { toast } from "react-hot-toast";
+import {
+  UserIcon,
+  PhotoIcon,
   XMarkIcon,
   PencilIcon,
-  EyeIcon,
   CheckIcon,
-  XCircleIcon
-} from '@heroicons/react/24/outline';
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
 
-import { useStudentProfileStore } from '../../../store/studentProfile.store';
-import AddressSelector from '../../AddressSelector';
-import type { 
-  StudentPersonalInfoUpdate, 
+import { useStudentProfileStore } from "../../../store/studentProfile.store";
+import AddressSelector from "../../AddressSelector";
+import type {
+  StudentPersonalInfoUpdate,
   StudentDashboardUser,
-  GENDER_OPTIONS
-} from '../../../types/student.types';
+} from "../../../types/student.types";
 
 interface StudentPersonalInfoSectionProps {
   user: StudentDashboardUser | null;
 }
 
-const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({ 
-  user 
+const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
+  user,
 }) => {
   const { updatePersonalInfo, isUpdatingPersonal } = useStudentProfileStore();
   const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
@@ -41,12 +39,13 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
     formState: { errors, isDirty },
   } = useForm<StudentPersonalInfoUpdate>({
     defaultValues: {
-      full_name: user?.full_name || '',
-      phone_number: user?.phone_number || '',
+      full_name: user?.full_name || "",
+      phone_number: user?.phone_number || "",
       gender: user?.gender || undefined,
-      date_of_birth: user?.date_of_birth ? 
-        new Date(user.date_of_birth).toISOString().split('T')[0] : '',
-      address: user?.address || '',
+      date_of_birth: user?.date_of_birth
+        ? new Date(user.date_of_birth).toISOString().split("T")[0]
+        : "",
+      address: user?.address || "",
       structured_address: user?.structured_address || undefined,
     },
   });
@@ -56,16 +55,17 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
     if (user) {
       const formData = {
         full_name: user.full_name,
-        phone_number: user.phone_number || '',
+        phone_number: user.phone_number || "",
         gender: user.gender,
-        date_of_birth: user.date_of_birth ? 
-          new Date(user.date_of_birth).toISOString().split('T')[0] : '',
-        address: user.address || '',
+        date_of_birth: user.date_of_birth
+          ? new Date(user.date_of_birth).toISOString().split("T")[0]
+          : "",
+        address: user.address || "",
         structured_address: user.structured_address,
       };
-      
+
       reset(formData);
-      
+
       // Set avatar preview
       if (user.avatar_url) {
         setAvatarPreview(user.avatar_url);
@@ -77,25 +77,28 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
   const handleEditToggle = () => {
     if (isEditing && isDirty) {
       // If there are unsaved changes, ask for confirmation
-      const confirmDiscard = window.confirm('Bạn có thay đổi chưa được lưu. Bạn có muốn hủy bỏ các thay đổi?');
+      const confirmDiscard = window.confirm(
+        "Bạn có thay đổi chưa được lưu. Bạn có muốn hủy bỏ các thay đổi?"
+      );
       if (!confirmDiscard) return;
-      
+
       // Reset form to original values
       if (user) {
         reset({
           full_name: user.full_name,
-          phone_number: user.phone_number || '',
+          phone_number: user.phone_number || "",
           gender: user.gender,
-          date_of_birth: user.date_of_birth ? 
-            new Date(user.date_of_birth).toISOString().split('T')[0] : '',
-          address: user.address || '',
+          date_of_birth: user.date_of_birth
+            ? new Date(user.date_of_birth).toISOString().split("T")[0]
+            : "",
+          address: user.address || "",
           structured_address: user.structured_address,
         });
       }
       setSelectedAvatar(null);
       setAvatarPreview(user?.avatar_url || null);
     }
-    
+
     setIsEditing(!isEditing);
   };
 
@@ -105,18 +108,18 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
     if (file) {
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Kích thước ảnh không được vượt quá 5MB');
+        toast.error("Kích thước ảnh không được vượt quá 5MB");
         return;
       }
 
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error('Vui lòng chọn file hình ảnh');
+      if (!file.type.startsWith("image/")) {
+        toast.error("Vui lòng chọn file hình ảnh");
         return;
       }
 
       setSelectedAvatar(file);
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onload = () => {
@@ -133,39 +136,39 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
 
   // Handle address change
   const handleProvinceChange = (provinceCode: string) => {
-    const currentStructured = watch('structured_address') || {};
-    setValue('structured_address', {
+    const currentStructured = watch("structured_address") || {};
+    setValue("structured_address", {
       ...currentStructured,
       province_code: provinceCode,
-      district_code: '',
-      ward_code: '',
+      district_code: "",
+      ward_code: "",
     });
   };
 
   const handleDistrictChange = (districtCode: string) => {
-    const currentStructured = watch('structured_address') || {};
-    setValue('structured_address', {
+    const currentStructured = watch("structured_address") || {};
+    setValue("structured_address", {
       ...currentStructured,
       district_code: districtCode,
-      ward_code: '',
+      ward_code: "",
     });
   };
 
   const handleWardChange = (wardCode: string) => {
-    const currentStructured = watch('structured_address') || {};
-    setValue('structured_address', {
+    const currentStructured = watch("structured_address") || {};
+    setValue("structured_address", {
       ...currentStructured,
       ward_code: wardCode,
     });
   };
 
   const handleDetailAddressChange = (detailAddress: string) => {
-    const currentStructured = watch('structured_address') || {};
-    setValue('structured_address', {
+    const currentStructured = watch("structured_address") || {};
+    setValue("structured_address", {
       ...currentStructured,
       detail_address: detailAddress,
     });
-    setValue('address', detailAddress);
+    setValue("address", detailAddress);
   };
 
   // Handle form submission
@@ -177,33 +180,37 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
       };
 
       await updatePersonalInfo(updateData);
-      toast.success('Cập nhật thông tin cá nhân thành công!');
+      toast.success("Cập nhật thông tin cá nhân thành công!");
       setSelectedAvatar(null);
       setIsEditing(false); // ✅ Exit edit mode after successful save
     } catch (error: any) {
-      toast.error(error.message || 'Cập nhật thông tin thất bại');
+      toast.error(error.message || "Cập nhật thông tin thất bại");
     }
   };
 
   // ✅ Format display values
   const formatGender = (gender?: string) => {
     const genderOptions = [
-      { value: 'male', label: 'Nam' },
-      { value: 'female', label: 'Nữ' },
-      { value: 'other', label: 'Khác' }
+      { value: "male", label: "Nam" },
+      { value: "female", label: "Nữ" },
+      { value: "other", label: "Khác" },
     ];
-    return genderOptions.find(opt => opt.value === gender)?.label || 'Chưa cập nhật';
+    return (
+      genderOptions.find((opt) => opt.value === gender)?.label ||
+      "Chưa cập nhật"
+    );
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Chưa cập nhật';
-    return new Date(dateString).toLocaleDateString('vi-VN');
+    if (!dateString) return "Chưa cập nhật";
+    return new Date(dateString).toLocaleDateString("vi-VN");
   };
 
   const formatAddress = () => {
     if (user?.address) return user.address;
-    if (user?.structured_address?.detail_address) return user.structured_address.detail_address;
-    return 'Chưa cập nhật';
+    if (user?.structured_address?.detail_address)
+      return user.structured_address.detail_address;
+    return "Chưa cập nhật";
   };
 
   return (
@@ -220,7 +227,7 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
             Thông tin cá nhân
           </h2>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {isEditing ? (
             <>
@@ -276,7 +283,7 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
                   </button>
                 )}
               </div>
-              
+
               <label className="mt-3 cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                 <PhotoIcon className="w-4 h-4 inline mr-2" />
                 Chọn ảnh
@@ -301,19 +308,21 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
                 Họ và tên *
               </label>
               <input
-                {...register('full_name', {
-                  required: 'Vui lòng nhập họ và tên',
+                {...register("full_name", {
+                  required: "Vui lòng nhập họ và tên",
                   minLength: {
                     value: 2,
-                    message: 'Họ và tên phải có ít nhất 2 ký tự'
-                  }
+                    message: "Họ và tên phải có ít nhất 2 ký tự",
+                  },
                 })}
                 type="text"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Nhập họ và tên"
               />
               {errors.full_name && (
-                <p className="mt-1 text-sm text-red-600">{errors.full_name.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.full_name.message}
+                </p>
               )}
             </div>
 
@@ -323,18 +332,20 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
                 Số điện thoại
               </label>
               <input
-                {...register('phone_number', {
+                {...register("phone_number", {
                   pattern: {
                     value: /^(\+84|0)[3|5|7|8|9][0-9]{8}$/,
-                    message: 'Số điện thoại không hợp lệ'
-                  }
+                    message: "Số điện thoại không hợp lệ",
+                  },
                 })}
                 type="tel"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="0123456789"
               />
               {errors.phone_number && (
-                <p className="mt-1 text-sm text-red-600">{errors.phone_number.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.phone_number.message}
+                </p>
               )}
             </div>
 
@@ -344,7 +355,7 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
                 Giới tính
               </label>
               <select
-                {...register('gender')}
+                {...register("gender")}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Chọn giới tính</option>
@@ -360,7 +371,7 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
                 Ngày sinh
               </label>
               <input
-                {...register('date_of_birth')}
+                {...register("date_of_birth")}
                 type="date"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -373,10 +384,14 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
               Địa chỉ
             </label>
             <AddressSelector
-              selectedProvince={watch('structured_address')?.province_code || ''}
-              selectedDistrict={watch('structured_address')?.district_code || ''}
-              selectedWard={watch('structured_address')?.ward_code || ''}
-              detailAddress={watch('structured_address')?.detail_address || ''}
+              selectedProvince={
+                watch("structured_address")?.province_code || ""
+              }
+              selectedDistrict={
+                watch("structured_address")?.district_code || ""
+              }
+              selectedWard={watch("structured_address")?.ward_code || ""}
+              detailAddress={watch("structured_address")?.detail_address || ""}
               onProvinceChange={handleProvinceChange}
               onDistrictChange={handleDistrictChange}
               onWardChange={handleWardChange}
@@ -400,7 +415,7 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
               className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <CheckIcon className="w-5 h-5" />
-              <span>{isUpdatingPersonal ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
+              <span>{isUpdatingPersonal ? "Đang lưu..." : "Lưu thay đổi"}</span>
             </button>
           </div>
         </form>
@@ -434,7 +449,7 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
                 Họ và tên
               </label>
               <div className="px-3 py-2 bg-gray-50 rounded-lg text-gray-900">
-                {user?.full_name || 'Chưa cập nhật'}
+                {user?.full_name || "Chưa cập nhật"}
               </div>
             </div>
 
@@ -444,7 +459,7 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
                 Số điện thoại
               </label>
               <div className="px-3 py-2 bg-gray-50 rounded-lg text-gray-900">
-                {user?.phone_number || 'Chưa cập nhật'}
+                {user?.phone_number || "Chưa cập nhật"}
               </div>
             </div>
 
@@ -474,7 +489,7 @@ const StudentPersonalInfoSection: React.FC<StudentPersonalInfoSectionProps> = ({
                 Email
               </label>
               <div className="px-3 py-2 bg-gray-50 rounded-lg text-gray-900">
-                {user?.email || 'Chưa cập nhật'}
+                {user?.email || "Chưa cập nhật"}
               </div>
             </div>
 

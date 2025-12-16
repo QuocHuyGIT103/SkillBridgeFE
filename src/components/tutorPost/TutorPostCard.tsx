@@ -7,9 +7,6 @@ import {
   CurrencyDollarIcon,
   UserIcon,
   BookOpenIcon,
-  FireIcon,
-  EyeIcon,
-  PhoneIcon,
   PaperAirplaneIcon,
 } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
@@ -77,14 +74,14 @@ interface TutorPostCardProps {
   };
   showCompatibility?: boolean;
   onClick?: () => void;
-  onSendRequest?: (post: TutorPostCardProps['post']) => void;
+  onSendRequest?: (post: TutorPostCardProps["post"]) => void;
 }
 
 const TutorPostCard: React.FC<TutorPostCardProps> = ({
   post,
   showCompatibility = false,
   onClick,
-  onSendRequest
+  onSendRequest,
 }) => {
   // Guard clause to prevent rendering if post or tutorId is undefined
   if (!post || !post.tutorId) {
@@ -140,40 +137,27 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
     return text.substring(0, maxLength) + "...";
   };
 
-  const getTeachingModeText = (mode: string): string => {
-    switch (mode) {
-      case "ONLINE":
-        return "Trực tuyến";
-      case "OFFLINE":
-        return "Tại nhà";
-      case "BOTH":
-        return "Cả hai";
-      default:
-        return "Linh hoạt";
-    }
-  };
-
   const getTeachingModeConfig = (mode: string) => {
     switch (mode) {
       case "ONLINE":
         return {
           color: "bg-green-100 text-green-800 border-green-200",
-          icon: "💻"
+          icon: "💻",
         };
       case "OFFLINE":
         return {
           color: "bg-blue-100 text-blue-800 border-blue-200",
-          icon: "🏠"
+          icon: "🏠",
         };
       case "BOTH":
         return {
           color: "bg-purple-100 text-purple-800 border-purple-200",
-          icon: "🔄"
+          icon: "🔄",
         };
       default:
         return {
           color: "bg-gray-100 text-gray-800 border-gray-200",
-          icon: "📍"
+          icon: "📍",
         };
     }
   };
@@ -187,53 +171,9 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
     return "Linh hoạt";
   };
 
-  // ✅ Compatibility score utilities
-  const getCompatibilityColor = (score: number): string => {
-    if (score >= 90) return "bg-gradient-to-r from-green-50 to-emerald-50 text-green-800 border-green-300";
-    if (score >= 80) return "bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-800 border-blue-300";
-    if (score >= 70) return "bg-gradient-to-r from-yellow-50 to-amber-50 text-yellow-800 border-yellow-300";
-    if (score >= 60) return "bg-gradient-to-r from-orange-50 to-red-50 text-orange-800 border-orange-300";
-    return "bg-gradient-to-r from-red-50 to-pink-50 text-red-800 border-red-300";
-  };
-
-  const getCompatibilityIcon = (score: number): string => {
-    if (score >= 90) return "🎯";
-    if (score >= 80) return "✅";
-    if (score >= 70) return "👍";
-    if (score >= 60) return "👌";
-    return "🤔";
-  };
-
-  const getCompatibilityText = (score: number): string => {
-    if (score >= 90) return "Rất phù hợp";
-    if (score >= 80) return "Phù hợp cao";
-    if (score >= 70) return "Phù hợp";
-    if (score >= 60) return "Tương đối phù hợp";
-    return "Ít phù hợp";
-  };
-
   const getDayName = (dayOfWeek: number): string => {
     const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
     return days[dayOfWeek];
-  };
-
-  const getBadgeConfig = (badge?: string) => {
-    if (!badge) return null;
-
-    switch (badge) {
-      case "TOP_RATED":
-        return {
-          label: "Top Rated",
-          className: "bg-yellow-100 text-yellow-800 border-yellow-200",
-        };
-      case "HIGHLY_RATED":
-        return {
-          label: "Được yêu thích",
-          className: "bg-emerald-100 text-emerald-800 border-emerald-200",
-        };
-      default:
-        return null;
-    }
   };
 
   const handleViewDetails = () => {
@@ -249,7 +189,7 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
   const ratingAverage = post.tutorId.rating?.average || 0;
   const ratingCount = post.tutorId.rating?.count || 0;
   const showRating = ratingCount > 0;
-  const badgeConfig = getBadgeConfig(post.tutorId.rating?.badges?.[0]);
+  // Badge configuration available if needed
   const tutorUserId =
     post.tutorId._id ||
     (post.tutorId as any).id ||
@@ -267,9 +207,10 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
         group cursor-pointer bg-white rounded-2xl shadow-lg border-2 hover:shadow-2xl 
         transition-all duration-300 overflow-hidden h-full flex flex-col
         relative
-        ${showCompatibility && post.compatibility && post.compatibility >= 80
-          ? 'border-blue-400 ring-4 ring-blue-100 shadow-blue-200'
-          : 'border-gray-200 hover:border-blue-300 hover:ring-2 hover:ring-blue-50'
+        ${
+          showCompatibility && post.compatibility && post.compatibility >= 80
+            ? "border-blue-400 ring-4 ring-blue-100 shadow-blue-200"
+            : "border-gray-200 hover:border-blue-300 hover:ring-2 hover:ring-blue-50"
         }
       `}
     >
@@ -305,11 +246,13 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
                 {post.tutorId.full_name || "Gia sư"}
               </h3>
               {/* Teaching Mode Badge */}
-              <div className={`px-2 py-1 rounded-lg text-xs font-semibold border ${modeConfig.color} flex items-center flex-shrink-0`}>
+              <div
+                className={`px-2 py-1 rounded-lg text-xs font-semibold border ${modeConfig.color} flex items-center flex-shrink-0`}
+              >
                 <span className="text-sm">{modeConfig.icon}</span>
               </div>
             </div>
-            
+
             <div className="space-y-0.5 mt-1">
               <div className="flex items-center text-xs text-gray-600">
                 {post.tutorId.date_of_birth && (
@@ -326,8 +269,8 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
                     {post.tutorId.gender === "male"
                       ? "Nam"
                       : post.tutorId.gender === "female"
-                        ? "Nữ"
-                        : "Khác"}
+                      ? "Nữ"
+                      : "Khác"}
                   </span>
                 )}
               </div>
@@ -346,15 +289,14 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
                     setIsReviewModalOpen(true);
                   }}
                   disabled={!tutorUserId}
-                  className={`flex items-center text-xs font-semibold text-yellow-700 hover:text-yellow-800 ${!tutorUserId ? "cursor-not-allowed opacity-60" : ""
-                    }`}
+                  className={`flex items-center text-xs font-semibold text-yellow-700 hover:text-yellow-800 ${
+                    !tutorUserId ? "cursor-not-allowed opacity-60" : ""
+                  }`}
                   title="Xem các đánh giá của học viên"
                 >
                   <StarIconSolid className="w-3.5 h-3.5 text-yellow-400 mr-1" />
                   <span>{ratingAverage.toFixed(1)}</span>
-                  <span className="ml-1 text-gray-500">
-                    ({ratingCount})
-                  </span>
+                  <span className="ml-1 text-gray-500">({ratingCount})</span>
                 </button>
               )}
             </div>
@@ -415,7 +357,9 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
             <div>
               <div className="flex items-center mb-2">
                 <ClockIcon className="w-4 h-4 text-purple-600 mr-1.5" />
-                <span className="text-xs font-bold text-gray-700">Lịch dạy</span>
+                <span className="text-xs font-bold text-gray-700">
+                  Lịch dạy
+                </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {post.teachingSchedule.slice(0, 2).map((schedule, index) => (
@@ -423,7 +367,8 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
                     key={index}
                     className="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs rounded-lg font-medium border border-purple-200"
                   >
-                    {getDayName(schedule.dayOfWeek)}: {schedule.startTime} - {schedule.endTime}
+                    {getDayName(schedule.dayOfWeek)}: {schedule.startTime} -{" "}
+                    {schedule.endTime}
                   </span>
                 ))}
                 {post.teachingSchedule.length > 2 && (
@@ -479,7 +424,9 @@ const TutorPostCard: React.FC<TutorPostCardProps> = ({
               handleViewDetails();
             }}
             className={`
-              ${onSendRequest ? 'flex-1' : 'w-full'} px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold text-sm
+              ${
+                onSendRequest ? "flex-1" : "w-full"
+              } px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold text-sm
               bg-gray-800 text-white hover:bg-gray-900 shadow-md hover:shadow-lg flex items-center justify-center
             `}
           >

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import usePostStore from "../../store/post.store";
-import { toast } from "react-hot-toast";
+
 import { useNavigate } from "react-router-dom";
 import StudentPostCard from "../../components/tutor/StudentPostCard";
 
@@ -43,7 +43,7 @@ const TutorStudentPostsPage: React.FC = () => {
     if (minRate.trim()) baseQuery.min_hourly_rate = Number(minRate);
     if (maxRate.trim()) baseQuery.max_hourly_rate = Number(maxRate);
 
-    console.log('[TutorStudentPostsPage] handleSearch query:', baseQuery);
+    console.log("[TutorStudentPostsPage] handleSearch query:", baseQuery);
 
     fetchTutorStudentPosts(baseQuery);
   };
@@ -64,10 +64,6 @@ const TutorStudentPostsPage: React.FC = () => {
 
   const handleViewDetail = (post: any) => {
     navigate(`/tutor/posts/student/${post.id || post._id}`);
-  };
-
-  const goToSendRequestPage = (studentPost: any) => {
-    navigate(`/tutor/posts/student/${studentPost.id || studentPost._id}/request`);
   };
 
   return (
@@ -194,15 +190,20 @@ const TutorStudentPostsPage: React.FC = () => {
           </div>
         ) : error ? (
           <div className="text-center py-12">
-            <div className="text-red-600 text-lg font-semibold mb-2">⚠️ Lỗi</div>
+            <div className="text-red-600 text-lg font-semibold mb-2">
+              ⚠️ Lỗi
+            </div>
             <div className="text-gray-600">{error}</div>
           </div>
         ) : list.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 text-6xl mb-4">📭</div>
-            <div className="text-gray-600 text-lg font-medium mb-2">Không có bài đăng nào phù hợp</div>
+            <div className="text-gray-600 text-lg font-medium mb-2">
+              Không có bài đăng nào phù hợp
+            </div>
             <div className="text-gray-500 text-sm">
-              Hãy thử điều chỉnh bộ lọc hoặc bật tìm kiếm thông minh để tìm thêm kết quả
+              Hãy thử điều chỉnh bộ lọc hoặc bật tìm kiếm thông minh để tìm thêm
+              kết quả
             </div>
           </div>
         ) : (
@@ -223,7 +224,7 @@ const TutorStudentPostsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {list.map((post, index) => (
                 <motion.div
-                  key={post.id || post._id}
+                  key={post.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
@@ -243,11 +244,16 @@ const TutorStudentPostsPage: React.FC = () => {
         {pagination && pagination.pages > 1 && (
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-8 pt-6 border-t gap-4">
             <div className="text-sm text-gray-600 order-2 md:order-1">
-              Hiển thị <span className="font-semibold">{((pagination.page - 1) * pagination.limit) + 1}</span> -{' '}
+              Hiển thị{" "}
+              <span className="font-semibold">
+                {(pagination.page - 1) * pagination.limit + 1}
+              </span>{" "}
+              -{" "}
               <span className="font-semibold">
                 {Math.min(pagination.page * pagination.limit, pagination.total)}
-              </span>{' '}
-              trong tổng số <span className="font-semibold">{pagination.total}</span> bài đăng
+              </span>{" "}
+              trong tổng số{" "}
+              <span className="font-semibold">{pagination.total}</span> bài đăng
             </div>
             <div className="flex items-center gap-2 order-1 md:order-2">
               <button
@@ -258,32 +264,35 @@ const TutorStudentPostsPage: React.FC = () => {
                 ← Trước
               </button>
               <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
-                  let pageNum;
-                  if (pagination.pages <= 5) {
-                    pageNum = i + 1;
-                  } else if (pagination.page <= 3) {
-                    pageNum = i + 1;
-                  } else if (pagination.page >= pagination.pages - 2) {
-                    pageNum = pagination.pages - 4 + i;
-                  } else {
-                    pageNum = pagination.page - 2 + i;
+                {Array.from(
+                  { length: Math.min(5, pagination.pages) },
+                  (_, i) => {
+                    let pageNum;
+                    if (pagination.pages <= 5) {
+                      pageNum = i + 1;
+                    } else if (pagination.page <= 3) {
+                      pageNum = i + 1;
+                    } else if (pagination.page >= pagination.pages - 2) {
+                      pageNum = pagination.pages - 4 + i;
+                    } else {
+                      pageNum = pagination.page - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        disabled={loading}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          pagination.page === pageNum
+                            ? "bg-blue-600 text-white"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
                   }
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setPage(pageNum)}
-                      disabled={loading}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                        pagination.page === pageNum
-                          ? 'bg-blue-600 text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
+                )}
               </div>
               <button
                 onClick={() =>

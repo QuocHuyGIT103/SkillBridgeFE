@@ -114,9 +114,7 @@ const HomeworkModal: React.FC<HomeworkModalProps> = ({
   const [uploadingFile, setUploadingFile] = useState(false);
   const [transcribingAudio, setTranscribingAudio] = useState(false);
 
-  const selectedGradeAssignment = assignments.find(
-    (assignment) => assignment.id === selectedGradeAssignmentId
-  );
+  // Selected assignment can be accessed via assignments.find if needed
 
   const loadExerciseLibrary = async () => {
     try {

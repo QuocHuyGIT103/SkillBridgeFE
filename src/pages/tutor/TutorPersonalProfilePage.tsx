@@ -19,7 +19,7 @@ import {
 } from "../../components/verification";
 
 // Components
-import TutorProfileStatusCard from "../../components/tutor/TutorProfileStatusCard";
+
 import PersonalInfoSection from "../../components/profile/PersonalInfoSection";
 import IntroductionSection from "../../components/profile/IntroductionSection";
 import CCCDSection from "../../components/profile/CCCDSection";
@@ -46,7 +46,7 @@ const TutorPersonalProfilePage: React.FC = () => {
   // Zustand store
   const {
     profileData,
-    profileStatusData,
+
     isLoading,
     isUpdatingPersonal,
     isUpdatingIntroduction,

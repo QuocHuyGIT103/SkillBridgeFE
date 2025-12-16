@@ -21,7 +21,12 @@ export interface TutorPostSearchQuery {
   search?: string;
   page?: number;
   limit?: number;
-  sortBy?: "createdAt" | "pricePerSession" | "viewCount" | "compatibility";
+  sortBy?:
+    | "createdAt"
+    | "pricePerSession"
+    | "viewCount"
+    | "compatibility"
+    | "rating";
   sortOrder?: "asc" | "desc";
   featured?: boolean;
 }
@@ -35,7 +40,7 @@ const TutorSearchPage: React.FC = () => {
     pagination,
     searchLoading,
     searchTutorPosts,
-    loadMorePosts,
+
     clearPosts,
     error,
     clearError,
@@ -187,12 +192,6 @@ const TutorSearchPage: React.FC = () => {
     },
     [isAuthenticated, user, navigate]
   );
-
-  const getTotalText = () => {
-    if (!pagination) return "Đang tải...";
-    const total = pagination.totalItems || 0;
-    return `Tìm thấy ${total.toLocaleString()} gia sư`;
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">

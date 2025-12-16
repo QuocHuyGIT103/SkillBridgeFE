@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import TutorPostCard from "../../components/tutorPost/TutorPostCard";
@@ -6,7 +6,10 @@ import TutorPostFilter from "../../components/tutorPost/TutorPostFilter";
 import ContactRequestForm from "../../components/student/ContactRequestForm";
 import toast from "react-hot-toast";
 import TutorPostService from "../../services/tutorPost.service";
-import type { TutorPost, TutorPostSearchQuery } from "../../services/tutorPost.service";
+import type {
+  TutorPost,
+  TutorPostSearchQuery,
+} from "../../services/tutorPost.service";
 import { useAuthStore } from "../../store/auth.store";
 
 // ==================== TYPES ====================
@@ -28,11 +31,11 @@ export interface SmartSearchQuery {
 
 // ==================== CACHE KEYS ====================
 const CACHE_KEYS = {
-  ALL_TUTORS: 'smart_search_all_tutors',
-  FILTERS: 'smart_search_filters',
-  SCROLL_POSITION: 'smart_search_scroll_position',
-  ALL_TUTORS_PAGE: 'smart_search_all_tutors_page',
-  CACHE_TIMESTAMP: 'smart_search_cache_timestamp',
+  ALL_TUTORS: "smart_search_all_tutors",
+  FILTERS: "smart_search_filters",
+  SCROLL_POSITION: "smart_search_scroll_position",
+  ALL_TUTORS_PAGE: "smart_search_all_tutors_page",
+  CACHE_TIMESTAMP: "smart_search_cache_timestamp",
 };
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -51,29 +54,35 @@ const StudentSmartSearchPage: React.FC = () => {
   const [allTutorsLoading, setAllTutorsLoading] = useState(false);
 
   // Common states
-  const [currentFilters, setCurrentFilters] = useState<SmartSearchQuery>(() => ({
-    subjects: searchParams.getAll("subjects").filter(Boolean),
-    teachingMode: (searchParams.get("teachingMode") as any) || undefined,
-    studentLevel: searchParams.getAll("studentLevel").filter(Boolean),
-    priceMin: searchParams.get("priceMin") ? Number(searchParams.get("priceMin")) : undefined,
-    priceMax: searchParams.get("priceMax") ? Number(searchParams.get("priceMax")) : undefined,
-    province: searchParams.get("province") || undefined,
-    district: searchParams.get("district") || undefined,
-    ward: searchParams.get("ward") || undefined,
-    search: searchParams.get("search") || undefined,
-    page: 1,
-    limit: 4,
-    sortBy: "createdAt",
-    sortOrder: "desc",
-  }));
+  const [currentFilters, setCurrentFilters] = useState<SmartSearchQuery>(
+    () => ({
+      subjects: searchParams.getAll("subjects").filter(Boolean),
+      teachingMode: (searchParams.get("teachingMode") as any) || undefined,
+      studentLevel: searchParams.getAll("studentLevel").filter(Boolean),
+      priceMin: searchParams.get("priceMin")
+        ? Number(searchParams.get("priceMin"))
+        : undefined,
+      priceMax: searchParams.get("priceMax")
+        ? Number(searchParams.get("priceMax"))
+        : undefined,
+      province: searchParams.get("province") || undefined,
+      district: searchParams.get("district") || undefined,
+      ward: searchParams.get("ward") || undefined,
+      search: searchParams.get("search") || undefined,
+      page: 1,
+      limit: 4,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    })
+  );
 
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  
+
   // Pagination
   const ALL_TUTORS_PER_PAGE = 4;
   const [allTutorsCurrentPage, setAllTutorsCurrentPage] = useState(1);
-  
-  const [allTutorsPagination, setAllTutorsPagination] = useState({
+
+  const [_allTutorsPagination, setAllTutorsPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
@@ -82,12 +91,12 @@ const StudentSmartSearchPage: React.FC = () => {
 
   // Contact Request Modal states
   const [showContactModal, setShowContactModal] = useState(false);
-  const [selectedTutorPost, setSelectedTutorPost] = useState<TutorPost | null>(null);
+  const [selectedTutorPost, setSelectedTutorPost] = useState<TutorPost | null>(
+    null
+  );
 
   // Check if user can send contact request
-  const canSendRequest = Boolean(
-    isAuthenticated && user?.role === "STUDENT"
-  );
+  const canSendRequest = Boolean(isAuthenticated && user?.role === "STUDENT");
 
   // ==================== CACHE HELPERS ====================
   const saveToCache = useCallback((key: string, data: any) => {
@@ -95,7 +104,7 @@ const StudentSmartSearchPage: React.FC = () => {
       sessionStorage.setItem(key, JSON.stringify(data));
       sessionStorage.setItem(CACHE_KEYS.CACHE_TIMESTAMP, Date.now().toString());
     } catch (error) {
-      console.error('Cache save error:', error);
+      console.error("Cache save error:", error);
     }
   }, []);
 
@@ -108,44 +117,50 @@ const StudentSmartSearchPage: React.FC = () => {
       }
       return null;
     } catch (error) {
-      console.error('Cache load error:', error);
+      console.error("Cache load error:", error);
       return null;
     }
   }, []);
 
   const clearCache = useCallback(() => {
-    Object.values(CACHE_KEYS).forEach(key => {
+    Object.values(CACHE_KEYS).forEach((key) => {
       sessionStorage.removeItem(key);
     });
   }, []);
 
   // Handle send request click
-  const handleSendRequest = useCallback((post: any) => {
-    if (!canSendRequest) {
-      toast.error("Bạn cần đăng nhập với tài khoản học viên để gửi yêu cầu");
-      return;
-    }
-    
-    // Convert the card's post format to TutorPost format for ContactRequestForm
-    const tutorPost: TutorPost = {
-      _id: post._id || post.id,
-      id: post.id || post._id,
-      title: post.title,
-      description: post.description,
-      subjects: post.subjects,
-      pricePerSession: post.pricePerSession,
-      sessionDuration: post.sessionDuration,
-      teachingMode: post.teachingMode,
-      tutorId: post.tutorId,
-      viewCount: post.viewCount,
-      contactCount: post.contactCount,
-      createdAt: post.createdAt,
-      status: 'active',
-    };
-    
-    setSelectedTutorPost(tutorPost);
-    setShowContactModal(true);
-  }, [canSendRequest]);
+  const handleSendRequest = useCallback(
+    (post: any) => {
+      if (!canSendRequest) {
+        toast.error("Bạn cần đăng nhập với tài khoản học viên để gửi yêu cầu");
+        return;
+      }
+
+      // Convert the card's post format to TutorPost format for ContactRequestForm
+      const tutorPost: TutorPost = {
+        _id: post._id || post.id,
+        id: post.id || post._id,
+        title: post.title,
+        description: post.description,
+        subjects: post.subjects,
+        studentLevel: post.studentLevel || [],
+        pricePerSession: post.pricePerSession,
+        sessionDuration: post.sessionDuration,
+        teachingMode: post.teachingMode,
+        teachingSchedule: post.teachingSchedule || [],
+        tutorId: post.tutorId,
+        viewCount: post.viewCount,
+        contactCount: post.contactCount || 0,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt || post.createdAt,
+        status: "ACTIVE" as const,
+      };
+
+      setSelectedTutorPost(tutorPost);
+      setShowContactModal(true);
+    },
+    [canSendRequest]
+  );
 
   // Handle contact request success
   const handleContactSuccess = useCallback(() => {
@@ -155,18 +170,6 @@ const StudentSmartSearchPage: React.FC = () => {
   }, []);
 
   // ==================== COMPUTED ====================
-  const hasActiveFilters = useCallback(() => {
-    return !!(
-      currentFilters.subjects?.length ||
-      currentFilters.teachingMode ||
-      currentFilters.studentLevel?.length ||
-      currentFilters.priceMin ||
-      currentFilters.priceMax ||
-      currentFilters.province ||
-      currentFilters.district ||
-      currentFilters.search
-    );
-  }, [currentFilters]);
 
   // ==================== URL UPDATE ====================
   const updateURL = useCallback(
@@ -174,9 +177,14 @@ const StudentSmartSearchPage: React.FC = () => {
       const params = new URLSearchParams();
 
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "" && !["page", "limit", "sortBy", "sortOrder"].includes(key)) {
+        if (
+          value !== undefined &&
+          value !== null &&
+          value !== "" &&
+          !["page", "limit", "sortBy", "sortOrder"].includes(key)
+        ) {
           if (Array.isArray(value) && value.length > 0) {
-            value.forEach(v => params.append(key, v.toString()));
+            value.forEach((v) => params.append(key, v.toString()));
           } else if (!Array.isArray(value)) {
             params.set(key, value.toString());
           }
@@ -195,9 +203,13 @@ const StudentSmartSearchPage: React.FC = () => {
       try {
         // Map sortBy field - "compatibility" only works with smart search
         // For regular search, use valid fields like "createdAt", "pricePerSession", "viewCount", etc.
-        let sortBy = filters.sortBy || "createdAt";
-        if (sortBy === "compatibility") {
-          sortBy = "createdAt"; // Default to createdAt for all tutors listing
+        let sortBy: "createdAt" | "pricePerSession" | "viewCount" = "createdAt";
+        const requestedSort = filters.sortBy;
+        if (
+          requestedSort === "pricePerSession" ||
+          requestedSort === "viewCount"
+        ) {
+          sortBy = requestedSort;
         }
 
         const searchQuery = {
@@ -207,7 +219,9 @@ const StudentSmartSearchPage: React.FC = () => {
           sortOrder: filters.sortOrder || "desc",
           ...(filters.subjects?.length && { subjects: filters.subjects }),
           ...(filters.teachingMode && { teachingMode: filters.teachingMode }),
-          ...(filters.studentLevel?.length && { studentLevel: filters.studentLevel }),
+          ...(filters.studentLevel?.length && {
+            studentLevel: filters.studentLevel,
+          }),
           ...(filters.priceMin !== undefined && { priceMin: filters.priceMin }),
           ...(filters.priceMax !== undefined && { priceMax: filters.priceMax }),
           ...(filters.province && { province: filters.province }),
@@ -216,7 +230,9 @@ const StudentSmartSearchPage: React.FC = () => {
           ...(filters.search?.trim() && { search: filters.search.trim() }),
         };
 
-        const tutorsResponse = await TutorPostService.searchTutorPosts(searchQuery);
+        const tutorsResponse = await TutorPostService.searchTutorPosts(
+          searchQuery
+        );
         if (tutorsResponse.success && tutorsResponse.data) {
           setAllTutors(tutorsResponse.data.posts || []);
           setAllTutorsPagination({
@@ -281,7 +297,7 @@ const StudentSmartSearchPage: React.FC = () => {
       saveToCache(CACHE_KEYS.FILTERS, currentFilters);
       saveToCache(CACHE_KEYS.ALL_TUTORS_PAGE, allTutorsCurrentPage);
       saveToCache(CACHE_KEYS.ALL_TUTORS, allTutors);
-      
+
       navigate(`/tutors/${tutorId}`);
     },
     [navigate, currentFilters, allTutorsCurrentPage, allTutors, saveToCache]
@@ -291,13 +307,11 @@ const StudentSmartSearchPage: React.FC = () => {
   // Restore from cache on mount
   useEffect(() => {
     const cachedFilters = loadFromCache(CACHE_KEYS.FILTERS);
-    const cachedPostId = loadFromCache(CACHE_KEYS.SELECTED_POST_ID);
     const cachedAllTutorsPage = loadFromCache(CACHE_KEYS.ALL_TUTORS_PAGE);
-    
+
     if (cachedFilters) setCurrentFilters(cachedFilters);
-    if (cachedPostId) setSelectedPostId(cachedPostId);
     if (cachedAllTutorsPage) setAllTutorsCurrentPage(cachedAllTutorsPage);
-    
+
     // Restore scroll position
     const cachedScroll = loadFromCache(CACHE_KEYS.SCROLL_POSITION);
     if (cachedScroll) {
@@ -361,7 +375,8 @@ const StudentSmartSearchPage: React.FC = () => {
   useEffect(() => {
     return () => {
       // Only clear cache if not going to tutor detail page
-      const isTutorDetailNavigation = window.location.pathname.includes('/tutors/');
+      const isTutorDetailNavigation =
+        window.location.pathname.includes("/tutors/");
       if (!isTutorDetailNavigation) {
         clearCache();
       }
@@ -372,14 +387,15 @@ const StudentSmartSearchPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
-        
         {/* ==================== HEADER ==================== */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-5 px-6 py-4"
         >
-          <h1 className="text-xl font-bold text-gray-900 text-center">Tìm gia sư phù hợp</h1>
+          <h1 className="text-xl font-bold text-gray-900 text-center">
+            Tìm gia sư phù hợp
+          </h1>
         </motion.div>
 
         {/* ==================== FILTERS ==================== */}
@@ -403,25 +419,26 @@ const StudentSmartSearchPage: React.FC = () => {
         {/* ==================== RESULTS ==================== */}
         <AnimatePresence mode="wait">
           {/* Loading State */}
-          {(isInitialLoading || allTutorsLoading) && (allTutors?.length || 0) === 0 && (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12"
-            >
-              <div className="flex flex-col items-center justify-center">
-                <div className="relative mb-6">
-                  <div className="animate-spin rounded-full h-14 w-14 border-4 border-blue-100"></div>
-                  <div className="animate-spin rounded-full h-14 w-14 border-4 border-blue-500 border-t-transparent absolute top-0"></div>
+          {(isInitialLoading || allTutorsLoading) &&
+            (allTutors?.length || 0) === 0 && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12"
+              >
+                <div className="flex flex-col items-center justify-center">
+                  <div className="relative mb-6">
+                    <div className="animate-spin rounded-full h-14 w-14 border-4 border-blue-100"></div>
+                    <div className="animate-spin rounded-full h-14 w-14 border-4 border-blue-500 border-t-transparent absolute top-0"></div>
+                  </div>
+                  <span className="text-gray-700 font-semibold text-lg">
+                    Đang tải danh sách gia sư...
+                  </span>
                 </div>
-                <span className="text-gray-700 font-semibold text-lg">
-                  Đang tải danh sách gia sư...
-                </span>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
           {/* Tutor List */}
           {!isInitialLoading && (
@@ -437,107 +454,136 @@ const StudentSmartSearchPage: React.FC = () => {
                       <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-100"></div>
                       <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-500 border-t-transparent absolute top-0"></div>
                     </div>
-                    <span className="text-gray-600 font-medium">Đang tải danh sách gia sư...</span>
+                    <span className="text-gray-600 font-medium">
+                      Đang tải danh sách gia sư...
+                    </span>
                   </div>
                 </div>
-              ) : allTutors && allTutors.length > 0 ? (() => {
-                const totalItems = allTutors.length;
-                const totalPages = Math.ceil(totalItems / ALL_TUTORS_PER_PAGE);
-                const startIndex = (allTutorsCurrentPage - 1) * ALL_TUTORS_PER_PAGE;
-                const endIndex = startIndex + ALL_TUTORS_PER_PAGE;
-                const paginatedTutors = allTutors.slice(startIndex, endIndex);
-                
-                return (
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold text-gray-900">
-                        Danh sách gia sư
-                      </h3>
-                      <span className="text-sm text-gray-500">
-                        {allTutors.length} gia sư
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {paginatedTutors.map((tutor: TutorPost) => (
-                        <TutorPostCard
-                          key={tutor.id || tutor._id}
-                          post={tutor}
-                          showCompatibility={false}
-                          onClick={() => handleTutorClick(tutor.id || tutor._id)}
-                          onSendRequest={canSendRequest ? handleSendRequest : undefined}
-                        />
-                      ))}
-                    </div>
-                    
-                    {/* Pagination Controls for All Tutors */}
-                    {totalPages > 1 && (
-                      <motion.div 
-                        initial={{ opacity: 0 }} 
-                        animate={{ opacity: 1 }} 
-                        className="flex flex-col items-center gap-3 pt-6 mt-6 border-t border-gray-100"
-                      >
-                        <div className="flex items-center gap-1.5 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100">
-                          {/* Previous Button */}
-                          <button
-                            onClick={() => handleAllTutorsPageChange(allTutorsCurrentPage - 1)}
-                            disabled={allTutorsCurrentPage <= 1}
-                            className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                          >
-                            ← Trước
-                          </button>
+              ) : allTutors && allTutors.length > 0 ? (
+                (() => {
+                  const totalItems = allTutors.length;
+                  const totalPages = Math.ceil(
+                    totalItems / ALL_TUTORS_PER_PAGE
+                  );
+                  const startIndex =
+                    (allTutorsCurrentPage - 1) * ALL_TUTORS_PER_PAGE;
+                  const endIndex = startIndex + ALL_TUTORS_PER_PAGE;
+                  const paginatedTutors = allTutors.slice(startIndex, endIndex);
 
-                          {/* Page Numbers */}
-                          <div className="flex items-center gap-1">
-                            {Array.from({ length: totalPages }, (_, i) => i + 1)
-                              .filter(page => {
-                                const current = allTutorsCurrentPage;
-                                return page === 1 || 
-                                       page === totalPages || 
-                                       (page >= current - 1 && page <= current + 1);
-                              })
-                              .map((page, index, array) => {
-                                const showEllipsisBefore = index > 0 && page - array[index - 1] > 1;
-                                return (
-                                  <React.Fragment key={page}>
-                                    {showEllipsisBefore && (
-                                      <span className="px-1.5 text-gray-400 text-sm">...</span>
-                                    )}
-                                    <button
-                                      onClick={() => handleAllTutorsPageChange(page)}
-                                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
-                                        page === allTutorsCurrentPage
-                                          ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm"
-                                          : "text-gray-600 hover:bg-gray-100"
-                                      }`}
-                                    >
-                                      {page}
-                                    </button>
-                                  </React.Fragment>
-                                );
-                              })}
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-gray-900">
+                          Danh sách gia sư
+                        </h3>
+                        <span className="text-sm text-gray-500">
+                          {allTutors.length} gia sư
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {paginatedTutors.map((tutor: TutorPost) => (
+                          <TutorPostCard
+                            key={tutor.id || tutor._id}
+                            post={tutor}
+                            showCompatibility={false}
+                            onClick={() =>
+                              handleTutorClick(tutor.id || tutor._id || "")
+                            }
+                            onSendRequest={
+                              canSendRequest ? handleSendRequest : undefined
+                            }
+                          />
+                        ))}
+                      </div>
+
+                      {/* Pagination Controls for All Tutors */}
+                      {totalPages > 1 && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex flex-col items-center gap-3 pt-6 mt-6 border-t border-gray-100"
+                        >
+                          <div className="flex items-center gap-1.5 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100">
+                            {/* Previous Button */}
+                            <button
+                              onClick={() =>
+                                handleAllTutorsPageChange(
+                                  allTutorsCurrentPage - 1
+                                )
+                              }
+                              disabled={allTutorsCurrentPage <= 1}
+                              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            >
+                              ← Trước
+                            </button>
+
+                            {/* Page Numbers */}
+                            <div className="flex items-center gap-1">
+                              {Array.from(
+                                { length: totalPages },
+                                (_, i) => i + 1
+                              )
+                                .filter((page) => {
+                                  const current = allTutorsCurrentPage;
+                                  return (
+                                    page === 1 ||
+                                    page === totalPages ||
+                                    (page >= current - 1 && page <= current + 1)
+                                  );
+                                })
+                                .map((page, index, array) => {
+                                  const showEllipsisBefore =
+                                    index > 0 && page - array[index - 1] > 1;
+                                  return (
+                                    <React.Fragment key={page}>
+                                      {showEllipsisBefore && (
+                                        <span className="px-1.5 text-gray-400 text-sm">
+                                          ...
+                                        </span>
+                                      )}
+                                      <button
+                                        onClick={() =>
+                                          handleAllTutorsPageChange(page)
+                                        }
+                                        className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                                          page === allTutorsCurrentPage
+                                            ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm"
+                                            : "text-gray-600 hover:bg-gray-100"
+                                        }`}
+                                      >
+                                        {page}
+                                      </button>
+                                    </React.Fragment>
+                                  );
+                                })}
+                            </div>
+
+                            {/* Next Button */}
+                            <button
+                              onClick={() =>
+                                handleAllTutorsPageChange(
+                                  allTutorsCurrentPage + 1
+                                )
+                              }
+                              disabled={allTutorsCurrentPage >= totalPages}
+                              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            >
+                              Sau →
+                            </button>
                           </div>
 
-                          {/* Next Button */}
-                          <button
-                            onClick={() => handleAllTutorsPageChange(allTutorsCurrentPage + 1)}
-                            disabled={allTutorsCurrentPage >= totalPages}
-                            className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                          >
-                            Sau →
-                          </button>
-                        </div>
-
-                        {/* Pagination Info */}
-                        <span className="text-xs text-gray-500">
-                          Trang {allTutorsCurrentPage} / {totalPages}
-                          {" • "}
-                          {totalItems} gia sư
-                        </span>
-                      </motion.div>
-                    )}
-                  </div>
-                );
-              })() : (
+                          {/* Pagination Info */}
+                          <span className="text-xs text-gray-500">
+                            Trang {allTutorsCurrentPage} / {totalPages}
+                            {" • "}
+                            {totalItems} gia sư
+                          </span>
+                        </motion.div>
+                      )}
+                    </div>
+                  );
+                })()
+              ) : (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
                     <span className="text-3xl">🔍</span>
@@ -558,8 +604,6 @@ const StudentSmartSearchPage: React.FC = () => {
               )}
             </motion.div>
           )}
-
-
         </AnimatePresence>
       </div>
 

@@ -7,7 +7,6 @@ import {
   EyeIcon,
   LockClosedIcon,
   LockOpenIcon,
-  PencilIcon,
   ExclamationTriangleIcon,
   AcademicCapIcon,
   UserIcon,
