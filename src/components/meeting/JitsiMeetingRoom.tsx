@@ -40,6 +40,9 @@ const JitsiMeetingRoom: React.FC<JitsiMeetingRoomProps> = ({
   const jitsiApiRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [joinedAt, setJoinedAt] = useState<Date | null>(null);
+  // Use ref to track if user has joined (for cleanup)
+  const hasJoinedRef = useRef<boolean>(false);
+  const hasLeftRef = useRef<boolean>(false);
 
   useEffect(() => {
     // Load Jitsi External API script
@@ -66,7 +69,7 @@ const JitsiMeetingRoom: React.FC<JitsiMeetingRoomProps> = ({
       try {
         // Extract room name from meeting link
         const roomName = extractRoomName(meetingLink);
-        
+
         // Get domain (meet.jit.si or custom)
         const domain = extractDomain(meetingLink);
 
@@ -139,14 +142,17 @@ const JitsiMeetingRoom: React.FC<JitsiMeetingRoomProps> = ({
     // Cleanup
     return () => {
       if (jitsiApiRef.current) {
-        // Track leave before closing
-        if (joinedAt) {
-          trackLeave();
+        // Track leave before closing if joined but hasn't left yet
+        if (hasJoinedRef.current && !hasLeftRef.current) {
+          // Call leave API synchronously before dispose
+          classService.trackLeaveSession(classId, sessionNumber)
+            .catch(err => console.error('Cleanup trackLeave error:', err));
+          hasLeftRef.current = true;
         }
         jitsiApiRef.current.dispose();
       }
     };
-  }, []);
+  }, [classId, sessionNumber]);
 
   /**
    * Event Handlers
@@ -155,6 +161,8 @@ const JitsiMeetingRoom: React.FC<JitsiMeetingRoomProps> = ({
     console.log('Video conference joined:', event);
     const now = new Date();
     setJoinedAt(now);
+    hasJoinedRef.current = true;
+    hasLeftRef.current = false;
 
     // Track join in backend
     try {
@@ -181,7 +189,7 @@ const JitsiMeetingRoom: React.FC<JitsiMeetingRoomProps> = ({
 
   const handleRecordingStatusChanged = (event: any) => {
     console.log('Recording status changed:', event);
-    
+
     if (event.on) {
       toast.success('Đang ghi hình buổi học');
     } else {
@@ -201,13 +209,19 @@ const JitsiMeetingRoom: React.FC<JitsiMeetingRoomProps> = ({
    * Track leave session
    */
   const trackLeave = async () => {
-    if (!joinedAt) return;
+    // Prevent double tracking
+    if (!hasJoinedRef.current || hasLeftRef.current) return;
+    hasLeftRef.current = true;
 
     try {
       await classService.trackLeaveSession(classId, sessionNumber);
-      
-      const duration = Math.floor((new Date().getTime() - joinedAt.getTime()) / 60000);
-      toast.success(`Đã rời phòng học. Thời gian tham gia: ${duration} phút`);
+
+      if (joinedAt) {
+        const duration = Math.floor((new Date().getTime() - joinedAt.getTime()) / 60000);
+        toast.success(`Đã rời phòng học. Thời gian tham gia: ${duration} phút`);
+      } else {
+        toast.success('Đã rời phòng học');
+      }
     } catch (error) {
       console.error('Error tracking leave:', error);
     }
@@ -261,7 +275,7 @@ const JitsiMeetingRoom: React.FC<JitsiMeetingRoomProps> = ({
             {userRole === 'TUTOR' ? 'Gia sư' : 'Học viên'}
           </span>
         </div>
-        
+
         <button
           onClick={handleEndMeeting}
           className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"

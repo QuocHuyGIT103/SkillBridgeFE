@@ -77,18 +77,32 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
     }
   };
 
-  // NEW: Track join session automatically
+  // NEW: Open meeting link in new tab (simpler and more reliable)
   const handleJoinSession = async (classId: string, sessionNumber: number, meetingLink: string) => {
     try {
-      // Navigate to embedded meeting page (with auto tracking)
-      const meetingPath = userRole === 'TUTOR' 
-        ? `/tutor/meeting/${classId}/${sessionNumber}`
-        : `/student/meeting/${classId}/${sessionNumber}`;
-      
-      navigate(meetingPath);
+      // Track join attempt in backend
+      await classService.trackJoinSession(classId, sessionNumber);
+
+      // Open meeting link in new tab
+      window.open(meetingLink, '_blank');
+
+      toast.success('Đã mở phòng học trong tab mới');
     } catch (error: any) {
       console.error('Failed to join meeting:', error);
-      toast.error('Không thể vào phòng học');
+      // Still open the link even if tracking fails
+      window.open(meetingLink, '_blank');
+    }
+  };
+
+  // NEW: Mark session as completed (for tutor)
+  const handleMarkCompleted = async (classId: string, sessionNumber: number) => {
+    try {
+      await classService.markSessionCompleted(classId, sessionNumber);
+      toast.success('Đã đánh dấu hoàn thành buổi học');
+      fetchWeeklySchedule(); // Refresh to update UI
+    } catch (error: any) {
+      console.error('Failed to mark completed:', error);
+      toast.error(error.response?.data?.message || 'Không thể đánh dấu hoàn thành');
     }
   };
 
@@ -166,10 +180,10 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
     const now = new Date();
     const start = new Date(session.scheduledDate);
     const end = new Date(start.getTime() + (session.duration || 90) * 60000); // Default 90 minutes if no duration
-    
+
     // Allow joining 10 minutes before start time
     const canJoinStart = new Date(start.getTime() - 10 * 60000);
-    
+
     if (now < canJoinStart) {
       return { status: 'NOT_STARTED', canJoinMeeting: false, isPast: false, message: 'Chưa đến giờ' };
     } else if (now >= canJoinStart && now <= end) {
@@ -268,23 +282,20 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: dayOfWeek * 0.05 }}
-              className={`bg-white rounded-xl shadow-sm border ${
-                isToday
-                  ? "border-blue-300 ring-2 ring-blue-100"
-                  : "border-gray-100"
-              }`}
+              className={`bg-white rounded-xl shadow-sm border ${isToday
+                ? "border-blue-300 ring-2 ring-blue-100"
+                : "border-gray-100"
+                }`}
             >
               {/* Day Header */}
               <div
-                className={`p-4 border-b ${
-                  isToday ? "bg-blue-50" : "bg-gray-50"
-                }`}
+                className={`p-4 border-b ${isToday ? "bg-blue-50" : "bg-gray-50"
+                  }`}
               >
                 <div className="text-center">
                   <div
-                    className={`text-sm font-semibold ${
-                      isToday ? "text-blue-600" : "text-gray-900"
-                    }`}
+                    className={`text-sm font-semibold ${isToday ? "text-blue-600" : "text-gray-900"
+                      }`}
                   >
                     {getDayName(dayOfWeek)}
                   </div>
@@ -351,11 +362,10 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                           <div className="flex items-center space-x-2">
                             <div className="flex items-center space-x-1">
                               <div
-                                className={`w-2 h-2 rounded-full ${
-                                  session.attendance.tutorAttended
-                                    ? "bg-green-500"
-                                    : "bg-gray-300"
-                                }`}
+                                className={`w-2 h-2 rounded-full ${session.attendance.tutorAttended
+                                  ? "bg-green-500"
+                                  : "bg-gray-300"
+                                  }`}
                               />
                               <span className="text-xs text-gray-600">
                                 Gia sư
@@ -363,11 +373,10 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                             </div>
                             <div className="flex items-center space-x-1">
                               <div
-                                className={`w-2 h-2 rounded-full ${
-                                  session.attendance.studentAttended
-                                    ? "bg-green-500"
-                                    : "bg-gray-300"
-                                }`}
+                                className={`w-2 h-2 rounded-full ${session.attendance.studentAttended
+                                  ? "bg-green-500"
+                                  : "bg-gray-300"
+                                  }`}
                               />
                               <span className="text-xs text-gray-600">
                                 Học viên
@@ -379,11 +388,10 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                           {session.paymentRequired &&
                             session.paymentStatus !== "PAID" && (
                               <span
-                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                  session.paymentStatus === "UNPAID"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-yellow-100 text-yellow-700"
-                                }`}
+                                className={`text-xs px-2 py-0.5 rounded-full font-medium ${session.paymentStatus === "UNPAID"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-yellow-100 text-yellow-700"
+                                  }`}
                               >
                                 {session.paymentStatus === "UNPAID"
                                   ? "Chưa thanh toán"
@@ -424,67 +432,102 @@ const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ userRole }) => {
                           {/* Only show other actions if payment is NOT required OR session is PAID */}
                           {(!session.paymentRequired ||
                             session.paymentStatus === "PAID") && (
-                            <>
-                              {/* NEW: Direct Join Button - No Attendance Required */}
-                              {session.learningMode === "ONLINE" && session.meetingLink && (() => {
-                                const now = new Date();
-                                const start = new Date(session.scheduledDate);
-                                const canJoinTime = new Date(start.getTime() - 15 * 60000); // 15 min before
-                                const end = new Date(start.getTime() + (session.duration || 0) * 60000);
-                                
-                                const canJoinNow = now >= canJoinTime && now <= end;
-                                const sessionEnded = now > end;
-                                const sessionNotYet = now < canJoinTime;
-                                
-                                if (canJoinNow) {
-                                  return (
-                                    <button
-                                      onClick={() => handleJoinSession(session.classId, session.sessionNumber, session.meetingLink!)}
-                                      className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
-                                    >
-                                      <VideoCameraIcon className="w-4 h-4" />
-                                      <span>Vào phòng học</span>
-                                    </button>
-                                  );
-                                } else if (sessionEnded) {
-                                  return (
-                                    <div className="w-full px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
-                                      <CheckCircleIcon className="w-4 h-4" />
-                                      <span>Buổi học đã kết thúc</span>
-                                    </div>
-                                  );
-                                } else if (sessionNotYet) {
-                                  return (
-                                    <div className="w-full px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
-                                      <ClockIcon className="w-4 h-4" />
-                                      <span>Chưa đến giờ học</span>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              })()}
+                              <>
+                                {/* NEW: Direct Join Button - No Attendance Required */}
+                                {session.learningMode === "ONLINE" && session.meetingLink && (() => {
+                                  const now = new Date();
+                                  const start = new Date(session.scheduledDate);
+                                  const canJoinTime = new Date(start.getTime() - 15 * 60000); // 15 min before
+                                  const end = new Date(start.getTime() + (session.duration || 0) * 60000);
 
-                              {/* Homework Button - Show after session is completed or both attended */}
-                              {(session.status === "COMPLETED" ||
-                                session.canJoin) && (
-                                <button
-                                  onClick={() => handleOpenHomework(session)}
-                                  className="w-full px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer flex items-center justify-center space-x-1"
-                                >
-                                  <DocumentTextIcon className="w-4 h-4" />
-                                  <span>
-                                    {userRole === "TUTOR"
-                                      ? session.homework.hasAssignment
-                                        ? "Quản lý bài tập"
-                                        : "Giao bài tập"
-                                      : session.homework.hasAssignment
-                                      ? "Xem bài tập"
-                                      : "Chưa có bài tập"}
-                                  </span>
-                                </button>
-                              )}
-                            </>
-                          )}
+                                  const canJoinNow = now >= canJoinTime && now <= end;
+                                  const sessionEnded = now > end;
+                                  const sessionNotYet = now < canJoinTime;
+                                  const isCompleted = session.status === "COMPLETED";
+                                  // Check if session has started (past start time)
+                                  const sessionStarted = now >= start;
+
+                                  if (isCompleted) {
+                                    return (
+                                      <div className="w-full px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
+                                        <CheckCircleIcon className="w-4 h-4" />
+                                        <span>Đã hoàn thành</span>
+                                      </div>
+                                    );
+                                  } else if (canJoinNow) {
+                                    return (
+                                      <div className="space-y-1.5">
+                                        <button
+                                          onClick={() => handleJoinSession(session.classId, session.sessionNumber, session.meetingLink!)}
+                                          className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
+                                        >
+                                          <VideoCameraIcon className="w-4 h-4" />
+                                          <span>Vào phòng học</span>
+                                        </button>
+                                        {/* Show mark completed for tutor after session has started */}
+                                        {userRole === "TUTOR" && sessionStarted && (
+                                          <button
+                                            onClick={() => handleMarkCompleted(session.classId, session.sessionNumber)}
+                                            className="w-full px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
+                                          >
+                                            <CheckCircleIcon className="w-4 h-4" />
+                                            <span>Đánh dấu hoàn thành</span>
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  } else if (sessionEnded) {
+                                    // Show mark completed button for tutor
+                                    if (userRole === "TUTOR") {
+                                      return (
+                                        <button
+                                          onClick={() => handleMarkCompleted(session.classId, session.sessionNumber)}
+                                          className="w-full px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center justify-center space-x-1"
+                                        >
+                                          <CheckCircleIcon className="w-4 h-4" />
+                                          <span>Đánh dấu hoàn thành</span>
+                                        </button>
+                                      );
+                                    } else {
+                                      return (
+                                        <div className="w-full px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
+                                          <ClockIcon className="w-4 h-4" />
+                                          <span>Chờ gia sư xác nhận</span>
+                                        </div>
+                                      );
+                                    }
+                                  } else if (sessionNotYet) {
+                                    return (
+                                      <div className="w-full px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg flex items-center justify-center space-x-1">
+                                        <ClockIcon className="w-4 h-4" />
+                                        <span>Chưa đến giờ học</span>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+
+                                {/* Homework Button - Show after session is completed or both attended */}
+                                {(session.status === "COMPLETED" ||
+                                  session.canJoin) && (
+                                    <button
+                                      onClick={() => handleOpenHomework(session)}
+                                      className="w-full px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer flex items-center justify-center space-x-1"
+                                    >
+                                      <DocumentTextIcon className="w-4 h-4" />
+                                      <span>
+                                        {userRole === "TUTOR"
+                                          ? session.homework.hasAssignment
+                                            ? "Quản lý bài tập"
+                                            : "Giao bài tập"
+                                          : session.homework.hasAssignment
+                                            ? "Xem bài tập"
+                                            : "Chưa có bài tập"}
+                                      </span>
+                                    </button>
+                                  )}
+                              </>
+                            )}
                         </div>
 
                         {/* Location/Meeting Info */}
